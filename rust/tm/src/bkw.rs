@@ -524,10 +524,20 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
 
                         let left_ok = !prefixes
                             .prefixes(st, scan, left, right, LEFT_SIDE)
-                            .is_empty();
+                            .is_empty()
+                            && !prefixes
+                                .word_prefixes(
+                                    st, scan, left, right, LEFT_SIDE,
+                                )
+                                .is_empty();
                         let right_ok = !prefixes
                             .prefixes(st, scan, left, right, RIGHT_SIDE)
-                            .is_empty();
+                            .is_empty()
+                            && !prefixes
+                                .word_prefixes(
+                                    st, scan, left, right, RIGHT_SIDE,
+                                )
+                                .is_empty();
 
                         if !left_ok || !right_ok {
                             keep &= !(1_u64 << right);
@@ -934,6 +944,501 @@ impl SidePrefix {
     }
 }
 
+/// Ordered cell-prefix companion to `SidePrefix`. The ordinary run abstraction
+/// remains useful for long homogeneous runs; this second domain retains short
+/// periodic words such as `(1 2)+` instead of degrading them to a dirty spill
+/// after only a few run boundaries.
+///
+/// `Periodic` is deliberately a widening. `min_cells` cells are guaranteed to
+/// follow the stored primitive cycle from `phase`; any additional full cycles
+/// may occur before `tail`. Widening an exact observed prefix to that family is
+/// a sound over-approximation, and bounding/canonicalizing `min_cells` keeps the
+/// forward fixed point finite.
+const SIDE_WORD_LITERAL_CELLS: usize = 24;
+const SIDE_WORD_MAX_PATTERN: usize = 8;
+const SIDE_WORD_MIN_REPEATS: usize = 3;
+// Bound the exact alternative antichain at each exact window/side. When it
+// overflows, join the alternatives to their longest common guaranteed cell
+// prefix instead of enumerating an exponential family of 24-cell literals.
+// The joined unknown suffix is an over-approximation, so this can only weaken
+// the extra word-prefix proof domain, never make it unsound.
+const SIDE_WORD_MAX_ALTS_PER_WINDOW: usize = 16;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum SideWordTail {
+    Blank,
+    DirtyUnknown,
+    Unknown,
+}
+
+impl SideWordTail {
+    const fn definitely_dirty(self) -> bool {
+        matches!(self, Self::DirtyUnknown)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum SideWordPrefix {
+    Literal {
+        cells: [Color; SIDE_WORD_LITERAL_CELLS],
+        len: u8,
+        tail: SideWordTail,
+    },
+    Periodic {
+        word: [Color; SIDE_WORD_MAX_PATTERN],
+        word_len: u8,
+        phase: u8,
+        min_cells: u16,
+        tail: SideWordTail,
+    },
+}
+
+impl SideWordPrefix {
+    const fn blank() -> Self {
+        Self::Literal {
+            cells: [0; SIDE_WORD_LITERAL_CELLS],
+            len: 0,
+            tail: SideWordTail::Blank,
+        }
+    }
+
+    const fn dirty_unknown() -> Self {
+        Self::Literal {
+            cells: [0; SIDE_WORD_LITERAL_CELLS],
+            len: 0,
+            tail: SideWordTail::DirtyUnknown,
+        }
+    }
+
+    const fn unknown() -> Self {
+        Self::Literal {
+            cells: [0; SIDE_WORD_LITERAL_CELLS],
+            len: 0,
+            tail: SideWordTail::Unknown,
+        }
+    }
+
+    const fn is_blank(self) -> bool {
+        matches!(
+            self,
+            Self::Literal {
+                len: 0,
+                tail: SideWordTail::Blank,
+                ..
+            }
+        )
+    }
+
+    const fn is_dirty_unknown(self) -> bool {
+        matches!(
+            self,
+            Self::Literal {
+                len: 0,
+                tail: SideWordTail::DirtyUnknown,
+                ..
+            }
+        )
+    }
+
+    const fn is_unconstrained(self) -> bool {
+        matches!(
+            self,
+            Self::Literal {
+                len: 0,
+                tail: SideWordTail::Unknown,
+                ..
+            }
+        )
+    }
+
+    fn definitely_dirty(self) -> bool {
+        match self {
+            Self::Literal { cells, len, tail } => {
+                cells[..usize::from(len)]
+                    .iter()
+                    .any(|&color| color != 0)
+                    || tail.definitely_dirty()
+            },
+            Self::Periodic {
+                word,
+                word_len,
+                min_cells,
+                tail,
+                ..
+            } => {
+                min_cells != 0
+                    && word[..usize::from(word_len)]
+                        .iter()
+                        .any(|&color| color != 0)
+                    || tail.definitely_dirty()
+            },
+        }
+    }
+
+    fn guaranteed_len(self) -> usize {
+        match self {
+            Self::Literal { len, .. } => usize::from(len),
+            Self::Periodic { min_cells, .. } => usize::from(min_cells),
+        }
+    }
+
+    fn guaranteed_cell(self, index: usize) -> Option<Color> {
+        match self {
+            Self::Literal { cells, len, .. } => {
+                (index < usize::from(len)).then_some(cells[index])
+            },
+            Self::Periodic {
+                word,
+                word_len,
+                phase,
+                min_cells,
+                ..
+            } => {
+                if index >= usize::from(min_cells) {
+                    return None;
+                }
+                let width = usize::from(word_len);
+                Some(word[(usize::from(phase) + index) % width])
+            },
+        }
+    }
+
+    fn periodic_min(width: usize, len: usize) -> u16 {
+        let threshold = SIDE_WORD_MIN_REPEATS * width;
+        let residue = len % width;
+        let minimum = threshold + residue;
+        debug_assert!(minimum <= len);
+        u16::try_from(minimum).unwrap_or(u16::MAX)
+    }
+
+    fn canonical_at_least_min(width: usize, min_cells: usize) -> u16 {
+        let threshold = SIDE_WORD_MIN_REPEATS * width;
+        #[expect(clippy::int_plus_one)]
+        if min_cells <= threshold + width - 1 {
+            return u16::try_from(min_cells).unwrap_or(u16::MAX);
+        }
+
+        let residue = min_cells % width;
+        u16::try_from(threshold + residue).unwrap_or(u16::MAX)
+    }
+
+    fn from_literal(
+        cells: [Color; SIDE_WORD_LITERAL_CELLS],
+        len: usize,
+        tail: SideWordTail,
+    ) -> Self {
+        debug_assert!(len <= SIDE_WORD_LITERAL_CELLS);
+
+        // Width one is intentionally left to the original run-prefix domain.
+        // Search the smallest nontrivial period so the stored cycle is
+        // primitive automatically.
+        for width in
+            2..=SIDE_WORD_MAX_PATTERN.min(len / SIDE_WORD_MIN_REPEATS)
+        {
+            if (0..len)
+                .all(|index| cells[index] == cells[index % width])
+            {
+                // Reject a homogeneous pseudo-word. A smaller width-one period
+                // would only duplicate the existing run abstraction.
+                if cells[..width].iter().all(|&color| color == cells[0])
+                {
+                    continue;
+                }
+
+                let mut word = [0; SIDE_WORD_MAX_PATTERN];
+                word[..width].copy_from_slice(&cells[..width]);
+                return Self::Periodic {
+                    word,
+                    word_len: u8::try_from(width)
+                        .expect("side word width fits in u8"),
+                    phase: 0,
+                    min_cells: Self::periodic_min(width, len),
+                    tail,
+                };
+            }
+        }
+
+        Self::Literal {
+            cells,
+            len: u8::try_from(len)
+                .expect("side word literal length fits in u8"),
+            tail,
+        }
+    }
+
+    #[expect(clippy::match_same_arms)]
+    const fn tail_after_dropped(
+        color: Color,
+        tail: SideWordTail,
+    ) -> SideWordTail {
+        match tail {
+            SideWordTail::Unknown => SideWordTail::Unknown,
+            SideWordTail::DirtyUnknown => SideWordTail::DirtyUnknown,
+            SideWordTail::Blank if color == 0 => SideWordTail::Blank,
+            SideWordTail::Blank => SideWordTail::DirtyUnknown,
+        }
+    }
+
+    fn periodic_to_literal_with_prepend(
+        word: [Color; SIDE_WORD_MAX_PATTERN],
+        word_len: u8,
+        phase: u8,
+        min_cells: u16,
+        color: Color,
+    ) -> Self {
+        let width = usize::from(word_len);
+        let mut cells = [0; SIDE_WORD_LITERAL_CELLS];
+        cells[0] = color;
+        let take =
+            (SIDE_WORD_LITERAL_CELLS - 1).min(usize::from(min_cells));
+        for index in 0..take {
+            cells[index + 1] =
+                word[(usize::from(phase) + index) % width];
+        }
+
+        // A broken periodic boundary can have the variable repetition stop at
+        // several farther positions. Retain its exact near cells but join the
+        // remainder conservatively.
+        Self::from_literal(cells, take + 1, SideWordTail::Unknown)
+    }
+
+    fn for_each_prepend(
+        self,
+        color: Color,
+        mut emit: impl FnMut(Self),
+    ) {
+        match self {
+            Self::Literal { cells, len, tail } => {
+                let len = usize::from(len);
+                if len == 0 && tail == SideWordTail::Blank && color == 0
+                {
+                    emit(self);
+                    return;
+                }
+
+                if len < SIDE_WORD_LITERAL_CELLS {
+                    let mut next = [0; SIDE_WORD_LITERAL_CELLS];
+                    next[0] = color;
+                    next[1..=len].copy_from_slice(&cells[..len]);
+                    emit(Self::from_literal(next, len + 1, tail));
+                    return;
+                }
+
+                let dropped = cells[SIDE_WORD_LITERAL_CELLS - 1];
+                let mut next = [0; SIDE_WORD_LITERAL_CELLS];
+                next[0] = color;
+                next[1..].copy_from_slice(
+                    &cells[..SIDE_WORD_LITERAL_CELLS - 1],
+                );
+                let next_tail = Self::tail_after_dropped(dropped, tail);
+                emit(Self::from_literal(
+                    next,
+                    SIDE_WORD_LITERAL_CELLS,
+                    next_tail,
+                ));
+            },
+            Self::Periodic {
+                word,
+                word_len,
+                phase,
+                min_cells,
+                tail,
+            } => {
+                let width = usize::from(word_len);
+                let previous = (usize::from(phase) + width - 1) % width;
+                if color == word[previous] {
+                    let next_min =
+                        usize::from(min_cells).saturating_add(1);
+                    emit(Self::Periodic {
+                        word,
+                        word_len,
+                        phase: u8::try_from(previous)
+                            .expect("side word phase fits in u8"),
+                        min_cells: Self::canonical_at_least_min(
+                            width, next_min,
+                        ),
+                        tail,
+                    });
+                } else {
+                    emit(Self::periodic_to_literal_with_prepend(
+                        word, word_len, phase, min_cells, color,
+                    ));
+                }
+            },
+        }
+    }
+
+    fn emit_tail<const C: usize>(
+        tail: SideWordTail,
+        mut emit: impl FnMut(Color, Self),
+    ) {
+        match tail {
+            SideWordTail::Blank => emit(0, Self::blank()),
+            SideWordTail::DirtyUnknown => {
+                for color in 0..C {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let color = color as Color;
+                    if color != 0 {
+                        emit(color, Self::blank());
+                    }
+                    emit(color, Self::dirty_unknown());
+                }
+            },
+            SideWordTail::Unknown => {
+                for color in 0..C {
+                    #[expect(clippy::cast_possible_truncation)]
+                    emit(color as Color, Self::unknown());
+                }
+            },
+        }
+    }
+
+    fn for_each_pull<const C: usize>(
+        self,
+        mut emit: impl FnMut(Color, Self),
+    ) {
+        match self {
+            Self::Literal { cells, len, tail } => {
+                let len = usize::from(len);
+                if len == 0 {
+                    Self::emit_tail::<C>(tail, emit);
+                    return;
+                }
+
+                let color = cells[0];
+                if len == 1 {
+                    let residual = match tail {
+                        SideWordTail::Blank => Self::blank(),
+                        SideWordTail::DirtyUnknown => {
+                            Self::dirty_unknown()
+                        },
+                        SideWordTail::Unknown => Self::unknown(),
+                    };
+                    emit(color, residual);
+                    return;
+                }
+
+                let mut next = [0; SIDE_WORD_LITERAL_CELLS];
+                next[..len - 1].copy_from_slice(&cells[1..len]);
+                emit(color, Self::from_literal(next, len - 1, tail));
+            },
+            Self::Periodic {
+                word,
+                word_len,
+                phase,
+                min_cells,
+                tail,
+            } => {
+                let width = usize::from(word_len);
+                let color = word[usize::from(phase)];
+                let next_phase = (usize::from(phase) + 1) % width;
+                let minimum = usize::from(min_cells);
+
+                if minimum > 1 {
+                    emit(
+                        color,
+                        Self::Periodic {
+                            word,
+                            word_len,
+                            phase: u8::try_from(next_phase)
+                                .expect("side word phase fits in u8"),
+                            min_cells: Self::canonical_at_least_min(
+                                width,
+                                minimum - 1,
+                            ),
+                            tail,
+                        },
+                    );
+                    return;
+                }
+
+                // `AtLeast(1 + k*width)` splits after one pull into the case
+                // k=0 (the periodic segment ended) and k>=1 (at least one
+                // whole cycle remains). This is the word-level counterpart of
+                // pulling from a `1..` monochromatic run.
+                let residual = match tail {
+                    SideWordTail::Blank => Self::blank(),
+                    SideWordTail::DirtyUnknown => Self::dirty_unknown(),
+                    SideWordTail::Unknown => Self::unknown(),
+                };
+                emit(color, residual);
+                emit(
+                    color,
+                    Self::Periodic {
+                        word,
+                        word_len,
+                        phase: u8::try_from(next_phase)
+                            .expect("side word phase fits in u8"),
+                        min_cells: u16::try_from(width)
+                            .expect("side word width fits in u16"),
+                        tail,
+                    },
+                );
+            },
+        }
+    }
+
+    /// Denotational subsumption used to keep each exact window/side as a
+    /// small antichain. In particular, a retained exact prefix followed by an
+    /// unknown tail covers every more-specific continuation with that prefix.
+    fn subsumes(self, other: Self) -> bool {
+        if self == other || self.is_unconstrained() {
+            return true;
+        }
+
+        if self.is_dirty_unknown() {
+            return other.definitely_dirty();
+        }
+
+        #[expect(clippy::match_like_matches_macro)]
+        let unknown_after_guarantee = match self {
+            Self::Literal {
+                tail: SideWordTail::Unknown,
+                ..
+            }
+            | Self::Periodic {
+                tail: SideWordTail::Unknown,
+                ..
+            } => true,
+            _ => false,
+        };
+        if !unknown_after_guarantee {
+            return false;
+        }
+
+        let required = self.guaranteed_len();
+        if other.guaranteed_len() < required {
+            return false;
+        }
+
+        (0..required).all(|index| {
+            self.guaranteed_cell(index) == other.guaranteed_cell(index)
+        })
+    }
+
+    fn prefix_compatible(self, other: Self) -> bool {
+        if self.is_unconstrained() || other.is_unconstrained() {
+            return true;
+        }
+
+        let common = self.guaranteed_len().min(other.guaranteed_len());
+        for index in 0..common {
+            if self.guaranteed_cell(index)
+                != other.guaranteed_cell(index)
+            {
+                return false;
+            }
+        }
+
+        // This deliberately checks only jointly guaranteed cells. Optional
+        // cycles and unknown tails are existential, so comparing farther would
+        // require a full regular-language intersection. The guaranteed prefix
+        // alone is already much stronger than the old two-run horizon and is
+        // sufficient to reject incompatible repeated words safely.
+        true
+    }
+}
+
 /// Same exact-window conditioning as `SidePossible`, but keeps alternatives
 /// instead of unioning their ordered near-tail run structure.
 const SIDE_PREFIX_HAS_BLANK: u8 = 1;
@@ -942,13 +1447,21 @@ const SIDE_PREFIX_UNCONSTRAINED: u8 =
     SIDE_PREFIX_HAS_BLANK | SIDE_PREFIX_HAS_DIRTY_UNKNOWN;
 
 struct SidePrefixPossible<const S: usize, const C: usize> {
-    // Flattened [window][side] -> reachable prefix alternatives.
+    // Flattened [window][side] -> reachable run-prefix alternatives.
     windows: Vec<Vec<SidePrefix>>,
 
-    // Cached membership of the two broad alternatives. Besides making query
-    // time O(1), this avoids scanning an antichain on every forward insertion
-    // just to discover that `dirty_unknown()` already subsumes the candidate.
+    // Parallel ordered cell/word-prefix alternatives. This is a second sound
+    // projection of the same forward executions, so backward configurations
+    // must be compatible with both domains.
+    word_windows: Vec<Vec<SideWordPrefix>>,
+
+    // Cached membership of the broad alternatives for the original run
+    // abstraction.
     flags: Vec<u8>,
+
+    // Broad-state flags for the word abstraction. Bit 0 = exact blank,
+    // bit 1 = dirty unknown, bit 2 = fully unknown/unconstrained.
+    word_flags: Vec<u8>,
 }
 
 impl<const S: usize, const C: usize> SidePrefixPossible<S, C> {
@@ -975,7 +1488,9 @@ impl<const S: usize, const C: usize> SidePrefixPossible<S, C> {
         let len = S * C * C * C * 2;
         Self {
             windows: (0..len).map(|_| Vec::new()).collect(),
+            word_windows: (0..len).map(|_| Vec::new()).collect(),
             flags: vec![0; len],
+            word_flags: vec![0; len],
         }
     }
 
@@ -988,6 +1503,34 @@ impl<const S: usize, const C: usize> SidePrefixPossible<S, C> {
         side: usize,
     ) -> &[SidePrefix] {
         &self.windows[Self::index(st, scan, left, right, side)]
+    }
+
+    fn word_prefixes(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        side: usize,
+    ) -> &[SideWordPrefix] {
+        &self.word_windows[Self::index(st, scan, left, right, side)]
+    }
+
+    fn word_side_unconstrained(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        side: usize,
+    ) -> bool {
+        let flags =
+            self.word_flags[Self::index(st, scan, left, right, side)];
+        flags & 0b100 != 0 || flags & 0b011 == 0b011
+    }
+
+    fn word_has_unknown_index(&self, index: usize) -> bool {
+        self.word_flags[index] & 0b100 != 0
     }
 
     fn side_unconstrained(
@@ -1015,6 +1558,16 @@ struct SidePrefixNode {
     left: usize,
     right: usize,
     prefix: SidePrefix,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct SideWordPrefixNode {
+    side: usize,
+    st: usize,
+    scan: usize,
+    left: usize,
+    right: usize,
+    prefix: SideWordPrefix,
 }
 
 /// Bit `p` of `possible[state]` is set when the transition graph admits a
@@ -3108,7 +3661,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// from the prefix. Once two complete runs have been retained, the next
     /// run is kept as a cheap color + 1/2+ spill before farther structure
     /// finally degrades to exact blank/dirty status.
-    #[expect(clippy::cast_possible_truncation)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::excessive_nesting,
+        clippy::shadow_unrelated
+    )]
     fn side_prefix_possible_from_blank(
         &self,
         windows: &WinPossible<s, c>,
@@ -3366,6 +3923,302 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                                 next_prefix,
                                 &mut possible,
                                 &mut q,
+                            );
+                        },
+                    );
+                },
+                _ => unreachable!(),
+            }
+        }
+
+        // A second worklist over the same exact windows retains ordered cell
+        // prefixes and promotes repeated non-homogeneous words instead of
+        // forgetting them after the run-prefix spill horizon. Keeping this
+        // separate from the original run lattice preserves its cheap strong
+        // homogeneous-run facts while adding periodic-order facts as a
+        // conjunct.
+        let mut word_q = VecDeque::new();
+
+        let push_word =
+            |side: usize,
+             st: usize,
+             scan: usize,
+             left: usize,
+             right: usize,
+             prefix: SideWordPrefix,
+             possible: &mut SidePrefixPossible<s, c>,
+             q: &mut VecDeque<SideWordPrefixNode>| {
+                if windows.right[st][scan][left] & (1_u64 << right) == 0
+                {
+                    return;
+                }
+
+                let index = SidePrefixPossible::<s, c>::index(
+                    st, scan, left, right, side,
+                );
+                let flags = possible.word_flags[index];
+
+                // A fully unknown side is the top element of this word
+                // projection; once reached, no more-specific alternative can
+                // strengthen that exact window/side.
+                if flags & 0b100 != 0 || flags & 0b011 == 0b011 {
+                    return;
+                }
+
+                if prefix.is_unconstrained() {
+                    possible.word_flags[index] |= 0b100;
+                    possible.word_windows[index].clear();
+                } else if prefix.is_blank() {
+                    if flags & 0b001 != 0 {
+                        return;
+                    }
+                    possible.word_flags[index] |= 0b001;
+                } else if prefix.is_dirty_unknown() {
+                    if flags & 0b010 != 0 {
+                        return;
+                    }
+                    possible.word_flags[index] |= 0b010;
+                    possible.word_windows[index].retain(|old| {
+                        old.is_blank() || !old.definitely_dirty()
+                    });
+                } else if flags & 0b010 != 0
+                    && prefix.definitely_dirty()
+                {
+                    return;
+                } else {
+                    // The word lattice deliberately has no unbounded global
+                    // `seen`: a 24-cell exact literal domain can otherwise
+                    // explode combinatorially. Dedup in the small local
+                    // antichain instead.
+                    if possible.word_windows[index]
+                        .iter()
+                        .copied()
+                        .any(|old| old.subsumes(prefix))
+                    {
+                        return;
+                    }
+
+                    possible.word_windows[index]
+                        .retain(|old| !prefix.subsumes(*old));
+
+                    if possible.word_windows[index].len()
+                        >= SIDE_WORD_MAX_ALTS_PER_WINDOW
+                    {
+                        // If a broad blank/dirty alternative is already
+                        // present, joining it with another specific prefix
+                        // yields full unknown immediately. Otherwise retain
+                        // the longest cell prefix guaranteed by every exact
+                        // alternative. `from_literal` can promote that common
+                        // prefix straight back to a periodic word.
+                        let joined = if flags != 0 {
+                            SideWordPrefix::unknown()
+                        } else {
+                            let mut cells =
+                                [0; SIDE_WORD_LITERAL_CELLS];
+                            let mut common = prefix
+                                .guaranteed_len()
+                                .min(SIDE_WORD_LITERAL_CELLS);
+
+                            for old in &possible.word_windows[index] {
+                                common =
+                                    common.min(old.guaranteed_len());
+                            }
+
+                            let mut keep = 0_usize;
+                            while keep < common {
+                                let Some(color) =
+                                    prefix.guaranteed_cell(keep)
+                                else {
+                                    break;
+                                };
+                                if possible.word_windows[index]
+                                    .iter()
+                                    .any(|old| {
+                                        old.guaranteed_cell(keep)
+                                            != Some(color)
+                                    })
+                                {
+                                    break;
+                                }
+                                cells[keep] = color;
+                                keep += 1;
+                            }
+
+                            if keep == 0 {
+                                SideWordPrefix::unknown()
+                            } else {
+                                SideWordPrefix::from_literal(
+                                    cells,
+                                    keep,
+                                    SideWordTail::Unknown,
+                                )
+                            }
+                        };
+
+                        possible.word_windows[index].clear();
+                        if joined.is_unconstrained() {
+                            possible.word_flags[index] |= 0b100;
+                        }
+                        possible.word_windows[index].push(joined);
+                        q.push_back(SideWordPrefixNode {
+                            side,
+                            st,
+                            scan,
+                            left,
+                            right,
+                            prefix: joined,
+                        });
+                        return;
+                    }
+                }
+
+                possible.word_windows[index].push(prefix);
+                q.push_back(SideWordPrefixNode {
+                    side,
+                    st,
+                    scan,
+                    left,
+                    right,
+                    prefix,
+                });
+            };
+
+        for side in [LEFT_SIDE, RIGHT_SIDE] {
+            push_word(
+                side,
+                0,
+                0,
+                0,
+                0,
+                SideWordPrefix::blank(),
+                &mut possible,
+                &mut word_q,
+            );
+        }
+
+        while let Some(node) = word_q.pop_front() {
+            let SideWordPrefixNode {
+                side,
+                st,
+                scan,
+                left,
+                right,
+                prefix,
+            } = node;
+
+            let index = SidePrefixPossible::<s, c>::index(
+                st, scan, left, right, side,
+            );
+
+            // A local join can remove many already-queued exact literals.
+            // Do not keep propagating those stale nodes after their window has
+            // been replaced by a broader common-prefix representative.
+            if !possible.word_windows[index].contains(&prefix) {
+                continue;
+            }
+
+            if !prefix.is_unconstrained()
+                && possible.word_has_unknown_index(index)
+            {
+                continue;
+            }
+            if !prefix.is_blank()
+                && !prefix.is_dirty_unknown()
+                && prefix.definitely_dirty()
+                && possible.word_flags[index] & 0b010 != 0
+            {
+                continue;
+            }
+
+            let Some((print, shift, tr)) = trans[st][scan] else {
+                continue;
+            };
+
+            match (side, shift) {
+                (LEFT_SIDE, true) => {
+                    let window =
+                        SidePrefixPossible::<s, c>::window_index(
+                            st, scan, left, right,
+                        );
+                    let new_rights = exposed[window];
+                    prefix.for_each_prepend(
+                        left as Color,
+                        |next_prefix| {
+                            let mut colors = new_rights;
+                            while colors != 0 {
+                                let new_right =
+                                    colors.trailing_zeros() as usize;
+                                colors &= colors - 1;
+                                push_word(
+                                    side,
+                                    tr,
+                                    right,
+                                    print,
+                                    new_right,
+                                    next_prefix,
+                                    &mut possible,
+                                    &mut word_q,
+                                );
+                            }
+                        },
+                    );
+                },
+                (LEFT_SIDE, false) => {
+                    prefix.for_each_pull::<c>(
+                        |new_left, next_prefix| {
+                            push_word(
+                                side,
+                                tr,
+                                left,
+                                usize::from(new_left),
+                                print,
+                                next_prefix,
+                                &mut possible,
+                                &mut word_q,
+                            );
+                        },
+                    );
+                },
+                (RIGHT_SIDE, false) => {
+                    let window =
+                        SidePrefixPossible::<s, c>::window_index(
+                            st, scan, left, right,
+                        );
+                    let new_lefts = exposed[window];
+                    prefix.for_each_prepend(
+                        right as Color,
+                        |next_prefix| {
+                            let mut colors = new_lefts;
+                            while colors != 0 {
+                                let new_left =
+                                    colors.trailing_zeros() as usize;
+                                colors &= colors - 1;
+                                push_word(
+                                    side,
+                                    tr,
+                                    left,
+                                    new_left,
+                                    print,
+                                    next_prefix,
+                                    &mut possible,
+                                    &mut word_q,
+                                );
+                            }
+                        },
+                    );
+                },
+                (RIGHT_SIDE, true) => {
+                    prefix.for_each_pull::<c>(
+                        |new_right, next_prefix| {
+                            push_word(
+                                side,
+                                tr,
+                                right,
+                                print,
+                                usize::from(new_right),
+                                next_prefix,
+                                &mut possible,
+                                &mut word_q,
                             );
                         },
                     );
@@ -6471,6 +7324,130 @@ impl Tape {
             })
         }
 
+        #[expect(clippy::shadow_unrelated)]
+        fn word_requirement(span: &Span) -> SideWordPrefix {
+            let mut cells = [0; SIDE_WORD_LITERAL_CELLS];
+            let mut len = 0_usize;
+            let mut skip = 1_usize;
+
+            let append = |cells: &mut [Color;
+                                   SIDE_WORD_LITERAL_CELLS],
+                          len: &mut usize,
+                          color: Color|
+             -> bool {
+                if *len == SIDE_WORD_LITERAL_CELLS {
+                    return false;
+                }
+                cells[*len] = color;
+                *len += 1;
+                true
+            };
+
+            for block in span.span.iter() {
+                match block {
+                    Block::Run { color, count } => {
+                        let minimum = usize::from(count.minimum());
+                        let start = skip.min(minimum);
+                        skip -= start;
+
+                        for _ in start..minimum {
+                            if !append(&mut cells, &mut len, *color) {
+                                return SideWordPrefix::from_literal(
+                                    cells,
+                                    len,
+                                    SideWordTail::Unknown,
+                                );
+                            }
+                        }
+
+                        if count.is_indef() {
+                            // Optional extra cells of this run sit before all
+                            // farther explicit blocks, so their exact near
+                            // positions are lost from this projection.
+                            return SideWordPrefix::from_literal(
+                                cells,
+                                len,
+                                SideWordTail::Unknown,
+                            );
+                        }
+                    },
+                    Block::Word { word, count } => {
+                        let width = word.len();
+                        let minimum =
+                            count.minimum().saturating_mul(width);
+                        let start = skip.min(minimum);
+                        skip -= start;
+
+                        for offset in start..minimum {
+                            if !append(
+                                &mut cells,
+                                &mut len,
+                                word[offset % width],
+                            ) {
+                                return SideWordPrefix::from_literal(
+                                    cells,
+                                    len,
+                                    SideWordTail::Unknown,
+                                );
+                            }
+                        }
+
+                        if count.is_indef() {
+                            return SideWordPrefix::from_literal(
+                                cells,
+                                len,
+                                SideWordTail::Unknown,
+                            );
+                        }
+                    },
+                }
+            }
+
+            // With no explicit first cell, the skipped immediate neighbor came
+            // from the tape end itself. An unknown end remains unconstrained;
+            // a blank end remains exact blank after skipping one zero.
+            if skip != 0 {
+                return match span.end {
+                    TapeEnd::Blanks => SideWordPrefix::blank(),
+                    TapeEnd::Unknown => SideWordPrefix::unknown(),
+                };
+            }
+
+            let tail = match span.end {
+                TapeEnd::Blanks => SideWordTail::Blank,
+                TapeEnd::Unknown => SideWordTail::Unknown,
+            };
+            SideWordPrefix::from_literal(cells, len, tail)
+        }
+
+        fn matches_word_side<const S: usize, const C: usize>(
+            possible: &SidePrefixPossible<S, C>,
+            st: usize,
+            sc: usize,
+            left: usize,
+            right: usize,
+            side: usize,
+            req: SideWordPrefix,
+        ) -> bool {
+            let prefixes =
+                possible.word_prefixes(st, sc, left, right, side);
+            if prefixes.is_empty() {
+                return false;
+            }
+
+            if req.is_unconstrained()
+                || possible
+                    .word_side_unconstrained(st, sc, left, right, side)
+            {
+                return true;
+            }
+
+            prefixes
+                .iter()
+                .copied()
+                .any(|prefix| prefix.prefix_compatible(req))
+        }
+
         let st = state as usize;
         let sc = self.scan as usize;
         let known_left = self.left_neighbor_color().map(usize::from);
@@ -6480,6 +7457,12 @@ impl Tape {
             possible.side_unconstrained(st, sc, left, right, LEFT_SIDE)
                 && possible
                     .side_unconstrained(st, sc, left, right, RIGHT_SIDE)
+                && possible.word_side_unconstrained(
+                    st, sc, left, right, LEFT_SIDE,
+                )
+                && possible.word_side_unconstrained(
+                    st, sc, left, right, RIGHT_SIDE,
+                )
         };
 
         // Before compiling either backward span, look for an exact reachable
@@ -6508,12 +7491,30 @@ impl Tape {
         // or per-configuration heap allocation remains on this hot path.
         let left_req = requirements(&self.lspan);
         let right_req = requirements(&self.rspan);
+        let left_word_req = word_requirement(&self.lspan);
+        let right_word_req = word_requirement(&self.rspan);
 
         let matches_window = |left: usize, right: usize| {
             matches_side(
                 possible, st, sc, left, right, LEFT_SIDE, left_req,
             ) && matches_side(
                 possible, st, sc, left, right, RIGHT_SIDE, right_req,
+            ) && matches_word_side(
+                possible,
+                st,
+                sc,
+                left,
+                right,
+                LEFT_SIDE,
+                left_word_req,
+            ) && matches_word_side(
+                possible,
+                st,
+                sc,
+                left,
+                right,
+                RIGHT_SIDE,
+                right_word_req,
             )
         };
 
@@ -7707,6 +8708,11 @@ fn test_side_prefix_spill_matches_third_run() {
     possible.windows[right_index].push(SidePrefix::blank());
     possible.flags[right_index] |= SIDE_PREFIX_HAS_BLANK;
 
+    for index in [left_index, right_index] {
+        possible.word_windows[index].push(SideWordPrefix::unknown());
+        possible.word_flags[index] |= 0b100;
+    }
+
     let actual: Tape = "0+ 1 2 3 4 [0] 0+".into();
     assert!(actual.obeys_side_prefix_possible(0, &possible));
 
@@ -7736,6 +8742,11 @@ fn test_side_prefix_matches_dynamic_word() {
         SidePrefixPossible::<1, 4>::index(0, 0, 3, 0, RIGHT_SIDE);
     possible.windows[right_index].push(SidePrefix::blank());
     possible.flags[right_index] |= SIDE_PREFIX_HAS_BLANK;
+
+    for index in [left_index, right_index] {
+        possible.word_windows[index].push(SideWordPrefix::unknown());
+        possible.word_flags[index] |= 0b100;
+    }
 
     let compressed = Tape {
         scan: 0,
@@ -7774,6 +8785,123 @@ fn test_side_prefix_matches_dynamic_word() {
         compressed.color_parity_mask::<4>(),
         expanded.color_parity_mask::<4>(),
     );
+}
+
+#[test]
+#[expect(clippy::shadow_unrelated, clippy::panic)]
+fn test_side_word_prefix_discovers_periodic_word() {
+    let mut prefix = SideWordPrefix::blank();
+
+    // Prepend far-to-near so the final represented near-to-far sequence is
+    // exactly 1,2,1,2,1,2.
+    for color in [2, 1, 2, 1, 2, 1] {
+        let mut next = Vec::new();
+        prefix
+            .for_each_prepend(color, |candidate| next.push(candidate));
+        assert_eq!(next.len(), 1);
+        prefix = next[0];
+    }
+
+    let SideWordPrefix::Periodic {
+        word,
+        word_len,
+        phase,
+        min_cells,
+        tail,
+    } = prefix
+    else {
+        panic!("alternating prefix was not promoted to a word")
+    };
+    assert_eq!(&word[..usize::from(word_len)], &[1, 2]);
+    assert_eq!(phase, 0);
+    assert_eq!(min_cells, 6);
+    assert_eq!(tail, SideWordTail::Blank);
+
+    let mut pulled = Vec::new();
+    prefix.for_each_pull::<3>(|color, next| pulled.push((color, next)));
+    assert_eq!(pulled.len(), 1);
+    assert_eq!(pulled[0].0, 1);
+    let SideWordPrefix::Periodic {
+        phase, min_cells, ..
+    } = pulled[0].1
+    else {
+        panic!("pull lost the periodic prefix")
+    };
+    assert_eq!(phase, 1);
+    assert_eq!(min_cells, 5);
+}
+
+#[test]
+fn test_side_word_prefix_prunes_wrong_repeated_word() {
+    let mut possible = SidePrefixPossible::<1, 4>::new();
+    let left_index =
+        SidePrefixPossible::<1, 4>::index(0, 0, 3, 0, LEFT_SIDE);
+    let right_index =
+        SidePrefixPossible::<1, 4>::index(0, 0, 3, 0, RIGHT_SIDE);
+
+    // Leave the old run-prefix projection universal so this test isolates the
+    // new periodic-word conjunct.
+    for index in [left_index, right_index] {
+        possible.windows[index].push(SidePrefix::blank());
+        possible.flags[index] = SIDE_PREFIX_UNCONSTRAINED;
+    }
+
+    let forward = SideWordPrefix::from_literal(
+        {
+            let mut cells = [0; SIDE_WORD_LITERAL_CELLS];
+            cells[..6].copy_from_slice(&[2, 1, 2, 1, 2, 1]);
+            cells
+        },
+        6,
+        SideWordTail::Blank,
+    );
+    assert!(matches!(forward, SideWordPrefix::Periodic { .. }));
+    possible.word_windows[left_index].push(forward);
+    possible.word_windows[right_index].push(SideWordPrefix::unknown());
+    possible.word_flags[right_index] |= 0b100;
+
+    let compressed = Tape {
+        scan: 0,
+        lspan: Span {
+            span: SpanT {
+                blocks: vec![
+                    Block::exact_word(&[2, 1], 3),
+                    Block::exact(3, 1),
+                ],
+            },
+            end: TapeEnd::Blanks,
+        },
+        rspan: Span::init_blank(),
+    };
+    assert!(compressed.obeys_side_prefix_possible(0, &possible));
+
+    let wrong: Tape = "0+ 1 2 3 2 1 2 3 [0] 0+".into();
+    assert!(!wrong.obeys_side_prefix_possible(0, &possible));
+}
+
+#[test]
+fn test_side_word_prefix_fixed_point_retains_alternation() {
+    // The machine walks right forever on blank cells while writing 1,2,1,2...
+    // behind the head. The same exact local windows recur, so the word-prefix
+    // fixed point should widen the growing left tail to an alternating cycle
+    // rather than eventually forgetting its order.
+    let prog = Prog::<2, 3>::from("1RB ... ...  2RA ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let sides = prog.side_possible_from_blank(&windows);
+    let prefixes =
+        prog.side_prefix_possible_from_blank(&windows, &sides);
+
+    let found = prefixes.word_windows.iter().flatten().any(|prefix| {
+        let SideWordPrefix::Periodic { word, word_len, .. } = prefix
+        else {
+            return false;
+        };
+        let word = &word[..usize::from(*word_len)];
+        word == [1, 2] || word == [2, 1]
+    });
+    assert!(found);
 }
 
 #[test]
