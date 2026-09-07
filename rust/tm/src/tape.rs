@@ -892,7 +892,6 @@ impl DynamicBlock {
         } else {
             count * AlgCount::from(factor)
         };
-        #[expect(clippy::shadow_unrelated)]
         let word = DynamicWord::from(root.to_vec());
         let word_hash = dynamic_word_hash(&word);
 
@@ -1079,7 +1078,6 @@ impl DynamicSpan {
                     break;
                 }
 
-                #[expect(clippy::shadow_unrelated)]
                 let block = self.pop_block();
                 consumed += &block.count;
                 Self::merge_metadata(&mut metadata, &block);

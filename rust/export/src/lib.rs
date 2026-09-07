@@ -1,4 +1,4 @@
-#![expect(clippy::shadow_unrelated, non_camel_case_types)]
+#![expect(non_camel_case_types)]
 
 use pyo3::{pyclass, pyfunction, pymethods, pymodule};
 

@@ -920,7 +920,6 @@ impl SidePrefix {
 
         let residual = |new_count: Option<u8>| {
             let mut next = self;
-            #[expect(clippy::shadow_unrelated)]
             if let Some(count) = new_count {
                 next.runs[0].count = count;
             } else {
@@ -3663,8 +3662,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// finally degrades to exact blank/dirty status.
     #[expect(
         clippy::cast_possible_truncation,
-        clippy::excessive_nesting,
-        clippy::shadow_unrelated
+        clippy::excessive_nesting
     )]
     fn side_prefix_possible_from_blank(
         &self,
@@ -3719,7 +3717,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let mut q = VecDeque::new();
         let mut seen_specific: Set<(usize, SidePrefix)> = Set::new();
 
-        #[expect(clippy::shadow_unrelated)]
         let mut push =
             |side: usize,
              st: usize,
@@ -4496,7 +4493,6 @@ impl WordWideningHistory {
         None
     }
 
-    #[expect(clippy::shadow_unrelated)]
     fn widen(&mut self, config: &mut Config, step: Steps) -> bool {
         // Keep the common non-periodic path allocation-free. Only after an
         // exact compound block exists do we build the structural signatures.
@@ -4730,7 +4726,6 @@ fn span_runs(span: &Span) -> Vec<BlockSig> {
         .collect()
 }
 
-#[expect(clippy::shadow_unrelated)]
 fn growth_edge_observation(
     config: &Config,
     instr: Instr,
@@ -6710,7 +6705,6 @@ impl Tape {
             };
             let mut previous = None;
 
-            #[expect(clippy::shadow_unrelated)]
             let add_pair = |req: &mut SideRequirements<C>,
                             near: usize,
                             far: usize| {
@@ -7324,7 +7318,6 @@ impl Tape {
             })
         }
 
-        #[expect(clippy::shadow_unrelated)]
         fn word_requirement(span: &Span) -> SideWordPrefix {
             let mut cells = [0; SIDE_WORD_LITERAL_CELLS];
             let mut len = 0_usize;
@@ -7850,7 +7843,6 @@ fn test_push_indef() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated)]
 fn test_tail_color_count_excludes_neighbor_before_cap() {
     let run = Span {
         span: SpanT {
@@ -7907,7 +7899,6 @@ fn test_indef_word_parity_keeps_word_correlation() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated, clippy::panic)]
 fn test_dynamic_word_rebalance() {
     let mut span = Span::init_unknown();
 
@@ -7943,7 +7934,6 @@ fn test_dynamic_word_rebalance() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated, clippy::panic)]
 fn test_indef_word_pull_split_and_absorb() {
     let mut span = Span {
         span: SpanT {
@@ -7977,7 +7967,6 @@ fn test_indef_word_pull_split_and_absorb() {
 }
 
 #[test]
-#[expect(clippy::panic)]
 fn test_indef_word_count_one_split() {
     let mut span = Span {
         span: SpanT {
@@ -7995,7 +7984,6 @@ fn test_indef_word_count_one_split() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated, clippy::panic)]
 fn test_word_growth_widens_stable_macro_cycle() {
     fn config(copies: usize) -> Config {
         Config::new(
@@ -8066,7 +8054,6 @@ fn test_count_limit_triggers_overflow_edge_cycle_cut() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated)]
 fn test_overflow_edge_history_requires_stable_recurrence() {
     let instr: Instr = (2, true, 2);
     let mut history = OverflowCycleHistory::default();
@@ -8788,7 +8775,6 @@ fn test_side_prefix_matches_dynamic_word() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated, clippy::panic)]
 fn test_side_word_prefix_discovers_periodic_word() {
     let mut prefix = SideWordPrefix::blank();
 
@@ -8935,7 +8921,6 @@ fn test_ordered_side_prefix_pruning() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated)]
 fn test_halfblank_direction() {
     // A0 writes 1 and moves right.  At B0 the right side is still all blank,
     // but the left side contains the written 1.
@@ -8984,7 +8969,6 @@ fn test_halfblank_direction() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated)]
 fn test_same_run_joint_blank_dirty_flags() {
     // Writing a nonblank while moving onto fresh blank reaches B0 with a dirty
     // left side and blank right side, but not with both sides blank.
@@ -9255,7 +9239,7 @@ fn test_spinout_fresh_frontier_filter() {
 }
 
 #[test]
-#[expect(clippy::shadow_unrelated, clippy::iter_on_single_items)]
+#[expect(clippy::iter_on_single_items)]
 fn test_halt_side_excursion_filter() {
     // Fresh zero at a right frontier: after A0 moves right, B0 is a valid
     // halting shape because the newly scanned cell is blank and the right
@@ -9273,7 +9257,6 @@ fn test_halt_side_excursion_filter() {
     // If the child side has no way to return across the parent boundary, the
     // same nonzero halt slot has no last-departure witness.
     let prog = Prog::<3, 2>::from("1RB ...  0RB ...  ... ...");
-    #[expect(clippy::shadow_unrelated)]
     let slots: Set<Slot> = [(2, 1)].into_iter().collect();
     assert!(prog.halt_slots_side_excursion(slots).is_empty());
 }
@@ -9464,7 +9447,6 @@ fn window_child_mask<const S: usize, const C: usize>(
     }
 }
 
-#[expect(clippy::shadow_unrelated)]
 fn side_excursions<const S: usize, const C: usize>(
     prog: &Prog<S, C>,
     windows: &WinPossible<S, C>,
@@ -9699,7 +9681,6 @@ fn halfblank_slots<const S: usize, const C: usize>(
     let mut q = VecDeque::new();
     let away_side = !blank_side;
 
-    #[expect(clippy::shadow_unrelated)]
     let push = |st: usize,
                 co: usize,
                 near: usize,
@@ -9819,7 +9800,6 @@ fn frontier_slots<const S: usize, const C: usize>(
 
     let mut q = VecDeque::new();
 
-    #[expect(clippy::shadow_unrelated)]
     let push = |st: usize,
                 co: usize,
                 near: usize,
@@ -9934,7 +9914,6 @@ fn color_tail_count_from_blank<const S: usize, const C: usize>(
     let mut possible = ColorTailCountPossible::new();
     let mut q = VecDeque::new();
 
-    #[expect(clippy::shadow_unrelated)]
     let push = |st: usize,
                 left: usize,
                 scan: usize,
@@ -10082,7 +10061,6 @@ fn pair_tail_presence_from_blank<const S: usize, const C: usize>(
 
     let mut q = VecDeque::new();
 
-    #[expect(clippy::shadow_unrelated)]
     let push = |st: usize,
                 left: usize,
                 scan: usize,
@@ -10242,7 +10220,6 @@ fn joint_blank_status_from_blank<const S: usize, const C: usize>(
     let mut possible = JointBlankPossible::new();
     let mut q = VecDeque::new();
 
-    #[expect(clippy::shadow_unrelated)]
     let push =
         |st: usize,
          left: usize,

@@ -2225,7 +2225,6 @@ impl Span {
         let new_last = {
             let colors = pool.colors(span_id);
 
-            #[expect(clippy::shadow_unrelated)]
             if let Some((&last, prefix)) = colors.split_last() {
                 v.push(color);
                 v.extend_from_slice(prefix);
