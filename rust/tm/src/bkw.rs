@@ -498,6 +498,48 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         changed
     }
 
+    /// Remove exact local windows for which the tiny joint left/right prefix
+    /// product has no witness. This feeds correlation discovered beyond both
+    /// immediate neighbors back into the existing exact-window fixed point.
+    fn refine_joint_short_reachability_relation(
+        &mut self,
+        joint: &JointShortPossible<S, C>,
+    ) -> bool {
+        let mut changed = false;
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let old = self.right[st][scan][left];
+                    if old == 0 {
+                        continue;
+                    }
+
+                    let mut keep = old;
+                    let mut rights = old;
+                    while rights != 0 {
+                        let right = rights.trailing_zeros() as usize;
+                        rights &= rights - 1;
+                        if joint
+                            .window(st, scan, left, right)
+                            .is_empty()
+                        {
+                            keep &= !(1_u64 << right);
+                        }
+                    }
+
+                    changed |= keep != old;
+                    self.right[st][scan][left] = keep;
+                }
+            }
+        }
+
+        if changed {
+            self.rebuild_window_relation();
+        }
+        changed
+    }
+
     /// Remove exact local windows for which ordered-prefix propagation found
     /// no witness on at least one side.  This only edits the compact
     /// `right/left/any` relation; expensive aggregate tables are rebuilt once
@@ -1569,6 +1611,154 @@ struct SideWordPrefixNode {
     prefix: SideWordPrefix,
 }
 
+const JOINT_SHORT_DEPTH: usize = 3;
+
+/// Tiny left/right reduced product retaining the first two cells strictly
+/// beyond each immediate neighbor in the *same* forward execution.  Each side
+/// also remembers whether everything after those cells is certainly blank.
+/// Unknown forgotten tails are deliberately widened: the power comes from
+/// correlating the two near prefixes, not from another long-horizon domain.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct JointShortSide {
+    cells: [Color; JOINT_SHORT_DEPTH],
+    len: u8,
+    end_blank: bool,
+}
+
+impl JointShortSide {
+    const fn blank() -> Self {
+        Self {
+            cells: [0; JOINT_SHORT_DEPTH],
+            len: 0,
+            end_blank: true,
+        }
+    }
+
+    fn prepend(self, color: Color) -> Self {
+        if self.len == 0 && self.end_blank && color == 0 {
+            return self;
+        }
+
+        let mut out = self;
+        let len = usize::from(out.len);
+        if len < JOINT_SHORT_DEPTH {
+            let mut index = len;
+            while index != 0 {
+                out.cells[index] = out.cells[index - 1];
+                index -= 1;
+            }
+            out.cells[0] = color;
+            out.len += 1;
+            return out;
+        }
+
+        let dropped = out.cells[JOINT_SHORT_DEPTH - 1];
+        let mut index = JOINT_SHORT_DEPTH - 1;
+        while index != 0 {
+            out.cells[index] = out.cells[index - 1];
+            index -= 1;
+        }
+        out.cells[0] = color;
+        out.end_blank &= dropped == 0;
+        out
+    }
+
+    fn for_each_pull<const C: usize>(
+        self,
+        mut emit: impl FnMut(Color, Self),
+    ) {
+        let len = usize::from(self.len);
+        if len != 0 {
+            let color = self.cells[0];
+            let mut out = self;
+            let mut index = 1;
+            while index < len {
+                out.cells[index - 1] = out.cells[index];
+                index += 1;
+            }
+            out.cells[len - 1] = 0;
+            out.len -= 1;
+            emit(color, out);
+            return;
+        }
+
+        if self.end_blank {
+            emit(0, self);
+            return;
+        }
+
+        for color in 0..C {
+            #[expect(clippy::cast_possible_truncation)]
+            emit(color as Color, self);
+        }
+    }
+
+    fn cell(self, index: usize) -> Option<Color> {
+        if index < usize::from(self.len) {
+            Some(self.cells[index])
+        } else if self.end_blank {
+            Some(0)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct JointShortPrefix {
+    left: JointShortSide,
+    right: JointShortSide,
+}
+
+impl JointShortPrefix {
+    const fn blank() -> Self {
+        Self {
+            left: JointShortSide::blank(),
+            right: JointShortSide::blank(),
+        }
+    }
+}
+
+struct JointShortPossible<const S: usize, const C: usize> {
+    windows: Vec<Vec<JointShortPrefix>>,
+}
+
+impl<const S: usize, const C: usize> JointShortPossible<S, C> {
+    const fn index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    fn new() -> Self {
+        Self {
+            windows: (0..S * C * C * C).map(|_| Vec::new()).collect(),
+        }
+    }
+
+    fn window(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> &[JointShortPrefix] {
+        &self.windows[Self::index(st, scan, left, right)]
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct JointShortNode {
+    st: usize,
+    scan: usize,
+    left: usize,
+    right: usize,
+    prefix: JointShortPrefix,
+}
+
 /// Bit `p` of `possible[state]` is set when the transition graph admits a
 /// run from the blank initial configuration to `state` with
 /// `p == (# nonblank tape cells mod 2)`.
@@ -2063,20 +2253,33 @@ where
     // `right/left/any`.  If the relation actually shrinks, rebuild all
     // aggregates and cheap summaries exactly once at the final fixed point.
     let mut prefix_refined_windows = false;
-    let side_prefix_possible = loop {
+    let (side_prefix_possible, joint_short_possible) = loop {
         let prefixes = prog.side_prefix_possible_from_blank(
             &win_possible,
             &side_possible,
         );
 
-        if !win_possible.refine_prefix_reachability_relation(&prefixes)
-        {
-            break prefixes;
+        if win_possible.refine_prefix_reachability_relation(&prefixes) {
+            prefix_refined_windows = true;
+            side_possible =
+                prog.side_possible_from_blank(&win_possible);
+            win_possible
+                .refine_side_reachability_relation(&side_possible);
+            continue;
         }
 
-        prefix_refined_windows = true;
-        side_possible = prog.side_possible_from_blank(&win_possible);
-        win_possible.refine_side_reachability_relation(&side_possible);
+        let joint = prog.joint_short_possible_from_blank(&win_possible);
+        if win_possible.refine_joint_short_reachability_relation(&joint)
+        {
+            prefix_refined_windows = true;
+            side_possible =
+                prog.side_possible_from_blank(&win_possible);
+            win_possible
+                .refine_side_reachability_relation(&side_possible);
+            continue;
+        }
+
+        break (prefixes, joint);
     };
 
     if prefix_refined_windows {
@@ -2131,6 +2334,10 @@ where
 
     configs.retain(|Config { state, tape }| {
         tape.obeys_side_prefix_possible(*state, &side_prefix_possible)
+            && tape.obeys_joint_short_possible(
+                *state,
+                &joint_short_possible,
+            )
     });
 
     if configs.is_empty() {
@@ -2224,6 +2431,7 @@ where
             &win_possible,
             &side_possible,
             &side_prefix_possible,
+            &joint_short_possible,
             &blank_side_possible,
             &color_tail_count,
             &pair_tail_presence,
@@ -2590,6 +2798,7 @@ fn step_instrs<
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
+    joint_short_possible: &JointShortPossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -2693,6 +2902,8 @@ fn step_instrs<
             )
             || !tape
                 .obeys_side_prefix_possible(state, side_prefix_possible)
+            || !tape
+                .obeys_joint_short_possible(state, joint_short_possible)
         {
             continue;
         }
@@ -2716,6 +2927,7 @@ fn step_configs<
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
+    joint_short_possible: &JointShortPossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -2748,6 +2960,7 @@ fn step_configs<
                 win_possible,
                 side_possible,
                 side_prefix_possible,
+                joint_short_possible,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -2775,6 +2988,7 @@ fn step_configs<
                 win_possible,
                 side_possible,
                 side_prefix_possible,
+                joint_short_possible,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -2798,6 +3012,7 @@ fn step_configs<
             win_possible,
             side_possible,
             side_prefix_possible,
+            joint_short_possible,
             blank_side_possible,
             color_tail_count,
             pair_tail_presence,
@@ -4221,6 +4436,116 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     );
                 },
                 _ => unreachable!(),
+            }
+        }
+
+        possible
+    }
+}
+
+#[expect(clippy::multiple_inherent_impl)]
+impl<const S: usize, const C: usize> Prog<S, C> {
+    #[expect(clippy::cast_possible_truncation)]
+    fn joint_short_possible_from_blank(
+        &self,
+        windows: &WinPossible<S, C>,
+    ) -> JointShortPossible<S, C> {
+        let mut trans = [[None; C]; S];
+        for ((state, read), &(print, shift, next_state)) in self.iter()
+        {
+            trans[state as usize][read as usize] =
+                Some((print as usize, shift, next_state as usize));
+        }
+
+        let mut possible = JointShortPossible::new();
+        let mut q = VecDeque::new();
+        let mut seen: Set<JointShortNode> = Set::new();
+
+        let push =
+            |node: JointShortNode,
+             possible: &mut JointShortPossible<S, C>,
+             seen: &mut Set<JointShortNode>,
+             q: &mut VecDeque<JointShortNode>| {
+                if windows.right[node.st][node.scan][node.left]
+                    & (1_u64 << node.right)
+                    == 0
+                {
+                    return;
+                }
+                if !seen.insert(node) {
+                    return;
+                }
+
+                let index = JointShortPossible::<S, C>::index(
+                    node.st, node.scan, node.left, node.right,
+                );
+                possible.windows[index].push(node.prefix);
+                q.push_back(node);
+            };
+
+        push(
+            JointShortNode {
+                st: 0,
+                scan: 0,
+                left: 0,
+                right: 0,
+                prefix: JointShortPrefix::blank(),
+            },
+            &mut possible,
+            &mut seen,
+            &mut q,
+        );
+
+        while let Some(node) = q.pop_front() {
+            let Some((print, shift, tr)) = trans[node.st][node.scan]
+            else {
+                continue;
+            };
+
+            if shift {
+                let new_left_tail =
+                    node.prefix.left.prepend(node.left as Color);
+                node.prefix.right.for_each_pull::<C>(
+                    |new_right, new_right_tail| {
+                        push(
+                            JointShortNode {
+                                st: tr,
+                                scan: node.right,
+                                left: print,
+                                right: usize::from(new_right),
+                                prefix: JointShortPrefix {
+                                    left: new_left_tail,
+                                    right: new_right_tail,
+                                },
+                            },
+                            &mut possible,
+                            &mut seen,
+                            &mut q,
+                        );
+                    },
+                );
+            } else {
+                let new_right_tail =
+                    node.prefix.right.prepend(node.right as Color);
+                node.prefix.left.for_each_pull::<C>(
+                    |new_left, new_left_tail| {
+                        push(
+                            JointShortNode {
+                                st: tr,
+                                scan: node.left,
+                                left: usize::from(new_left),
+                                right: print,
+                                prefix: JointShortPrefix {
+                                    left: new_left_tail,
+                                    right: new_right_tail,
+                                },
+                            },
+                            &mut possible,
+                            &mut seen,
+                            &mut q,
+                        );
+                    },
+                );
             }
         }
 
@@ -7508,6 +7833,151 @@ impl Tape {
                 right,
                 RIGHT_SIDE,
                 right_word_req,
+            )
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => matches_window(left, right),
+            (Some(left), None) => {
+                (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
+    }
+
+    /// Match the two sides' first two cells beyond the immediate neighbors
+    /// against one joint forward witness. Unknown positions in the backward
+    /// tape are left unconstrained; exact/guaranteed positions must agree.
+    fn obeys_joint_short_possible<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &JointShortPossible<S, C>,
+    ) -> bool {
+        #[derive(Clone, Copy)]
+        struct Requirement {
+            cells: [Option<Color>; JOINT_SHORT_DEPTH],
+        }
+
+        impl Requirement {
+            const fn unconstrained(self) -> bool {
+                self.cells[0].is_none() && self.cells[1].is_none()
+            }
+        }
+
+        fn requirement(span: &Span) -> Requirement {
+            let mut cells = [None; JOINT_SHORT_DEPTH];
+            let mut len = 0_usize;
+            let mut skip = 1_usize;
+
+            const fn append(
+                cells: &mut [Option<Color>; JOINT_SHORT_DEPTH],
+                len: &mut usize,
+                color: Color,
+            ) {
+                if *len < JOINT_SHORT_DEPTH {
+                    cells[*len] = Some(color);
+                    *len += 1;
+                }
+            }
+
+            for block in span.span.iter() {
+                if len == JOINT_SHORT_DEPTH {
+                    break;
+                }
+
+                match block {
+                    Block::Run { color, count } => {
+                        let minimum = usize::from(count.minimum());
+                        let start = skip.min(minimum);
+                        skip -= start;
+                        let guaranteed = minimum - start;
+                        for _ in 0..guaranteed {
+                            if len == JOINT_SHORT_DEPTH {
+                                break;
+                            }
+                            append(&mut cells, &mut len, *color);
+                        }
+                        if count.is_indef() && len < JOINT_SHORT_DEPTH {
+                            return Requirement { cells };
+                        }
+                    },
+                    Block::Word { word, count } => {
+                        let width = word.len();
+                        let minimum =
+                            count.minimum().saturating_mul(width);
+                        let start = skip.min(minimum);
+                        skip -= start;
+                        for offset in start..minimum {
+                            if len == JOINT_SHORT_DEPTH {
+                                break;
+                            }
+                            append(
+                                &mut cells,
+                                &mut len,
+                                word[offset % width],
+                            );
+                        }
+                        if count.is_indef() && len < JOINT_SHORT_DEPTH {
+                            return Requirement { cells };
+                        }
+                    },
+                }
+            }
+
+            if len < JOINT_SHORT_DEPTH {
+                match span.end {
+                    TapeEnd::Blanks => {
+                        // If the immediate neighbor itself came from the blank
+                        // end, consume that skipped zero first; every farther
+                        // position is also exact zero.
+                        while len < JOINT_SHORT_DEPTH {
+                            append(&mut cells, &mut len, 0);
+                        }
+                    },
+                    TapeEnd::Unknown => {},
+                }
+            }
+
+            Requirement { cells }
+        }
+
+        fn side_matches(
+            side: JointShortSide,
+            req: Requirement,
+        ) -> bool {
+            for index in 0..JOINT_SHORT_DEPTH {
+                if let Some(required) = req.cells[index]
+                    && let Some(actual) = side.cell(index)
+                    && actual != required
+                {
+                    return false;
+                }
+            }
+            true
+        }
+
+        let left_req = requirement(&self.lspan);
+        let right_req = requirement(&self.rspan);
+        if left_req.unconstrained() && right_req.unconstrained() {
+            return true;
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        let matches_window = |left: usize, right: usize| {
+            possible.window(st, sc, left, right).iter().copied().any(
+                |prefix| {
+                    side_matches(prefix.left, left_req)
+                        && side_matches(prefix.right, right_req)
+                },
             )
         };
 
