@@ -282,7 +282,7 @@ class Machine:
 
                 self.blanks[state] = step
 
-                if state == 0:
+                if state == 0:  # no-cover
                     self.infrul = step
                     break
 

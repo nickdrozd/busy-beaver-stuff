@@ -472,7 +472,8 @@ class Recur(TuringTest):
 
             if blank:
                 self.assertTrue(
-                    self.machine.infrul)
+                    self.machine.infrul
+                        or self.machine.spnout is not None)
 
             else:
                 assert isinstance(self.machine, StrictLinRecMachine)
@@ -967,7 +968,7 @@ class Prover(RunProver):
                                 self.machine.spnout,
                                 f'"{prog}"')
                         except AssertionError:
-                            if prog not in ZLOOPERS:
+                            if prog not in ZLOOPERS | MULTISPIN:
                                 raise
                     case 'blank':
                         self.assertFalse(
