@@ -612,6 +612,7 @@ RECUR = {
     "1RB 1LB  0RC 1RC  1LA 0LA": (  0, 15),
     "1RB 0LA  0RC 1RC  1LA ...": (  0,  9),
     "1RB 0LB  1LA 1RC  0RC 0RA": (  0,  8),
+    "1RB 1LC  1RC 1RA  0LA 1LA": (10, 11),
     "1RB ...  1LB 0LC  1RA 0RB": (2, 7),
     "1RB 0LC  0LB 1LA  1RC 0RB": (4, 7),
     "1RB 0LC  1LB 1LA  1RC 0RB": (2, 14),
