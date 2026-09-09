@@ -130,8 +130,12 @@ HALT: BasicTermData = {
 
 HALT_SLOW = {
     # 3/3
+    "1RB 0LA 1LA  2RC 1RC ...  2LC 1RA 0RC": (20240, 408114977),
     "1RB 2RC 1LA  2LA 1RB ...  2RB 2RA 1LC": (95524079, 4345166620336565),
     "1RB 2LA 1LC  0LA 2RB 1LB  ... 1RA 1RC": (374676383, 119112334170342540),
+
+    # 3/4
+    "1RB ... ... ...  0RC 2LB 3LB 1RB  1LA ... 2RB 3RC": (32, 663941479),
 }
 
 SPINOUT: dict[str, tuple[int, int]] = {

@@ -165,7 +165,7 @@ class Simple(TuringTest):
     def run_bb(
             self,
             prog: str,
-            sim_lim: int = 100_000_000,
+            sim_lim: int = 1_000_000_000,
             analyze: bool = True,
     ):
         print(prog)
