@@ -192,3 +192,10 @@ class TestFloss(TestCase):
                 "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ..."
             ).run().susrul,
             (5, 2))
+
+    def test_twostep(self):
+        self.assertEqual(
+            Machine(
+                "1RB 2RC 1LA  2LA 1RB 2LB  2RB 2RA 1LC"
+            ).run().spnout,
+            -1)

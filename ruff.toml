@@ -42,7 +42,7 @@ max-args       =  7  # macro
 max-locals     = 19  # machine
 max-returns    =  7  # prover
 max-branches   = 24  # machine
-max-statements = 82  # machine
+max-statements = 83  # machine
 
 [lint.mccabe]
 max-complexity = 26  # num

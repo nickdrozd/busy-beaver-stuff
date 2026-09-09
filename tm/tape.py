@@ -98,6 +98,11 @@ class Tape:
             and not (self.rspan if edge else self.lspan)
         )
 
+    def neighbor_color(self, shift: Shift) -> Color:
+        span = self.rspan if shift else self.lspan
+
+        return span[0].color if span else 0
+
     @property
     def length_one_spans(self) -> bool:
         return len(self.lspan) == 1 and len(self.rspan) == 1

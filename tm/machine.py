@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from tm.macro import MacroInfLoop, make_macro
 from tm.num import NumError
-from tm.parse import blank_loops
+from tm.parse import blank_loops, twostep_loops
 from tm.prover import ConfigLimit, Prover
 from tm.rules import (
     InfiniteRule,
@@ -196,6 +196,12 @@ class Machine:
             blank_loops(comp)
         )
 
+        twosteps = (
+            {}
+            if not isinstance(comp, dict) else
+            twostep_loops(comp)
+        )
+
         step: int = 0
 
         state: State = 0
@@ -258,8 +264,14 @@ class Machine:
 
             color, shift, next_state = instr
 
-            if (((same := state == next_state) or state in loops[shift])
-                    and tape.at_edge(shift)):
+            if (
+                (((same := state == next_state) or state in loops[shift])
+                    and tape.at_edge(shift))
+                or (
+                    (twostep := twosteps.get((state, tape.scan))) is not None
+                    and tape.neighbor_color(shift) in twostep
+                )
+            ):
                 self.spnout = step
                 break
 

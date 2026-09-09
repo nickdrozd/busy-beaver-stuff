@@ -186,6 +186,12 @@ class Simple(TuringTest):
         self._test_spinout(SPINOUT)
         self._test_spinout(SPINOUT_BLANK, blank = True)
 
+    def test_twostep(self):
+        for prog in TWOSTEPPERS:
+            print(prog)
+            self.assertIsNotNone(
+                Machine(prog).run().spnout)
+
     def test_init_blank(self):
         for prog, (steps, total) in INIT_BLANK.items():
             self.run_bb(prog, sim_lim = steps, analyze = False)
@@ -968,7 +974,7 @@ class Prover(RunProver):
                                 self.machine.spnout,
                                 f'"{prog}"')
                         except AssertionError:
-                            if prog not in ZLOOPERS | MULTISPIN:
+                            if prog not in ZLOOPERS | MULTISPIN | TWOSTEPPERS:
                                 raise
                     case 'blank':
                         self.assertFalse(

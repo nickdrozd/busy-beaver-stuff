@@ -16,6 +16,34 @@ if TYPE_CHECKING:
     type Params = tuple[int, int]
 
 
+def twostep_loops(prog: Prog) -> dict[Slot, set[Color]]:
+    by_state: dict[State, list[tuple[Color, Instr]]] = {}
+
+    for (state, color), instr in prog.items():
+        by_state.setdefault(state, []).append((color, instr))
+
+    result: dict[Slot, set[Color]] = {}
+
+    for slot, (write, shift, next_state) in prog.items():
+        state, read = slot
+
+        if write != read:
+            continue
+
+        if (next_instrs := by_state.get(next_state)) is None:  # no-cover
+            continue
+
+        for next_read, (next_write, next_shift, return_state) in next_instrs:
+            if (
+                next_write == next_read
+                and next_shift != shift
+                and return_state == state
+            ):
+                result.setdefault(slot, set()).add(next_read)
+
+    return result
+
+
 def _states_colors(
         prog: Prog,
 ) -> tuple[set[State], tuple[Color, ...]]:
