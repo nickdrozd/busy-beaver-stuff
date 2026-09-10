@@ -20,8 +20,8 @@ HALT: BasicTermData = {
     "1RB 0LB  1LA ...": (3, 6),
     "1RB ...  1LB 1LA": (3, 6),
     "1RB ...  0LB 1LA": (2, 6),
-    "1RB ...  1LB 1RA": (2, 3),
-    "1RB ...  1LB 0RA": (1, 3),
+    "1RB ...  1LB 1RA": (2, 4),
+    "1RB ...  1LB 0RA": (1, 4),
 
     # 3/2 BB
     "1RB ...  1LB 0RC  1LC 1LA": (5, 21),  # shift
@@ -29,19 +29,19 @@ HALT: BasicTermData = {
     "1RB 1LA  0RC ...  1LC 0LA": (5, 20),
     "1RB 1RA  0RC ...  1LC 0LA": (5, 19),
     "1RB 0RA  0RC ...  1LC 0LA": (4, 19),
-    "1RB ...  0RC 1RB  1LC 1LA": (6, 13),
+    "1RB ...  0RC 1RB  1LC 1LA": (6, 14),
     "1RB 1LC  1RC ...  1LA 0LB": (6, 11),  # sigma
-    "1RB 0LB  1LA 0RC  1LC ...": (4,  8),
+    "1RB 0LB  1LA 0RC  1LC ...": (4,  9),
 
     # 2/3 BB
-    "1RB 0RB ...  2LA ... 0LB": (1,  7),
+    "1RB 0RB ...  2LA ... 0LB": (1,  8),
     "1RB 2LB ...  2LA 2RB 1LB": (9, 38),
     "1RB 0LB ...  2LA 1RB 1RA": (8, 29),
     "1RB 1LA 1LB  0LA 2RA ...": (6, 26),
     "1RB 2LA ...  1LB 1LA 0RA": (6, 26),
-    "1RB 2RB ...  2LA 1LA 2LB": (5, 13),
-    "1RB 1RA ...  1LB 2LA 0RB": (4, 12),
-    "1RB 1LA ...  2LA 1LB 2RA": (5, 10),
+    "1RB 2RB ...  2LA 1LA 2LB": (5, 14),
+    "1RB 1RA ...  1LB 2LA 0RB": (4, 13),
+    "1RB 1LA ...  2LA 1LB 2RA": (5, 11),
 
     # 4/2 BB
     "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": (13, 107),  # shift
@@ -49,14 +49,14 @@ HALT: BasicTermData = {
     "1RB 0RC  1LA 1RA  ... 1RD  1LD 0LB": (13,  96),  # sigma
     "1RB 1LB  0LC 0RD  ... 1LA  1RA 0LA": ( 6,  96),
     "1RB 1LC  0LD 0RD  ... 0LA  1LD 1LA": (11,  84),
-    "1RB ...  1LC 1LB  0RD 1RD  1LA 1RC": ( 9,  39),
-    "1RB 1RC  0LA 1LD  1LB 0RC  0RA ...": ( 4,  24),
-    "1RB 0LC  1LD 1RB  ... 0RB  1LC 1LA": ( 4,  12),
-    "1RB 1LA  1RC 0RD  1LA 1RD  ... 0LA": ( 4,  11),
-    "1RB 0LA  0RC 1LD  0RD ...  1LA 1RD": ( 4,  19),
-    "1RB ...  1LC 1RA  1LD 1RC  0RB 0LD": ( 3,  12),
-    "1RB 0LA  0RC 0LD  0RD ...  1LA 1RD": ( 3,  11),
-    "1RB ...  1LC 0RA  1LD 1RC  0RB 0LD": ( 2,  12),
+    "1RB ...  1LC 1LB  0RD 1RD  1LA 1RC": ( 9,  40),
+    "1RB 1RC  0LA 1LD  1LB 0RC  0RA ...": ( 4,  25),
+    "1RB 0LC  1LD 1RB  ... 0RB  1LC 1LA": ( 4,  13),
+    "1RB 1LA  1RC 0RD  1LA 1RD  ... 0LA": ( 4,  12),
+    "1RB 0LA  0RC 1LD  0RD ...  1LA 1RD": ( 4,  20),
+    "1RB ...  1LC 1RA  1LD 1RC  0RB 0LD": ( 3,  13),
+    "1RB 0LA  0RC 0LD  0RD ...  1LA 1RD": ( 3,  12),
+    "1RB ...  1LC 0RA  1LD 1RC  0RB 0LD": ( 2,  13),
 
     # 2/4
     "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (2050, 3932964),  # BB
@@ -67,23 +67,23 @@ HALT: BasicTermData = {
 
     # 5/2 BB
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (4098, 47176870),
-    "1RB 1LA  1RC 1LD  1RE 1RD  ... 0LB  0LA 1RC": ( 164,    15588),
-    "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  ... 1LB": (  23,      151),
+    "1RB 1LA  1RC 1LD  1RE 1RD  ... 0LB  0LA 1RC": ( 164,    15589),
+    "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  ... 1LB": (  23,      152),
 
     # 5/5 block-compiled from 5/2
-    "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721561),
+    "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721562),
 
     # 3/3
-    "1RB 2LA 1RC  1LA 1LC 2RB  ... 0LA 1RB": (5, 39),
-    "1RB 1RC 2LA  1LA 2RB 1LC  ... 0RB 1LA": (6, 43),
-    "1RB 2LA 0RC  2LA ... 1RC  1LA 0LB 2RC": (5, 51),
-    "1RB 2RB 1LC  1LA 2RB 1LB  ... 2RB 2LA": (256, 39252),
+    "1RB 2LA 1RC  1LA 1LC 2RB  ... 0LA 1RB": (5, 40),
+    "1RB 1RC 2LA  1LA 2RB 1LC  ... 0RB 1LA": (6, 44),
+    "1RB 2LA 0RC  2LA ... 1RC  1LA 0LB 2RC": (5, 52),
+    "1RB 2RB 1LC  1LA 2RB 1LB  ... 2RB 2LA": (256, 39253),
     "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC": (36089, 310341163),
     "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
 
     # 2/5
-    "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA": (62, 3178),
-    "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB": (67, 3293),
+    "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA": (62, 3179),
+    "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB": (67, 3294),
 
     # Copy of 2/4 BB
     "1RB 1LC ...  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),

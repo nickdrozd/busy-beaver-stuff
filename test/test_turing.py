@@ -285,14 +285,9 @@ class Simple(TuringTest):
 
             self.assert_steps(steps)
 
-            try:
-                self.assertEqual(
-                    steps,
-                    self.machine.simple_termination)
-            except AssertionError:
-                self.assertEqual(
-                    steps - 1,
-                    self.machine.simple_termination)
+            self.assertEqual(
+                steps - 1 if self.machine.undfnd else steps,
+                self.machine.simple_termination, prog)
 
             blanks = self.machine.blanks
 
