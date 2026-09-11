@@ -836,7 +836,7 @@ class Prover(RunProver):
             simple_term: bool = True,
     ):
         for prog in prog_data:
-            if prog == "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC":  # SIAB
+            if prog in CFGLIM:
                 continue
 
             self.run_bb(
