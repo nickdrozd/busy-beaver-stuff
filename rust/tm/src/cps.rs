@@ -349,6 +349,9 @@ fn cps_cant_reach_obs(
             active,
             active_count,
             todo,
+            continuation_cursor,
+            l_watch,
+            r_watch,
             ..
         } = &mut *configs;
 
@@ -566,16 +569,27 @@ fn cps_cant_reach_obs(
                 obs.edge(config_id, next_id, init_scan, print, shift);
 
                 if is_new {
+                    debug_assert_eq!(continuation_cursor.len(), next_id);
+                    continuation_cursor.push(UNSEEN_CONTINUATION_CURSOR);
                     todo.push(next_id);
                 }
             }};
         }
 
-        let continuations = if shift {
-            rspans.get_continuations(pull)
-        } else {
-            lspans.get_continuations(pull)
-        };
+        let pull_key = pull.span;
+        let cursor = continuation_cursor[config_id];
+        let pull_spans = if shift { &*rspans } else { &*lspans };
+        let next_cursor = pull_spans.delta_len(pull);
+        let continuations: &[Continuation] =
+            if cursor == UNSEEN_CONTINUATION_CURSOR {
+                // First processing of this configuration: consume only the
+                // current canonical set, not obsolete historical Rich values.
+                pull_spans.current_continuations(pull)
+            } else {
+                // Wakeup: consume only facts learned since the last time this
+                // config drained this span's event stream.
+                pull_spans.continuation_deltas(pull, cursor)
+            };
 
         for &Continuation {
             color,
@@ -592,14 +606,17 @@ fn cps_cant_reach_obs(
             );
         }
 
-        let pull_key = pull.span;
+        continuation_cursor[config_id] = next_cursor;
 
-        if configs.is_active(config_id) {
-            let watch = if shift {
-                &mut configs.r_watch
-            } else {
-                &mut configs.l_watch
-            };
+        let config_is_active = match interner {
+            ConfigInterner::Exact(_) => true,
+            ConfigInterner::Antichain { .. } => {
+                active.get(config_id).copied().unwrap_or(false)
+            },
+        };
+
+        if config_is_active {
+            let watch = if shift { r_watch } else { l_watch };
 
             if watch.len() <= pull_key {
                 watch.resize_with(pull_key + 1, Vec::new);
@@ -607,10 +624,7 @@ fn cps_cant_reach_obs(
             watch[pull_key].push(config_id);
         }
 
-        if configs
-            .interner
-            .at_capacity(configs.by_id.len(), configs.active_count)
-        {
+        if interner.at_capacity(by_id.len(), *active_count) {
             return CpsOutcome::Inconclusive;
         }
     }
@@ -1478,8 +1492,19 @@ struct Continuation {
 }
 
 type Continuations = Vec<Continuation>;
-type RichSpans = Vec<Continuations>;
-type HaltSpans = Vec<Continuations>;
+
+#[derive(Default)]
+struct SpanContinuations {
+    // Canonical continuation set used when a configuration first reaches
+    // this span. Rich CPS keeps only the smallest tail_nz for each key.
+    current: Continuations,
+    // Append-only changes to `current`. A waiting configuration remembers
+    // how far it consumed this stream, so wakeups process only new facts.
+    deltas: Continuations,
+}
+
+type RichSpans = Vec<SpanContinuations>;
+type HaltSpans = Vec<SpanContinuations>;
 
 enum Spans {
     Halt(HaltSpans),
@@ -1488,6 +1513,8 @@ enum Spans {
 
 type ConfigId = usize;
 type Watch = Vec<Vec<ConfigId>>;
+
+const UNSEEN_CONTINUATION_CURSOR: usize = usize::MAX;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct HaltConfigShape {
@@ -1857,6 +1884,10 @@ struct Configs {
     todo: Vec<ConfigId>,
     todo_head: usize,
     refinement_level: usize,
+    // Per-config offset into the delta stream of the span it waits on.
+    // usize::MAX means the config has never processed that span, so its
+    // first visit consumes the canonical continuation set instead.
+    continuation_cursor: Vec<usize>,
 
     l_watch: Watch,
     r_watch: Watch,
@@ -1882,6 +1913,7 @@ impl Configs {
             todo: Vec::new(),
             todo_head: 0,
             refinement_level: 0,
+            continuation_cursor: Vec::new(),
             l_watch: Vec::new(),
             r_watch: Vec::new(),
         }
@@ -1912,6 +1944,7 @@ impl Configs {
         self.active_count = 0;
         self.todo.clear();
         self.todo_head = 0;
+        self.continuation_cursor.clear();
 
         let init = Config::init(rad, &mut self.span_pool);
 
@@ -1935,12 +1968,19 @@ impl Configs {
     }
 
     fn intern_config(&mut self, config: Config) -> (ConfigId, bool) {
-        self.interner.intern(
+        let (id, is_new) = self.interner.intern(
             config,
             &mut self.by_id,
             &mut self.active,
             &mut self.active_count,
-        )
+        );
+
+        if is_new {
+            debug_assert_eq!(self.continuation_cursor.len(), id);
+            self.continuation_cursor.push(UNSEEN_CONTINUATION_CURSOR);
+        }
+
+        (id, is_new)
     }
 
     fn is_active(&self, id: ConfigId) -> bool {
@@ -1997,8 +2037,9 @@ impl Spans {
     fn clear(&mut self, span_count: usize) {
         match self {
             Self::Halt(spans) | Self::Rich(spans) => {
-                for continuations in spans.iter_mut().take(span_count) {
-                    continuations.clear();
+                for span in spans.iter_mut().take(span_count) {
+                    span.current.clear();
+                    span.deltas.clear();
                 }
             },
         }
@@ -2024,17 +2065,22 @@ impl Spans {
                 };
 
                 if spans.len() <= span.span {
-                    spans.resize_with(span.span + 1, Vec::new);
+                    spans.resize_with(
+                        span.span + 1,
+                        SpanContinuations::default,
+                    );
                 }
 
-                let continuations = &mut spans[span.span];
-                match continuations.binary_search_by_key(
+                let SpanContinuations { current, deltas } =
+                    &mut spans[span.span];
+                match current.binary_search_by_key(
                     &(span.last, tail_sig),
                     |cnt| (cnt.color, cnt.tail_sig),
                 ) {
                     Ok(_) => false,
                     Err(pos) => {
-                        continuations.insert(pos, continuation);
+                        current.insert(pos, continuation);
+                        deltas.push(continuation);
                         true
                     },
                 }
@@ -2049,26 +2095,34 @@ impl Spans {
                 };
 
                 if spans.len() <= span.span {
-                    spans.resize_with(span.span + 1, Vec::new);
+                    spans.resize_with(
+                        span.span + 1,
+                        SpanContinuations::default,
+                    );
                 }
 
-                let continuations = &mut spans[span.span];
-                match continuations.binary_search_by_key(
+                let SpanContinuations { current, deltas } =
+                    &mut spans[span.span];
+                match current.binary_search_by_key(
                     &(span.last, tail_parity, tail_sig),
                     |cnt| (cnt.color, cnt.tail_parity, cnt.tail_sig),
                 ) {
                     Ok(pos) => {
-                        // Counts are lower bounds.  For the same continuation
+                        // Counts are lower bounds. For the same continuation
                         // color, exact tail parity, and exact active signature,
-                        // a smaller bound subsumes every larger one.
-                        if tail_nz < continuations[pos].tail_nz {
-                            continuations[pos].tail_nz = tail_nz;
+                        // a smaller bound subsumes every larger one. Record the
+                        // stronger value as a delta so existing watchers only
+                        // revisit this changed continuation.
+                        if tail_nz < current[pos].tail_nz {
+                            current[pos].tail_nz = tail_nz;
+                            deltas.push(continuation);
                             return true;
                         }
                         false
                     },
                     Err(pos) => {
-                        continuations.insert(pos, continuation);
+                        current.insert(pos, continuation);
+                        deltas.push(continuation);
                         true
                     },
                 }
@@ -2076,12 +2130,36 @@ impl Spans {
         }
     }
 
-    fn get_continuations(&self, span: &Span) -> &Continuations {
+    fn current_continuations(&self, span: &Span) -> &Continuations {
         let continuations = match self {
-            Self::Halt(spans) | Self::Rich(spans) => &spans[span.span],
+            Self::Halt(spans) | Self::Rich(spans) => {
+                &spans[span.span].current
+            },
         };
         debug_assert!(!continuations.is_empty());
         continuations
+    }
+
+    fn delta_len(&self, span: &Span) -> usize {
+        match self {
+            Self::Halt(spans) | Self::Rich(spans) => {
+                spans[span.span].deltas.len()
+            },
+        }
+    }
+
+    fn continuation_deltas(
+        &self,
+        span: &Span,
+        cursor: usize,
+    ) -> &[Continuation] {
+        let deltas = match self {
+            Self::Halt(spans) | Self::Rich(spans) => {
+                &spans[span.span].deltas
+            },
+        };
+        debug_assert!(cursor <= deltas.len());
+        &deltas[cursor..]
     }
 }
 
