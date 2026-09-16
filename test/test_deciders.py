@@ -366,7 +366,7 @@ class Far(DeciderTest):
                 self.assertIn(prog, self.false_negatives['blank'] | RECUR_FAST)
 
         for prog in NONSPINNERS:
-            if not far_cant_spinout(prog, 3):
+            if not far_cant_spinout(prog, 4):
                 self.assertIn(prog, self.false_negatives['spinout'] | RECUR_FAST)
 
     def test_true_negatives(self):

@@ -2251,6 +2251,8 @@ DONT_BLANK: set[str] = {
     "1RB 2LA 1LA  0LA 0RB 2RB",
     "1RB 2LB 0LA  1LA 2RB 0RB",
     "1RB 2LB 1LA  1LA 2RB 0RB",
+
+    "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",  # far
 }
 
 DO_BLANK: set[str] = {
@@ -2306,6 +2308,20 @@ DONT_SPINOUT: set[str] = {
     "1RB 1RD  1LC 1LB  1LD 1RA  0RE 0RD  1LB 1RE",  # 10^28, xmas
     "1RB 1RA  1LC 0RB  1LE 0LD  1RA 1RE  1LB 0RA",  # 10^31
     "1RB 1LE  0RC 1LD  1RD 0RD  1RE 1RC  0LA 1LB",  # 10^46
+
+    # far
+    "1RB 2LA 1RA 1LB  2LB 2RB 3RB 1LA",
+    "1RB 2LB 0RA 1LB  2LB 3LA 1RA 0RB",
+    "1RB 2RB 0RB 1LA  2LB 2LA 3RB 0LA",
+    "1RB 2RB 3LA 0LA  2LB 3RB 0RB 1LA",
+    "1RB 3LA 3LB 2RA  0LB 2RB 1LA 0RA",
+    "1RB 3RA 3RA 1LB  2LB 2RB 3LA 1LA",
+    "1RB 3RA 3RB 1LA  2LB 1RA 2LA 0LB",
+    "1RB 3RB 1LA 2LA  2LB 2RA 3RB 0LB",
+    "1RB 3RB 2LA 1LA  2LB 2RA 3RB 3LB",
+    "1RB 3RB 3RA 1LA  0LB 2RB 1LA 2LB",
+    "1RB 3RB 3RA 2LB  1LB 2LA 0RA 0LA",
+    "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
 }
 
 DIFFUSE = {
@@ -3950,14 +3966,14 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     },
     "cps": {
         "halt": 6,
-        "blank": 6,
-        "spinout": 7,
+        "blank": 7,
+        "spinout": 18,
         "quasihalt": 24,
     },
     "bkw": {
         "halt": 65,
-        "blank": 25,
-        "spinout": 84,
+        "blank": 26,
+        "spinout": 95,
         "twostep": 0,
         "zloop": 1,
     },
@@ -3999,6 +4015,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
         },
         "blank": {
+            "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
             "1RB 0RB  1RC 1RA  1LC 0LD  0RA 0LE  1LD 1LE",
             "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
             "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...",
@@ -4007,6 +4024,17 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA",
         },
         "spinout": {
+            "1RB 2LA 1RA 1LB  2LB 2RB 3RB 1LA",
+            "1RB 2LB 0RA 1LB  2LB 3LA 1RA 0RB",
+            "1RB 2RB 0RB 1LA  2LB 2LA 3RB 0LA",
+            "1RB 2RB 3LA 0LA  2LB 3RB 0RB 1LA",
+            "1RB 3LA 3LB 2RA  0LB 2RB 1LA 0RA",
+            "1RB 3RA 3RA 1LB  2LB 2RB 3LA 1LA",
+            "1RB 3RA 3RB 1LA  2LB 1RA 2LA 0LB",
+            "1RB 3RB 1LA 2LA  2LB 2RA 3RB 0LB",
+            "1RB 3RB 2LA 1LA  2LB 2RA 3RB 3LB",
+            "1RB 3RB 3RA 1LA  0LB 2RB 1LA 2LB",
+            "1RB 3RB 3RA 2LB  1LB 2LA 0RA 0LA",
             "1RB 0RB  1LC 1LD  0LC 1RA  0LD 0RA",
             "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
             "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
@@ -4113,6 +4141,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
         "blank": {
             "1RB ...  1LC 0RB  1LB 1LA",
             "1RB 0RB  1LC 0RA  1LC 1LA",
+            "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
             "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
             "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
             "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA",
@@ -4154,19 +4183,30 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 1LB 1LA 0LB  2LB 2RA 3RB 0LB",
             "1RB 1LB 1LA 3RA  2LB 2RA 3RB 0LB",
             "1RB 1LB 3LA 3RA  1LB 2RB 0LA 0RA",
+            "1RB 2LA 1RA 1LB  2LB 2RB 3RB 1LA",
+            "1RB 2LB 0RA 1LB  2LB 3LA 1RA 0RB",
             "1RB 2LB 1LB 2RB  2LB 3LA 1RA 0RB",
             "1RB 2RA 0RB 0LA  1LB 2LA 3RB 3RA",
             "1RB 2RA 1LB 1LA  2LB 3RB 3LA 3RA",
             "1RB 2RA 2RB 0RA  2LB 3RB 1LB 1LA",
+            "1RB 2RB 0RB 1LA  2LB 2LA 3RB 0LA",
+            "1RB 2RB 3LA 0LA  2LB 3RB 0RB 1LA",
+            "1RB 3LA 3LB 2RA  0LB 2RB 1LA 0RA",
             "1RB 3LB 2RA 0LA  2LB 3LA 1RB 0RA",
             "1RB 3RA 1LA 1LB  2LB 2RA 0LB 0LB",
             "1RB 3RA 1RA 1LB  1LB 2LA 0RA 0LB",
             "1RB 3RA 3LA 3LB  1LB 2LA 1RB 0LA",
             "1RB 3RA 3RA 0LB  1LB 2LA 0RB 2LA",
+            "1RB 3RA 3RA 1LB  2LB 2RB 3LA 1LA",
+            "1RB 3RA 3RB 1LA  2LB 1RA 2LA 0LB",
             "1RB 3RA 3RB 3LA  1LB 2LA 0RA 2LB",
             "1RB 3RB 1LA 0LB  2LB 2RA 3RB 0LB",
+            "1RB 3RB 1LA 2LA  2LB 2RA 3RB 0LB",
             "1RB 3RB 1LA 2LA  2LB 3RA 2RA 0LB",
             "1RB 3RB 1RA 0LA  1LB 2RB 2LA 0LB",
+            "1RB 3RB 2LA 1LA  2LB 2RA 3RB 3LB",
+            "1RB 3RB 3RA 1LA  0LB 2RB 1LA 2LB",
+            "1RB 3RB 3RA 2LB  1LB 2LA 0RA 0LA",
             "1RB 3RB 3RA 2RA  1LB 2LA 1RB 0LB",
             "1RB 0LB  1LB 0LC  0RD 1LC  1RD 1RA",
             "1RB 0LC  0RC 1RD  0RD 1RA  1LD 0LA",
