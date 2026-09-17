@@ -597,6 +597,50 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         }
         changed
     }
+
+    /// Remove exact local windows for which the parity-aware joint left/right
+    /// run-prefix product has no witness. Unlike the independent prefix
+    /// refinement above, this keeps the two long side summaries correlated.
+    /// A capped `Unknown` alternative still counts as a witness, so overflow
+    /// can only disable this refinement rather than make it unsound.
+    fn refine_joint_side_prefix_reachability_relation(
+        &mut self,
+        joint: &JointSidePrefixPossible<S, C>,
+    ) -> bool {
+        let mut changed = false;
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let old = self.right[st][scan][left];
+                    if old == 0 {
+                        continue;
+                    }
+
+                    let mut keep = old;
+                    let mut rights = old;
+                    while rights != 0 {
+                        let right = rights.trailing_zeros() as usize;
+                        rights &= rights - 1;
+                        if joint
+                            .window(st, scan, left, right)
+                            .is_empty()
+                        {
+                            keep &= !(1_u64 << right);
+                        }
+                    }
+
+                    changed |= keep != old;
+                    self.right[st][scan][left] = keep;
+                }
+            }
+        }
+
+        if changed {
+            self.rebuild_window_relation();
+        }
+        changed
+    }
 }
 
 /// Near-to-far run prefix of the tape strictly beyond one immediate neighbor.
@@ -878,6 +922,7 @@ impl SidePrefix {
         }
 
         let mut out = self;
+        #[expect(clippy::match_same_arms)]
         if out.runs[0].color == color {
             out.runs[0].count = match out.runs[0].count {
                 1 => 2,
@@ -2357,7 +2402,11 @@ where
     // `right/left/any`.  If the relation actually shrinks, rebuild all
     // aggregates and cheap summaries exactly once at the final fixed point.
     let mut prefix_refined_windows = false;
-    let (side_prefix_possible, joint_short_possible) = loop {
+    let (
+        side_prefix_possible,
+        joint_short_possible,
+        joint_side_prefix_fixed,
+    ) = loop {
         let prefixes = prog.side_prefix_possible_from_blank(
             &win_possible,
             &side_possible,
@@ -2383,19 +2432,33 @@ where
             continue;
         }
 
-        break (prefixes, joint);
+        // Feed the stronger parity-aware reduced product back into the local
+        // window relation too.  This is deliberately after the cheaper two
+        // projections so most impossible windows are gone before paying for
+        // the larger joint worklist.
+        let joint_side =
+            prog.joint_side_prefix_possible_from_blank(&win_possible);
+        if win_possible
+            .refine_joint_side_prefix_reachability_relation(&joint_side)
+        {
+            prefix_refined_windows = true;
+            side_possible =
+                prog.side_possible_from_blank(&win_possible);
+            win_possible
+                .refine_side_reachability_relation(&side_possible);
+            continue;
+        }
+
+        break (prefixes, joint, joint_side);
     };
 
-    // The joint product is substantially stronger but more expensive. Build it
-    // lazily only when an initial target can actually query an exact-blank side.
-    // If a later predecessor gains such a side while this is None, skipping the
-    // check is conservative.
+    // Preserve the old lazy backward check: only retain the expensive joint
+    // product when an initial target can query an exact-blank side.  Its
+    // reachability information has already been fed into WinPossible above.
     let joint_side_prefix_possible = configs
         .iter()
         .any(|Config { tape, .. }| tape.has_exact_blank_side())
-        .then(|| {
-            prog.joint_side_prefix_possible_from_blank(&win_possible)
-        });
+        .then_some(joint_side_prefix_fixed);
 
     if prefix_refined_windows {
         // Finalize every exact/aggregate table once.  `side_possible` was
@@ -7871,10 +7934,7 @@ impl Tape {
                 1..=3 => {
                     let value = u16::from(count);
                     value >= req.min
-                        && match req.max {
-                            None => true,
-                            Some(max) => value <= max,
-                        }
+                        && req.max.is_none_or(|max| value <= max)
                 },
                 SIDE_PREFIX_EVEN_MANY | SIDE_PREFIX_ODD_MANY => {
                     let (minimum, odd) =
@@ -7891,10 +7951,7 @@ impl Tape {
                     if (first & 1 != 0) != odd {
                         first = first.saturating_add(1);
                     }
-                    match req.max {
-                        None => true,
-                        Some(max) => first <= max,
-                    }
+                    req.max.is_none_or(|max| first <= max)
                 },
                 _ => unreachable!(),
             }
