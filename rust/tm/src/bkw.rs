@@ -601,17 +601,21 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
 
 /// Near-to-far run prefix of the tape strictly beyond one immediate neighbor.
 ///
-/// Two complete runs keep the original 1/2/3/4+ count precision.  One extra
-/// spill run remembers the next run color and only whether its length is 1 or
-/// 2+.  This delays the old collapse to `dirty_unknown()` by one run boundary
-/// without paying for a full third precise run.
+/// Two complete runs keep exact lengths 1/2/3 and, beyond that, retain
+/// run-length parity as `even >= 4` or `odd >= 5`.  One extra spill run
+/// remembers the next run color and only whether its length is 1 or 2+.
+/// Keeping parity in the two precise runs preserves long erase/fill sweep
+/// invariants without making the spill lattice larger.
 ///
 /// The spill's `farther_dirty` bit is exact for each alternative: false means
 /// everything after that spill run is blank; true means there is definitely a
 /// nonblank cell farther out.  When that distinction is not known, the
 /// forward worklist retains both alternatives.  `DirtyUnknown` is used only
 /// after the spill itself has been consumed/lost.
-const SIDE_PREFIX_MANY: u8 = 4;
+// Full-run count codes. 1/2/3 are exact; the two larger codes are infinite
+// parity classes rather than ordinary lower bounds.
+const SIDE_PREFIX_EVEN_MANY: u8 = 4; // even lengths >= 4
+const SIDE_PREFIX_ODD_MANY: u8 = 5; // odd lengths >= 5
 const SIDE_PREFIX_SPILL_MANY: u8 = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -676,7 +680,6 @@ impl SidePrefix {
         }
     }
 
-    #[cfg(test)]
     fn definitely_dirty(self) -> bool {
         let mut index = 0;
         while index < usize::from(self.len) {
@@ -690,7 +693,6 @@ impl SidePrefix {
 
     /// Denotational subsumption used by the regression tests for the broad
     /// antichain state. No structural-prefix heuristic is used.
-    #[cfg(test)]
     fn subsumes(self, other: Self) -> bool {
         self == other
             || (matches!(self.spill, SidePrefixSpill::DirtyUnknown)
@@ -787,8 +789,9 @@ impl SidePrefix {
                 } => {
                     if color == spill_color {
                         // The exact prepended cell merges into the known spill
-                        // run.  1 becomes exact 2; 2+ becomes either exact 3
-                        // or 4+, which is exactly the old full-run cap.
+                        // run. 1 becomes exact 2. The coarse spill state 2+
+                        // becomes the full-run family 3+, so enumerate exact 3
+                        // plus both unbounded parity classes.
                         let suffix =
                             Self::suffix_after_spill(farther_dirty);
                         if count == 1 {
@@ -805,7 +808,11 @@ impl SidePrefix {
                                 count,
                                 SIDE_PREFIX_SPILL_MANY
                             );
-                            for next_count in [3, SIDE_PREFIX_MANY] {
+                            for next_count in [
+                                3,
+                                SIDE_PREFIX_EVEN_MANY,
+                                SIDE_PREFIX_ODD_MANY,
+                            ] {
                                 emit(Self {
                                     runs: [
                                         SidePrefixRun {
@@ -840,7 +847,13 @@ impl SidePrefix {
                     // of the new run. A nonzero new run may consume the last
                     // dirty cells, so both blank and dirty residuals are
                     // possible. A zero run cannot account for the old dirt.
-                    for count in 1..=SIDE_PREFIX_MANY {
+                    for count in [
+                        1,
+                        2,
+                        3,
+                        SIDE_PREFIX_EVEN_MANY,
+                        SIDE_PREFIX_ODD_MANY,
+                    ] {
                         let mut dirty = Self {
                             runs: [
                                 SidePrefixRun { color, count },
@@ -866,8 +879,14 @@ impl SidePrefix {
 
         let mut out = self;
         if out.runs[0].color == color {
-            out.runs[0].count =
-                (out.runs[0].count + 1).min(SIDE_PREFIX_MANY);
+            out.runs[0].count = match out.runs[0].count {
+                1 => 2,
+                2 => 3,
+                3 => SIDE_PREFIX_EVEN_MANY,
+                SIDE_PREFIX_EVEN_MANY => SIDE_PREFIX_ODD_MANY,
+                SIDE_PREFIX_ODD_MANY => SIDE_PREFIX_EVEN_MANY,
+                _ => unreachable!(),
+            };
             emit(out);
             return;
         }
@@ -976,9 +995,15 @@ impl SidePrefix {
         match count {
             1 => emit(color, residual(None)),
             2 | 3 => emit(color, residual(Some(count - 1))),
-            SIDE_PREFIX_MANY => {
+            // even >= 4 minus one is either exact 3 (when the source was 4)
+            // or odd >= 5. Keep both cases explicitly.
+            SIDE_PREFIX_EVEN_MANY => {
                 emit(color, residual(Some(3)));
-                emit(color, residual(Some(SIDE_PREFIX_MANY)));
+                emit(color, residual(Some(SIDE_PREFIX_ODD_MANY)));
+            },
+            // odd >= 5 minus one is always even >= 4.
+            SIDE_PREFIX_ODD_MANY => {
+                emit(color, residual(Some(SIDE_PREFIX_EVEN_MANY)));
             },
             _ => unreachable!(),
         }
@@ -1759,6 +1784,85 @@ struct JointShortNode {
     prefix: JointShortPrefix,
 }
 
+// Joint version of the run-prefix domain.  Unlike `SidePrefixPossible`, the
+// left and right prefixes below always come from the same forward execution.
+// This preserves correlations such as a remote left anchor being required
+// while the right side has a particular shape.
+const JOINT_SIDE_PREFIX_MAX_ALTS_PER_WINDOW: usize = 64;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum JointSidePrefix {
+    Specific { left: SidePrefix, right: SidePrefix },
+    // Conservative top used only after the per-window antichain cap overflows.
+    Unknown,
+}
+
+impl JointSidePrefix {
+    const fn blank() -> Self {
+        Self::Specific {
+            left: SidePrefix::blank(),
+            right: SidePrefix::blank(),
+        }
+    }
+
+    fn subsumes(self, other: Self) -> bool {
+        match (self, other) {
+            (Self::Unknown, _) => true,
+            (_, Self::Unknown) => false,
+            (
+                Self::Specific {
+                    left: a_l,
+                    right: a_r,
+                },
+                Self::Specific {
+                    left: b_l,
+                    right: b_r,
+                },
+            ) => a_l.subsumes(b_l) && a_r.subsumes(b_r),
+        }
+    }
+}
+
+struct JointSidePrefixPossible<const S: usize, const C: usize> {
+    windows: Vec<Vec<JointSidePrefix>>,
+}
+
+impl<const S: usize, const C: usize> JointSidePrefixPossible<S, C> {
+    const fn index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    fn new() -> Self {
+        Self {
+            windows: (0..S * C * C * C).map(|_| Vec::new()).collect(),
+        }
+    }
+
+    fn window(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> &[JointSidePrefix] {
+        &self.windows[Self::index(st, scan, left, right)]
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct JointSidePrefixNode {
+    st: usize,
+    scan: usize,
+    left: usize,
+    right: usize,
+    prefix: JointSidePrefix,
+}
+
 /// Bit `p` of `possible[state]` is set when the transition graph admits a
 /// run from the blank initial configuration to `state` with
 /// `p == (# nonblank tape cells mod 2)`.
@@ -2282,6 +2386,17 @@ where
         break (prefixes, joint);
     };
 
+    // The joint product is substantially stronger but more expensive. Build it
+    // lazily only when an initial target can actually query an exact-blank side.
+    // If a later predecessor gains such a side while this is None, skipping the
+    // check is conservative.
+    let joint_side_prefix_possible = configs
+        .iter()
+        .any(|Config { tape, .. }| tape.has_exact_blank_side())
+        .then(|| {
+            prog.joint_side_prefix_possible_from_blank(&win_possible)
+        });
+
     if prefix_refined_windows {
         // Finalize every exact/aggregate table once.  `side_possible` was
         // computed on the already-prefix-refined relation, so this cannot
@@ -2337,6 +2452,10 @@ where
             && tape.obeys_joint_short_possible(
                 *state,
                 &joint_short_possible,
+            )
+            && tape.obeys_joint_side_prefix_possible(
+                *state,
+                joint_side_prefix_possible.as_ref(),
             )
     });
 
@@ -2432,6 +2551,7 @@ where
             &side_possible,
             &side_prefix_possible,
             &joint_short_possible,
+            joint_side_prefix_possible.as_ref(),
             &blank_side_possible,
             &color_tail_count,
             &pair_tail_presence,
@@ -2799,6 +2919,7 @@ fn step_instrs<
     side_possible: &SidePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
     joint_short_possible: &JointShortPossible<s, c>,
+    joint_side_prefix_possible: Option<&JointSidePrefixPossible<s, c>>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -2904,6 +3025,10 @@ fn step_instrs<
                 .obeys_side_prefix_possible(state, side_prefix_possible)
             || !tape
                 .obeys_joint_short_possible(state, joint_short_possible)
+            || !tape.obeys_joint_side_prefix_possible(
+                state,
+                joint_side_prefix_possible,
+            )
         {
             continue;
         }
@@ -2928,6 +3053,7 @@ fn step_configs<
     side_possible: &SidePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
     joint_short_possible: &JointShortPossible<s, c>,
+    joint_side_prefix_possible: Option<&JointSidePrefixPossible<s, c>>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -2961,6 +3087,7 @@ fn step_configs<
                 side_possible,
                 side_prefix_possible,
                 joint_short_possible,
+                joint_side_prefix_possible,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -2989,6 +3116,7 @@ fn step_configs<
                 side_possible,
                 side_prefix_possible,
                 joint_short_possible,
+                joint_side_prefix_possible,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -3013,6 +3141,7 @@ fn step_configs<
             side_possible,
             side_prefix_possible,
             joint_short_possible,
+            joint_side_prefix_possible,
             blank_side_possible,
             color_tail_count,
             pair_tail_presence,
@@ -4551,6 +4680,203 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
         possible
     }
+
+    #[expect(clippy::cast_possible_truncation)]
+    fn joint_side_prefix_possible_from_blank(
+        &self,
+        windows: &WinPossible<S, C>,
+    ) -> JointSidePrefixPossible<S, C> {
+        let mut trans = [[None; C]; S];
+        for ((state, read), &(print, shift, next_state)) in self.iter()
+        {
+            trans[state as usize][read as usize] =
+                Some((print as usize, shift, next_state as usize));
+        }
+
+        let mut possible = JointSidePrefixPossible::new();
+        let mut q = VecDeque::new();
+
+        let push =
+            |node: JointSidePrefixNode,
+             possible: &mut JointSidePrefixPossible<S, C>,
+             q: &mut VecDeque<JointSidePrefixNode>| {
+                if windows.right[node.st][node.scan][node.left]
+                    & (1_u64 << node.right)
+                    == 0
+                {
+                    return;
+                }
+
+                let index = JointSidePrefixPossible::<S, C>::index(
+                    node.st, node.scan, node.left, node.right,
+                );
+                let alts = &mut possible.windows[index];
+
+                if alts
+                    .iter()
+                    .copied()
+                    .any(|old| old.subsumes(node.prefix))
+                {
+                    return;
+                }
+                alts.retain(|&old| !node.prefix.subsumes(old));
+
+                if node.prefix != JointSidePrefix::Unknown
+                    && alts.len()
+                        >= JOINT_SIDE_PREFIX_MAX_ALTS_PER_WINDOW
+                {
+                    alts.clear();
+                    alts.push(JointSidePrefix::Unknown);
+                    q.push_back(JointSidePrefixNode {
+                        prefix: JointSidePrefix::Unknown,
+                        ..node
+                    });
+                    return;
+                }
+
+                alts.push(node.prefix);
+                q.push_back(node);
+            };
+
+        push(
+            JointSidePrefixNode {
+                st: 0,
+                scan: 0,
+                left: 0,
+                right: 0,
+                prefix: JointSidePrefix::blank(),
+            },
+            &mut possible,
+            &mut q,
+        );
+
+        while let Some(node) = q.pop_front() {
+            let index = JointSidePrefixPossible::<S, C>::index(
+                node.st, node.scan, node.left, node.right,
+            );
+            if !possible.windows[index].contains(&node.prefix) {
+                continue;
+            }
+
+            let Some((print, shift, tr)) = trans[node.st][node.scan]
+            else {
+                continue;
+            };
+
+            match node.prefix {
+                JointSidePrefix::Unknown => {
+                    if shift {
+                        let mut rights =
+                            windows.right[tr][node.right][print];
+                        while rights != 0 {
+                            let new_right =
+                                rights.trailing_zeros() as usize;
+                            rights &= rights - 1;
+                            push(
+                                JointSidePrefixNode {
+                                    st: tr,
+                                    scan: node.right,
+                                    left: print,
+                                    right: new_right,
+                                    prefix: JointSidePrefix::Unknown,
+                                },
+                                &mut possible,
+                                &mut q,
+                            );
+                        }
+                    } else {
+                        let mut lefts =
+                            windows.left[tr][node.left][print];
+                        while lefts != 0 {
+                            let new_left =
+                                lefts.trailing_zeros() as usize;
+                            lefts &= lefts - 1;
+                            push(
+                                JointSidePrefixNode {
+                                    st: tr,
+                                    scan: node.left,
+                                    left: new_left,
+                                    right: print,
+                                    prefix: JointSidePrefix::Unknown,
+                                },
+                                &mut possible,
+                                &mut q,
+                            );
+                        }
+                    }
+                },
+                JointSidePrefix::Specific { left, right } => {
+                    if shift {
+                        let mut left_next = Vec::new();
+                        left.for_each_prepend(
+                            node.left as Color,
+                            |p| {
+                                left_next.push(p);
+                            },
+                        );
+                        right.for_each_pull::<C>(|new_right, right_next| {
+                            if windows.right[tr][node.right][print]
+                                & (1_u64 << usize::from(new_right))
+                                == 0
+                            {
+                                return;
+                            }
+                            for &left_next in &left_next {
+                                push(
+                                    JointSidePrefixNode {
+                                        st: tr,
+                                        scan: node.right,
+                                        left: print,
+                                        right: usize::from(new_right),
+                                        prefix: JointSidePrefix::Specific {
+                                            left: left_next,
+                                            right: right_next,
+                                        },
+                                    },
+                                    &mut possible,
+                                    &mut q,
+                                );
+                            }
+                        });
+                    } else {
+                        let mut right_next = Vec::new();
+                        right.for_each_prepend(
+                            node.right as Color,
+                            |p| {
+                                right_next.push(p);
+                            },
+                        );
+                        left.for_each_pull::<C>(|new_left, left_next| {
+                            if windows.left[tr][node.left][print]
+                                & (1_u64 << usize::from(new_left))
+                                == 0
+                            {
+                                return;
+                            }
+                            for &right_next in &right_next {
+                                push(
+                                    JointSidePrefixNode {
+                                        st: tr,
+                                        scan: node.left,
+                                        left: usize::from(new_left),
+                                        right: print,
+                                        prefix: JointSidePrefix::Specific {
+                                            left: left_next,
+                                            right: right_next,
+                                        },
+                                    },
+                                    &mut possible,
+                                    &mut q,
+                                );
+                            }
+                        });
+                    }
+                },
+            }
+        }
+
+        possible
+    }
 }
 
 #[cfg(test)]
@@ -4589,6 +4915,28 @@ macro_rules! assert_entrypoints {
             );
         })*
     };
+}
+
+#[test]
+fn test_joint_side_prefix_rejects_blank_ab1_targets() {
+    let prog = Prog::<3, 2>::from("1RB 0RB  1LC 0RA  1LC 1LA");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let mut windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let sides = prog.side_possible_from_blank(&windows);
+    windows.refine_reachability(&sides);
+
+    let possible = prog.joint_side_prefix_possible_from_blank(&windows);
+    let blank_around_one: Tape = "0+ [1] 0+".into();
+
+    assert!(
+        !blank_around_one
+            .obeys_joint_side_prefix_possible(0, Some(&possible),)
+    );
+    assert!(
+        !blank_around_one
+            .obeys_joint_side_prefix_possible(1, Some(&possible),)
+    );
 }
 
 #[test]
@@ -7518,10 +7866,36 @@ impl Tape {
             }
         }
 
-        fn count_bounds(count: u8) -> (u16, Option<u16>) {
+        fn precise_count_matches(count: u8, req: ReqRun) -> bool {
             match count {
-                1..=3 => (u16::from(count), Some(u16::from(count))),
-                SIDE_PREFIX_MANY => (u16::from(SIDE_PREFIX_MANY), None),
+                1..=3 => {
+                    let value = u16::from(count);
+                    value >= req.min
+                        && match req.max {
+                            None => true,
+                            Some(max) => value <= max,
+                        }
+                },
+                SIDE_PREFIX_EVEN_MANY | SIDE_PREFIX_ODD_MANY => {
+                    let (minimum, odd) =
+                        if count == SIDE_PREFIX_EVEN_MANY {
+                            (4_u16, false)
+                        } else {
+                            (5_u16, true)
+                        };
+                    let mut first = if req.min > minimum {
+                        req.min
+                    } else {
+                        minimum
+                    };
+                    if (first & 1 != 0) != odd {
+                        first = first.saturating_add(1);
+                    }
+                    match req.max {
+                        None => true,
+                        Some(max) => first <= max,
+                    }
+                },
                 _ => unreachable!(),
             }
         }
@@ -7564,8 +7938,10 @@ impl Tape {
 
             for index in 0..common {
                 let run = prefix.runs[index];
-                let (min, max) = count_bounds(run.count);
-                if !run_matches(run.color, min, max, req.runs[index]) {
+                let required = req.runs[index];
+                if run.color != required.color
+                    || !precise_count_matches(run.count, required)
+                {
                     return false;
                 }
             }
@@ -7833,6 +8209,74 @@ impl Tape {
                 right,
                 RIGHT_SIDE,
                 right_word_req,
+            )
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => matches_window(left, right),
+            (Some(left), None) => {
+                (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
+    }
+
+    /// Check exact-blank whole-side facts against the joint run-prefix
+    /// product.  Other side shapes are deliberately left to the existing
+    /// richer independent prefix matcher; this joint check is focused on the
+    /// correlation that those projections lose.
+    fn has_exact_blank_side(&self) -> bool {
+        let exact_blank = |span: &Span| {
+            span.end == TapeEnd::Blanks
+                && span.span.iter().all(Block::blank)
+        };
+        exact_blank(&self.lspan) || exact_blank(&self.rspan)
+    }
+
+    fn obeys_joint_side_prefix_possible<
+        const S: usize,
+        const C: usize,
+    >(
+        &self,
+        state: State,
+        possible: Option<&JointSidePrefixPossible<S, C>>,
+    ) -> bool {
+        let Some(possible) = possible else {
+            return true;
+        };
+
+        let exact_blank = |span: &Span| {
+            span.end == TapeEnd::Blanks
+                && span.span.iter().all(Block::blank)
+        };
+        let require_left_blank = exact_blank(&self.lspan);
+        let require_right_blank = exact_blank(&self.rspan);
+
+        if !require_left_blank && !require_right_blank {
+            return true;
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        let matches_window = |left: usize, right: usize| {
+            possible.window(st, sc, left, right).iter().copied().any(
+                |prefix| match prefix {
+                    JointSidePrefix::Unknown => true,
+                    JointSidePrefix::Specific { left, right } => {
+                        (!require_left_blank
+                            || left == SidePrefix::blank())
+                            && (!require_right_blank
+                                || right == SidePrefix::blank())
+                    },
+                },
             )
         };
 
@@ -9079,6 +9523,85 @@ fn test_side_prefix_dirty_unknown_subsumption() {
     assert!(dirty.subsumes(dirty_zero));
     assert!(!dirty.subsumes(blank));
     assert!(!blank.subsumes(one));
+}
+
+#[test]
+fn test_side_prefix_run_count_keeps_long_parity() {
+    let exact_three = SidePrefix {
+        runs: [
+            SidePrefixRun { color: 1, count: 3 },
+            SidePrefixRun::EMPTY,
+        ],
+        len: 1,
+        spill: SidePrefixSpill::Blank,
+    };
+
+    let mut after_four = Vec::new();
+    exact_three.for_each_prepend(1, |prefix| after_four.push(prefix));
+    assert_eq!(after_four.len(), 1);
+    assert_eq!(after_four[0].runs[0].count, SIDE_PREFIX_EVEN_MANY);
+
+    let mut after_five = Vec::new();
+    after_four[0].for_each_prepend(1, |prefix| after_five.push(prefix));
+    assert_eq!(after_five.len(), 1);
+    assert_eq!(after_five[0].runs[0].count, SIDE_PREFIX_ODD_MANY);
+
+    let mut odd_pull = Vec::new();
+    after_five[0].for_each_pull::<2>(|color, prefix| {
+        odd_pull.push((color, prefix));
+    });
+    assert_eq!(odd_pull.len(), 1);
+    assert_eq!(odd_pull[0].0, 1);
+    assert_eq!(odd_pull[0].1.runs[0].count, SIDE_PREFIX_EVEN_MANY);
+
+    let mut even_pull = Vec::new();
+    after_four[0].for_each_pull::<2>(|color, prefix| {
+        even_pull.push((color, prefix));
+    });
+    assert_eq!(even_pull.len(), 2);
+    assert!(
+        even_pull
+            .iter()
+            .any(|(_, prefix)| { prefix.runs[0].count == 3 })
+    );
+    assert!(even_pull.iter().any(|(_, prefix)| {
+        prefix.runs[0].count == SIDE_PREFIX_ODD_MANY
+    }));
+}
+
+#[test]
+fn test_side_prefix_parity_rejects_wrong_long_exact_run() {
+    let mut possible = SidePrefixPossible::<1, 2>::new();
+    let left_index =
+        SidePrefixPossible::<1, 2>::index(0, 0, 1, 0, LEFT_SIDE);
+    possible.windows[left_index].push(SidePrefix {
+        runs: [
+            SidePrefixRun {
+                color: 1,
+                count: SIDE_PREFIX_EVEN_MANY,
+            },
+            SidePrefixRun::EMPTY,
+        ],
+        len: 1,
+        spill: SidePrefixSpill::Blank,
+    });
+
+    let right_index =
+        SidePrefixPossible::<1, 2>::index(0, 0, 1, 0, RIGHT_SIDE);
+    possible.windows[right_index].push(SidePrefix::blank());
+    possible.flags[right_index] |= SIDE_PREFIX_HAS_BLANK;
+
+    for index in [left_index, right_index] {
+        possible.word_windows[index].push(SideWordPrefix::unknown());
+        possible.word_flags[index] |= 0b100;
+    }
+
+    // Immediate left neighbor is one additional 1; the retained tail is the
+    // part checked by SidePrefixPossible. Four tail 1s fit even>=4; five do not.
+    let even_tail: Tape = "0+ 1^5 [0] 0+".into();
+    let odd_tail: Tape = "0+ 1^6 [0] 0+".into();
+    assert!(even_tail.obeys_side_prefix_possible(0, &possible));
+    assert!(!odd_tail.obeys_side_prefix_possible(0, &possible));
 }
 
 #[test]
