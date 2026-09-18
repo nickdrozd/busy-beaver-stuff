@@ -50,7 +50,7 @@ class Num:
 
     def estimate(self) -> Count:
         if (tower := self.tower_est) is None:
-            return PentPlus()  # type: ignore[abstract]
+            return PentPlus()  # type: ignore[abstract]  # ty: ignore[call-non-callable]
 
         est: Exp | Tet
 
