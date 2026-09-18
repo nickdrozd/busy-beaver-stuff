@@ -489,7 +489,6 @@ fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MOR)
         || prog.far_cant_blank(6)
-        || prog.bkw_cant_blank(500).is_refuted()
 }
 
 fn test_8_instr() {
