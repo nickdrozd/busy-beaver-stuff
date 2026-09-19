@@ -1303,9 +1303,12 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
     h3s: TodoSet<H3>,
     h2s: TodoSet<H2>,
 
-    // Spinout witnesses found in h2_pop that depend on the tape side
+    // Blank/Spinout witnesses found in h2_pop that depend on the tape side
     // forgotten by the H3 -> H2 projection. They are validated only after
     // relation saturation against the H3 generators recorded in `pre23`.
+    // Ordinary H2 reachability remains unchanged; only target detection is
+    // provenance-refined.
+    pending_h2_blank_targets: Set<H2>,
     pending_h2_spinout_targets: Set<H2>,
 
     // For each DFA state r, which machine states have H2(s,r).
@@ -1608,17 +1611,28 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         let first = self.tm_step(b.w, s, 1, ctx);
 
         // H2 is the projection of an H3 node and therefore forgets the H3
-        // block on one side of the head. For Spinout only, the ordinary H2
-        // context historically substitutes `back_zero = true` for that side.
-        // If a spinout target disappears when only that assumed-zero side is
-        // disabled, defer the witness until the H3 generators of this H2 fact
-        // are known. A target supported by the explicit forward/r0 side still
-        // fails immediately.
-        //
-        // Blank deliberately keeps the original behavior. A previous attempt
-        // to apply this provenance pruning to Blank was unsound because the
-        // two-sided global blank condition does not admit this local H2 filter.
+        // block on one side of the head.  A local Blank/Spinout target can
+        // therefore be spurious solely because that forgotten side is not
+        // actually blank.  Do not prune the H2 relation itself: rerun the
+        // local block with the forgotten-side blank assumption disabled, keep
+        // saturating the ordinary relations, and validate the target only after
+        // every H3 generator of this H2 fact has been discovered.
         let step = match first {
+            Err(StopReason::MayTarget) if self.goal.is_blank() => {
+                match self.tm_step(b.w, s, 1, StepContext::blank(false))
+                {
+                    Err(StopReason::MayTarget) => {
+                        // With a false outside-blank context a Blank target is
+                        // impossible.  Stay conservative if that invariant is
+                        // ever violated by a future target kind.
+                        return Err(StopReason::MayTarget);
+                    },
+                    other => {
+                        self.pending_h2_blank_targets.insert(a);
+                        other
+                    },
+                }
+            },
             Err(StopReason::MayTarget) if self.goal.is_spinout() => {
                 let forward_zero =
                     self.summary_may_be_all_zero_context(r0);
@@ -1831,15 +1845,28 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
-    /// A deferred H2 Spinout witness remains possible iff its H2 node has
-    /// some H3 generator whose forgotten side may really be all zero: the
-    /// adjacent H3 block is zero and the summary beyond it is reachable from
-    /// the initial summary using only zero blocks.
-    ///
+    /// The H3 block forgotten by H2, together with its summary beyond, may be
+    /// globally blank.  For Blank, use semantic base-tape blankness so
+    /// transcript/LRU macro colors that encode a blank base cell are accepted;
+    /// Spinout deliberately requires canonical macro zero instead.
+    fn h3_forgotten_side_may_be_blank(&self, c: &H3) -> bool {
+        self.word_is_zero_context(c.w)
+            && self.summary_may_be_all_zero_context(c.r)
+    }
+
     /// Every H2 fact is introduced only by `on_h3`, which simultaneously adds
     /// the corresponding `pre23` edge. Therefore `pre23.values(a)` is the full
-    /// set of H3 generators for that H2 fact. The check is delayed until the
-    /// relation fixed point because more generators may be discovered later.
+    /// set of H3 generators for that H2 fact once the relation fixed point is
+    /// reached.  A deferred target remains possible iff at least one generator
+    /// supplies an actually blank-compatible forgotten side.
+    fn pending_h2_blank_target_still_possible(&self) -> bool {
+        self.pending_h2_blank_targets.iter().any(|a| {
+            self.pre23
+                .values(a)
+                .any(|c| self.h3_forgotten_side_may_be_blank(c))
+        })
+    }
+
     fn pending_h2_spinout_target_still_possible(&self) -> bool {
         self.pending_h2_spinout_targets.iter().any(|a| {
             self.pre23.values(a).any(|c| {
@@ -1903,7 +1930,9 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
             break;
         }
 
-        if self.pending_h2_spinout_target_still_possible() {
+        if self.pending_h2_blank_target_still_possible()
+            || self.pending_h2_spinout_target_still_possible()
+        {
             return Err(StopReason::MayTarget);
         }
 
@@ -2108,6 +2137,7 @@ fn far_decider_for<P: GetInstr, S: Summary>(
         retl: TodoSet::new(),
         h3s: TodoSet::new(),
         h2s: TodoSet::new(),
+        pending_h2_blank_targets: Set::new(),
         pending_h2_spinout_targets: Set::new(),
         r_s: Vec::new(),
         zero_context: Vec::new(),
