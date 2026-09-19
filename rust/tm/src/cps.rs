@@ -505,12 +505,20 @@ fn cps_cant_reach_obs(
 
                 let reached_goal = match goal {
                     Blank => {
+                        // An actually blank hidden ray has the zero polynomial
+                        // signature in every active refinement channel.  The
+                        // nonzero counters are only lower bounds, so `nz == 0`
+                        // plus even parity still admits 2, 4, ... hidden
+                        // nonblank cells.  A nonzero exact tail signature rules
+                        // those spurious blank witnesses out soundly.
                         blank_window
                             && prog.is_blank(color)
                             && left_nz == 0
                             && right_nz == 0
                             && !left_parity
                             && !right_parity
+                            && left_sig == TailSig::default()
+                            && right_sig == TailSig::default()
                     },
                     Spinout => {
                         // The transition must itself be the state's blank
