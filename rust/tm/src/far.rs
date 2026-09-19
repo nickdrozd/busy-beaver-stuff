@@ -235,6 +235,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             || self.far_macro_cps_sweep(block, Goal::Blank)
             || self.mitm_cant_blank()
             || self.direct_far_cant_target(Goal::Blank)
+            || self.far_conditional_blank_sweep(block)
     }
 
     /// FAR spinout prover.
@@ -364,6 +365,22 @@ enum WordUpdateOutcome {
     /// Determinism then guarantees that this branch stays in the block forever.
     LocalLoop,
     /// The simulation reached its step bound.
+    Incomplete,
+}
+
+/// Result of a Blank block simulation when blanking is recorded as a
+/// conditional outcome instead of immediately aborting the FAR closure.
+#[derive(Clone, Copy, Debug)]
+enum DeferredBlankOutcome {
+    Exit(WordUpdateLemma),
+    LocalLoop { hit_blank: bool },
+    Incomplete,
+}
+
+#[derive(Clone, Debug)]
+enum RawDeferredBlankOutcome {
+    Exit(RawWordUpdateLemma),
+    LocalLoop { hit_blank: bool },
     Incomplete,
 }
 
@@ -1242,6 +1259,7 @@ struct FarRunParams {
     block_step_limit: usize,
     goal: Goal,
     mirrored: bool,
+    defer_blank_targets: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -1269,6 +1287,7 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
     prog: &'a P,
     goal: Goal,
     mirrored: bool,
+    defer_blank_targets: bool,
     block_len: usize,
     max_work: usize,
     block_step_limit: usize,
@@ -1282,6 +1301,10 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
 
     // Cache exact block simulations by local FAR context.
     step_cache: Map<StepKey, WordUpdateOutcome>,
+    // Separate cache for the conditional Blank pass. These simulations keep
+    // running after a local blanking event so the ordinary return closure is
+    // still saturated while the blank event is propagated as B2/B3 facts.
+    deferred_blank_step_cache: Map<StepKey, DeferredBlankOutcome>,
 
     // DFA
     id: Map<S, usize>,
@@ -1302,6 +1325,15 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
     retl: TodoSet<H2b>,
     h3s: TodoSet<H3>,
     h2s: TodoSet<H2>,
+
+    // Conditional Blank outcomes.
+    // B2(a): a computation from H2 `a` can blank provided the whole tape to
+    // the left of that boundary is blank.
+    // B3(c): a computation from H3 `c` can blank provided the tape strictly
+    // left of c.w is blank. pre32/pre33 transport this condition across blocks
+    // that the subcomputation may modify or erase.
+    blank2: TodoSet<H2>,
+    blank3: TodoSet<H3>,
 
     // Spinout witnesses found in h2_pop that depend on the tape side
     // forgotten by the H3 -> H2 projection. They are validated only after
@@ -1530,6 +1562,86 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         self.ret3.insert(a, b);
     }
 
+    fn insert_blank2(&mut self, a: H2) {
+        if self.defer_blank_targets {
+            self.blank2.insert(a);
+        }
+    }
+
+    fn insert_blank3(&mut self, c: H3) {
+        if self.defer_blank_targets {
+            self.blank3.insert(c);
+        }
+    }
+
+    /// Conditional-Blank local simulation. Unlike `tm_step`, a local blank
+    /// event is remembered but does not terminate the block simulation; this is
+    /// necessary to keep the return relations closed even when the event's
+    /// missing left context has not yet been discharged.
+    fn tm_step_deferred_blank(
+        &mut self,
+        w: WordId,
+        s: State,
+        sgn: i8,
+        ctx: StepContext,
+    ) -> Result<(Option<WordUpdateLemma>, bool), StopReason> {
+        debug_assert!(self.goal.is_blank());
+        debug_assert!(self.defer_blank_targets);
+        self.bump()?;
+
+        let key = StepKey { w, s, sgn, ctx };
+        let outcome = if let Some(&cached) =
+            self.deferred_blank_step_cache.get(&key)
+        {
+            cached
+        } else {
+            let computed =
+                match far_raw_word_update_lemma_deferred_blank(
+                    self.prog,
+                    self.words.clone_word(key.w),
+                    key.s,
+                    key.sgn,
+                    self.block_step_limit,
+                    key.ctx,
+                    self.mirrored,
+                ) {
+                    RawDeferredBlankOutcome::Exit(raw) => {
+                        DeferredBlankOutcome::Exit(WordUpdateLemma {
+                            w1: self.words.intern(raw.w1),
+                            s1: raw.s1,
+                            is_back: raw.is_back,
+                            hit_blank: raw.hit_blank,
+                        })
+                    },
+                    RawDeferredBlankOutcome::LocalLoop {
+                        hit_blank,
+                    } => DeferredBlankOutcome::LocalLoop { hit_blank },
+                    RawDeferredBlankOutcome::Incomplete => {
+                        DeferredBlankOutcome::Incomplete
+                    },
+                };
+            self.deferred_blank_step_cache.insert(key, computed);
+            computed
+        };
+
+        match outcome {
+            DeferredBlankOutcome::Exit(res) => {
+                let hit_blank = res.hit_blank;
+                if res.s1.is_none() {
+                    Ok((None, hit_blank))
+                } else {
+                    Ok((Some(res), hit_blank))
+                }
+            },
+            DeferredBlankOutcome::LocalLoop { hit_blank } => {
+                Ok((None, hit_blank))
+            },
+            DeferredBlankOutcome::Incomplete => {
+                Err(StopReason::BlockTimeout)
+            },
+        }
+    }
+
     fn tm_step(
         &mut self,
         w: WordId,
@@ -1604,43 +1716,58 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         let H2 { s, .. } = a;
         let r0 = b.prev;
 
-        let ctx = self.h2_pop_step_context(r0);
-        let first = self.tm_step(b.w, s, 1, ctx);
+        let res = if self.defer_blank_targets && self.goal.is_blank() {
+            // Inside an H2 subcomputation the right remainder `r0` is explicit,
+            // while the whole left side was forgotten by H3 -> H2. Record a
+            // local blank as B2(a) when the explicit right side may be zero;
+            // the missing left-side condition is propagated later.
+            let ctx = StepContext::blank(
+                self.summary_may_be_all_zero_context(r0),
+            );
+            let (step, hit_blank) =
+                self.tm_step_deferred_blank(b.w, s, 1, ctx)?;
+            if hit_blank {
+                self.insert_blank2(a);
+            }
+            step
+        } else {
+            let ctx = self.h2_pop_step_context(r0);
+            let first = self.tm_step(b.w, s, 1, ctx);
 
-        // H2 is the projection of an H3 node and therefore forgets the H3
-        // block on one side of the head. For Spinout only, the ordinary H2
-        // context historically substitutes `back_zero = true` for that side.
-        // If a spinout target disappears when only that assumed-zero side is
-        // disabled, defer the witness until the H3 generators of this H2 fact
-        // are known. A target supported by the explicit forward/r0 side still
-        // fails immediately.
-        //
-        // Blank deliberately keeps the original behavior. A previous attempt
-        // to apply this provenance pruning to Blank was unsound because the
-        // two-sided global blank condition does not admit this local H2 filter.
-        let step = match first {
-            Err(StopReason::MayTarget) if self.goal.is_spinout() => {
-                let forward_zero =
-                    self.summary_may_be_all_zero_context(r0);
-                match self.tm_step(
-                    b.w,
-                    s,
-                    1,
-                    StepContext::spinout(false, forward_zero),
-                ) {
-                    Err(StopReason::MayTarget) => {
-                        return Err(StopReason::MayTarget);
-                    },
-                    other => {
-                        self.pending_h2_spinout_targets.insert(a);
-                        other
-                    },
-                }
-            },
-            other => other,
+            // H2 is the projection of an H3 node and therefore forgets the H3
+            // block on one side of the head. For Spinout only, the ordinary H2
+            // context historically substitutes `back_zero = true` for that side.
+            // If a spinout target disappears when only that assumed-zero side is
+            // disabled, defer the witness until the H3 generators of this H2 fact
+            // are known. A target supported by the explicit forward/r0 side still
+            // fails immediately.
+            let step = match first {
+                Err(StopReason::MayTarget)
+                    if self.goal.is_spinout() =>
+                {
+                    let forward_zero =
+                        self.summary_may_be_all_zero_context(r0);
+                    match self.tm_step(
+                        b.w,
+                        s,
+                        1,
+                        StepContext::spinout(false, forward_zero),
+                    ) {
+                        Err(StopReason::MayTarget) => {
+                            return Err(StopReason::MayTarget);
+                        },
+                        other => {
+                            self.pending_h2_spinout_targets.insert(a);
+                            other
+                        },
+                    }
+                },
+                other => other,
+            };
+            step?
         };
 
-        let Some(res) = step? else {
+        let Some(res) = res else {
             return Ok(());
         };
         let s1 = res.s1.unwrap();
@@ -1669,13 +1796,30 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         let b = *b;
         let H2b { s: s0, r: r0 } = b;
 
-        let Some(res) = self.tm_step(
-            c.w,
-            s0,
-            -1,
-            self.h3_back_step_context(&c, &b),
-        )?
-        else {
+        let res = if self.defer_blank_targets && self.goal.is_blank() {
+            // `b.r` is the current right-hand stack after the H2 return. The
+            // context strictly left of c.w is the conditional part of B3(c), so
+            // do not require the original c.r to have been zero: the intervening
+            // subcomputation may have modified or erased that old context.
+            let ctx = StepContext::blank(
+                self.summary_may_be_all_zero_context(b.r),
+            );
+            let (step, hit_blank) =
+                self.tm_step_deferred_blank(c.w, s0, -1, ctx)?;
+            if hit_blank {
+                self.insert_blank3(c);
+            }
+            step
+        } else {
+            self.tm_step(
+                c.w,
+                s0,
+                -1,
+                self.h3_back_step_context(&c, &b),
+            )?
+        };
+
+        let Some(res) = res else {
             return Ok(());
         };
         let s1 = res.s1.unwrap();
@@ -1700,9 +1844,24 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         let H2b { s: s0, r: r0 } = b;
 
         let blank = self.words.intern(Word::zero(self.block_len));
-        let Some(res) =
+        let res = if self.defer_blank_targets && self.goal.is_blank() {
+            // At the left frontier the missing outer context is the concrete
+            // infinite blank ray, so a conditional local event is fully
+            // discharged as soon as the current right stack may be all zero.
+            let ctx = StepContext::blank(
+                self.summary_may_be_all_zero_context(r0),
+            );
+            let (step, hit_blank) =
+                self.tm_step_deferred_blank(blank, s0, -1, ctx)?;
+            if hit_blank {
+                return Err(StopReason::MayTarget);
+            }
+            step
+        } else {
             self.tm_step(blank, s0, -1, self.retl_step_context(r0))?
-        else {
+        };
+
+        let Some(res) = res else {
             return Ok(());
         };
         let s1 = res.s1.unwrap();
@@ -1794,12 +1953,63 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
+    fn on_blank2(&mut self, a: &H2) {
+        self.scratch_h3.clear();
+        self.scratch_h3.extend(self.pre23.values(a).copied());
+        self.scratch_h3.sort_unstable();
+        while let Some(c) = self.scratch_h3.pop() {
+            // B2 requires the whole left side of the H2 boundary to be blank.
+            // In H3 that side is c.w plus the still-conditional farther-left
+            // context, so an already blank c.w converts B2(a) into B3(c).
+            if self.word_is_zero_context(c.w) {
+                self.insert_blank3(c);
+            }
+        }
+    }
+
+    fn on_blank3(&mut self, c: &H3) -> Result<(), StopReason> {
+        // pre3l means the context strictly left of c.w is the concrete initial
+        // blank ray, so B3(c)'s remaining condition is discharged.
+        if self.pre3l.contains(c) {
+            return Err(StopReason::MayTarget);
+        }
+
+        self.scratch_h2.clear();
+        self.scratch_h2.extend(self.pre32.values(c).copied());
+        self.scratch_h2.sort_unstable();
+        while let Some(a0) = self.scratch_h2.pop() {
+            // Crossing a block forward turns the old H2 left context into the
+            // farther-left context of the resulting H3. The condition is
+            // unchanged when transported back through pre32.
+            self.insert_blank2(a0);
+        }
+
+        self.scratch_h3.clear();
+        self.scratch_h3.extend(self.pre33.values(c).copied());
+        self.scratch_h3.sort_unstable();
+        while let Some(c0) = self.scratch_h3.pop() {
+            // pre33 represents an excursion that may modify c.w and return to
+            // the same boundary. Only the farther-left context is unchanged,
+            // exactly the condition carried by B3.
+            self.insert_blank3(c0);
+        }
+
+        Ok(())
+    }
+
     fn on_pre23(&mut self, a: &H2, c: &H3) -> Result<(), StopReason> {
         self.scratch_h2b.clear();
         self.scratch_h2b.extend(self.ret2.values(a).copied());
         self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
             self.on_h3_back(c, &b)?;
+        }
+
+        if self.defer_blank_targets
+            && self.blank2.contains(a)
+            && self.word_is_zero_context(c.w)
+        {
+            self.insert_blank3(*c);
         }
         Ok(())
     }
@@ -1811,6 +2021,10 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         while let Some(b) = self.scratch_h2b.pop() {
             self.insert_ret2(*a0, b);
         }
+
+        if self.defer_blank_targets && self.blank3.contains(a) {
+            self.insert_blank2(*a0);
+        }
     }
 
     fn on_pre33(&mut self, a: &H3, a0: &H3) {
@@ -1820,15 +2034,24 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         while let Some(b) = self.scratch_h2b.pop() {
             self.insert_ret3(*a0, b);
         }
+
+        if self.defer_blank_targets && self.blank3.contains(a) {
+            self.insert_blank3(*a0);
+        }
     }
 
-    fn on_pre3l(&mut self, a: &H3) {
+    fn on_pre3l(&mut self, a: &H3) -> Result<(), StopReason> {
         self.scratch_h2b.clear();
         self.scratch_h2b.extend(self.ret3.values(a).copied());
         self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
             self.insert_retl(b);
         }
+
+        if self.defer_blank_targets && self.blank3.contains(a) {
+            return Err(StopReason::MayTarget);
+        }
+        Ok(())
     }
 
     /// A deferred H2 Spinout witness remains possible iff its H2 node has
@@ -1877,7 +2100,15 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
                 continue;
             }
             if let Some(a) = self.pre3l.pop_todo() {
-                self.on_pre3l(&a);
+                self.on_pre3l(&a)?;
+                continue;
+            }
+            if let Some(a) = self.blank2.pop_todo() {
+                self.on_blank2(&a);
+                continue;
+            }
+            if let Some(c) = self.blank3.pop_todo() {
+                self.on_blank3(&c)?;
                 continue;
             }
             if let Some((a, b)) = self.ret2.pop_todo() {
@@ -1908,6 +2139,120 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
 
         Ok(())
+    }
+}
+
+/// Exact one-block simulation for the conditional Blank pass. A blanking
+/// event is accumulated in `hit_blank`, but the simulation continues until the
+/// same exit/loop boundary used by the ordinary FAR closure. This lets target
+/// obligations and return relations reach a common fixed point.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_sign_loss
+)]
+fn far_raw_word_update_lemma_deferred_blank<P: GetInstr>(
+    prog: &P,
+    w: Word,
+    s: State,
+    sgn: i8,
+    max_steps: usize,
+    ctx: StepContext,
+    mirrored: bool,
+) -> RawDeferredBlankOutcome {
+    debug_assert!(sgn == 1 || sgn == -1);
+    let context_may_be_all_zero = match ctx {
+        StepContext::Blank {
+            context_may_be_all_zero,
+        } => context_may_be_all_zero,
+        _ => false,
+    };
+
+    let len = w.len() as i32;
+    let mut w1 = w;
+    let mut nonblank_count = w1
+        .cells
+        .iter()
+        .filter(|&&color| !prog.is_blank(color))
+        .count();
+    let mut s1 = s;
+    let mut pos: i32 = 0;
+    let mut hit_blank = false;
+
+    let mut local_words = Map::new();
+    local_words.insert(w1.clone(), 0_usize);
+    let mut local_word_id = 0_usize;
+    let mut seen = Set::new();
+    let mut steps = 0_usize;
+
+    loop {
+        if !seen.insert((local_word_id, s1, pos)) {
+            return RawDeferredBlankOutcome::LocalLoop { hit_blank };
+        }
+        if steps == max_steps {
+            return RawDeferredBlankOutcome::Incomplete;
+        }
+        steps += 1;
+
+        let input = w1.get(pos as usize);
+        let (out_color, shift_right, next_state) =
+            match prog.get_instr(&(s1, input)) {
+                Err(_) => return RawDeferredBlankOutcome::Incomplete,
+                Ok(None) => {
+                    return RawDeferredBlankOutcome::Exit(
+                        RawWordUpdateLemma::exit_oriented(
+                            w1, None, false, hit_blank,
+                        ),
+                    );
+                },
+                Ok(Some(instr)) => instr,
+            };
+
+        let dir: i32 = if shift_right { 1 } else { -1 };
+        let dir = if mirrored { -dir } else { dir };
+        let block_dir = dir * i32::from(sgn);
+
+        let input_nonblank = !prog.is_blank(input);
+        let output_nonblank = !prog.is_blank(out_color);
+        let erased_final_nonblank = input_nonblank && !output_nonblank;
+
+        if input != out_color {
+            if input_nonblank {
+                nonblank_count -= 1;
+            }
+            if output_nonblank {
+                nonblank_count += 1;
+            }
+            w1.set(pos as usize, out_color);
+
+            local_word_id = if let Some(&id) = local_words.get(&w1) {
+                id
+            } else {
+                let id = local_words.len();
+                local_words.insert(w1.clone(), id);
+                id
+            };
+        }
+        s1 = next_state;
+
+        if erased_final_nonblank
+            && nonblank_count == 0
+            && context_may_be_all_zero
+        {
+            hit_blank = true;
+        }
+
+        pos += block_dir;
+        if pos < 0 || pos >= len {
+            return RawDeferredBlankOutcome::Exit(
+                RawWordUpdateLemma::exit_oriented(
+                    w1,
+                    Some(s1),
+                    pos < 0,
+                    hit_blank,
+                ),
+            );
+        }
     }
 }
 
@@ -2088,12 +2433,14 @@ fn far_decider_for<P: GetInstr, S: Summary>(
         prog,
         goal: params.goal,
         mirrored: params.mirrored,
+        defer_blank_targets: params.defer_blank_targets,
         block_len: params.block_len,
         max_work: params.max_work,
         block_step_limit: params.block_step_limit,
         words: WordInterner::new(),
         work: 0,
         step_cache: Map::new(),
+        deferred_blank_step_cache: Map::new(),
         id: Map::new(),
         idr,
         pop: Vec::new(),
@@ -2108,6 +2455,8 @@ fn far_decider_for<P: GetInstr, S: Summary>(
         retl: TodoSet::new(),
         h3s: TodoSet::new(),
         h2s: TodoSet::new(),
+        blank2: TodoSet::new(),
+        blank3: TodoSet::new(),
         pending_h2_spinout_targets: Set::new(),
         r_s: Vec::new(),
         zero_context: Vec::new(),
@@ -2187,6 +2536,7 @@ fn far_macro_cps_sweep_for<P: GetInstr>(
             block_step_limit: FAR_STEP_PER_LEN * block_len,
             goal,
             mirrored: false,
+            defer_blank_targets: false,
         };
         for mirrored in [true, false] {
             let params = FarRunParams {
@@ -2232,6 +2582,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 block_step_limit: FAR_STEP_PER_LEN * block_len,
                 goal,
                 mirrored: false,
+                defer_blank_targets: false,
             };
             for mirrored in [true, false] {
                 let params = FarRunParams {
@@ -2244,6 +2595,44 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             }
         }
 
+        false
+    }
+
+    /// Late Blank-only pass that keeps the ordinary H2/H3 return sharing but
+    /// propagates local blanking as conditional B2/B3 outcomes. The condition
+    /// is discharged only when it reaches `pre3l`, i.e. a context connected to
+    /// the concrete initial blank ray.
+    fn far_conditional_blank_sweep(&self, block: usize) -> bool {
+        let reached = self.far_reached_params();
+        let cap_by_colors = if reached.colors <= 2 {
+            FAR_BLOCK_LEN_CAP_COLORS_2
+        } else if reached.colors <= 4 {
+            FAR_BLOCK_LEN_CAP_COLORS_3_4
+        } else {
+            FAR_BLOCK_LEN_CAP_COLORS_5_8
+        };
+        let block =
+            block.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
+
+        for block_len in 1..=block {
+            let params_base = FarRunParams {
+                block_len,
+                max_work: FAR_WORK_PER_LEN * block_len,
+                block_step_limit: FAR_STEP_PER_LEN * block_len,
+                goal: Goal::Blank,
+                mirrored: false,
+                defer_blank_targets: true,
+            };
+            for mirrored in [true, false] {
+                let params = FarRunParams {
+                    mirrored,
+                    ..params_base
+                };
+                if far_decide_summary_portfolio(self, params) {
+                    return true;
+                }
+            }
+        }
         false
     }
 

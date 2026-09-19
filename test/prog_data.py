@@ -3961,7 +3961,7 @@ type Decider = Literal[
 FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     "far": {
         "halt": 1,
-        "blank": 15,
+        "blank": 4,
         "spinout": 1,
     },
     "cps": {
@@ -3985,19 +3985,8 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
         },
         "blank": {
-            "1RB 0LB 3LA 0LA  2LA 2RA 3RA 0RB",
-            "1RB 2LB 0LA 1RA  2LA 0RB 3RB 0RA",
-            "1RB 2RB 0LB 0LA  1LA 3LA 0RB 2RA",
-            "1RB 3LA 1LB 4LA 0LA  2LA 0RB 4LA 4RA 2RA",
-            "1RB 0LD  1RC 0LA  1LD 0RA  1LE 1RE  0RC 1LC",
-            "1RB 0LD  1RC 0LB  1LD 0RA  1LE 1RE  0RC 1LC",
-            "1RB 0RA  1LC 0RB  1LD 0LD  1RE 1LA  0RE 0LC",
-            "1RB 0RB  0LC 1RD  1LA 1LC  0LE 1RA  1LE 0RD",
             "1RB 0RB  1RC 1RA  1LC 0LD  0RA 0LE  1LD 1LE",
             "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
-            "1RB 1RE  1RC 1LB  1LD 0LC  0RD 0RA  1LC 0RB",
-            "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...",
-            "1RB 2RA ...  1RC 0RA ...  1LD 0LC 1RC  0RB 1LC ...",
             "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB",
             "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA",
         },
