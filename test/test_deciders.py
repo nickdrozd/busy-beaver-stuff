@@ -362,7 +362,7 @@ class Far(DeciderTest):
                 self.assertIn(prog, self.false_negatives['halt'] | IRREGULAR)
 
         for prog in NONBLANKERS:
-            if not far_cant_blank(prog, 3):
+            if not far_cant_blank(prog, 6):
                 self.assertIn(prog, self.false_negatives['blank'] | RECUR_FAST)
 
         for prog in NONSPINNERS:
@@ -393,7 +393,7 @@ class Far(DeciderTest):
 
         print('blank')
         for prog in self.false_negatives['blank']:
-            if far_cant_blank(prog, 3):
+            if far_cant_blank(prog, 6):
                 print(prog)
                 new_solved = True
 
