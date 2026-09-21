@@ -89,13 +89,83 @@ const FAR_SET_PAIR_LEN_H: usize = 16;
 const FAR_SET_PAIR_LEN_H_NO_LRU: usize = 2;
 const FAR_SET_PAIR_LEN_H_TAIL: usize = 1;
 
-/// C++ FAR::RWL_mod defaults.
-const FAR_RWL_LEN_H: usize = 8;
-const FAR_RWL_MNC: u8 = 2;
+/// Faithful BusyCoq RWL_mod default profile.
+///
+/// RWL_mod has four independent transform parameters:
+/// `(mnc, mod_, len1, len2)`.  `len1` protects the newest prefix exactly;
+/// when the total retained list exceeds `len1 + len2`, the element immediately
+/// after that protected prefix is discarded.  This is intentionally different
+/// from a plain fixed-length FIFO/LRU queue.
+const FAR_RWL_DEFAULT_MNC: u64 = 2;
+const FAR_RWL_DEFAULT_LEN1: usize = 8;
+const FAR_RWL_DEFAULT_LEN2: usize = 0;
+const FAR_RWL_DEFAULT_MODS: &[usize] = &[1, 2, 3];
+
+/// Additional exact RWL_mod profiles.  Every tuple is
+/// `(mnc, mod_, len1, len2)` and is crossed independently with every FAR block
+/// length in the late generalized sweep.
+const FAR_RWL_GENERAL_PROFILES: &[(u64, u64, usize, usize)] = &[
+    (2, 0, 8, 0),
+    (2, 0, 4, 4),
+    (2, 1, 4, 4),
+    (2, 2, 4, 4),
+    (2, 3, 4, 4),
+    (2, 1, 2, 6),
+    (2, 2, 2, 6),
+    (2, 3, 2, 6),
+    (2, 2, 1, 7),
+    (2, 2, 0, 8),
+    (1, 2, 8, 0),
+    (3, 2, 8, 0),
+    (1, 2, 4, 4),
+    (3, 2, 4, 4),
+    (2, 4, 8, 0),
+    (2, 4, 4, 4),
+    (2, 2, 2, 2),
+];
+
+const FAR_RWL_GENERAL_BLOCK_LEN_CAP: usize = 31;
 
 /// C++ FAR::CPS_LRU defaults.
 const FAR_CPS_LRU_LEN_H: usize = 8;
 const FAR_CPS_LRU_LEN_H_NO_LRU: usize = 2;
+
+/// Upstream FAR sweeps commonly take `n` through roughly 1..=31 while varying
+/// CPS_LRU parameters separately.  Keep this as a late holdout pass instead of
+/// multiplying the hot raw-FAR path at very large block sizes.
+const FAR_CPS_LRU_EXACT_BLOCK_LEN_CAP: usize = 31;
+
+/// Exact upstream CPS_LRU parameter triples `(len1, len2, len3)`.
+///
+/// `len1` is the protected exact prefix of x12, `len2` is the LRU-updated
+/// suffix capacity, and `len3` is the exact x3 stack filled before x12 is
+/// touched.  These profiles subsume the removed experimental `(LRUH,H,tH)`
+/// portfolio at `LRU_n = 0` under `(len1,len2,len3) = (H,LRUH,tH)`.
+const FAR_CPS_LRU_EXACT_PROFILES: &[(usize, usize, usize)] = &[
+    (0, 2, 0),
+    (0, 1, 0),
+    (1, 3, 0),
+    (0, 3, 0),
+    (0, 4, 0),
+    (0, 2, 1),
+    (1, 2, 1),
+    (0, 3, 1),
+    (1, 4, 1),
+    (0, 4, 2),
+];
+
+/// Upstream `LRU_n` is the zero-based matching duplicate removed from the
+/// LRU suffix.  Sweep it independently of both the history-size triple and
+/// FAR block/DFA size.  Values above two are easy to add if this axis pays.
+const FAR_CPS_LRU_EXACT_LRU_NS: &[usize] = &[0, 1, 2];
+
+/// FAR over tape symbols augmented with finite per-cell execution history.
+///
+/// The full LRU history macro is finite: for a base machine with K slots, each
+/// cell history is a duplicate-free recency ordering of at most K slots.  It is
+/// nevertheless a much larger alphabet than the raw machine, so keep this late
+/// pass on the same conservative block-length cap previously used by macro FAR.
+const FAR_HISTORY_BLOCK_LEN_CAP: usize = 64;
 
 /// Exact finite tail-signature channels borrowed from standalone CPS.
 ///
@@ -111,10 +181,43 @@ const FAR_CPS_SIG_REFINEMENTS: [(u16, u16); 2] = [(2, 3), (3, 4)];
 /// `Color` is u8, so four u64 words cover every possible raw or macro color.
 const FAR_CPS_COLOR_WORDS: usize = 4;
 
-/// C++ FAR::RNGS_mod defaults.
-const FAR_RNGS_NG_N: usize = 4;
-const FAR_RNGS_LEN_H: usize = 8;
-const FAR_RNGS_MNC: u8 = 2;
+/// Faithful BusyCoq RNGS_mod default profile.
+///
+/// The full parameterization is `(mnc, mod_, NG_n, len_h, bs_n)`.
+/// `NG_n` is a count of FAR *block symbols*, not a count of raw tape cells.
+/// `bs_n` is the exact staging-buffer length before an n-gram is promoted into
+/// the repeated-history list.
+const FAR_RNGS_DEFAULT_MNC: u64 = 2;
+const FAR_RNGS_DEFAULT_MOD: u64 = 1;
+const FAR_RNGS_DEFAULT_NG_N: usize = 4;
+const FAR_RNGS_DEFAULT_LEN_H: usize = 8;
+const FAR_RNGS_DEFAULT_BS_N: usize = 0;
+
+/// Additional exact RNGS_mod profiles.  Every tuple is
+/// `(mnc, mod_, NG_n, len_h, bs_n)` and is crossed independently with FAR size.
+const FAR_RNGS_GENERAL_PROFILES: &[(u64, u64, usize, usize, usize)] = &[
+    (2, 2, 4, 8, 0),
+    (2, 3, 4, 8, 0),
+    (2, 1, 4, 8, 1),
+    (2, 2, 4, 8, 1),
+    (2, 3, 4, 8, 1),
+    (2, 1, 4, 8, 2),
+    (2, 2, 4, 8, 2),
+    (2, 3, 4, 8, 2),
+    (2, 2, 4, 8, 3),
+    (2, 2, 3, 8, 1),
+    (2, 2, 2, 8, 1),
+    (2, 2, 1, 8, 1),
+    (2, 2, 4, 4, 1),
+    (2, 2, 4, 16, 1),
+    (1, 2, 4, 8, 1),
+    (3, 2, 4, 8, 1),
+    (2, 0, 4, 8, 1),
+    (2, 2, 0, 8, 1),
+    (2, 2, 4, 0, 1),
+];
+
+const FAR_RNGS_GENERAL_BLOCK_LEN_CAP: usize = 31;
 
 /// C++ FAR::RS_mod defaults.
 const FAR_RS_NG_N: usize = 4;
@@ -128,6 +231,13 @@ const MITM_DEAD: usize = 1;
 const MITM_MAX_FINITE_INTERVAL: i32 = 100;
 const MITM_MAX_TRANSITIONS: usize = 10;
 const MITM_MAX_WEIGHT_PAIRS: usize = 1;
+
+// Rejection paths are local to one closed MITM skeleton and memory profile.
+// They are only replayed as exact concrete abstract paths; a replay hit rejects
+// a candidate but is never used to certify a non-target proof.
+const MITM_MAX_REJECT_PATHS: usize = 4;
+const MITM_MAX_REJECT_PATH_LEN: usize = 256;
+const MITM_MAX_REJECT_PARENTS: usize = 4096;
 
 /// MITM finite-memory refinements tried for every closed DFA skeleton and
 /// every weight assignment.  Keeping these in one shared portfolio avoids
@@ -153,6 +263,7 @@ const DIRECT_FAR_MAX_NFA_STATES: usize = 128;
 const DIRECT_FAR_TARGET_STATES: usize = 2;
 const DIRECT_FAR_MAX_DFA_ENTRIES: usize = 18;
 const DIRECT_FAR_MAX_WORK: usize = 350_000;
+const DIRECT_FAR_MAX_REJECTS: usize = 64;
 
 const fn direct_far_bit(idx: usize) -> u128 {
     1_u128 << idx
@@ -199,6 +310,107 @@ fn direct_far_matrix_times_vec(
     out
 }
 
+/// Extend zero-suffix acceptance using the current NFA lower bound. Target
+/// sinks have zero self-loops, so acceptance only grows as NFA edges are added.
+/// Once the initial configuration is accepted, no DFA completion can rescue
+/// this branch; the rest of its left-rule saturation can be skipped.
+fn direct_far_extend_accept(
+    zero_matrix: &[u128],
+    a: &mut u128,
+    nfa_states: usize,
+    deps: &mut DirectFarDeps,
+) -> bool {
+    // direct_far_idx(0, 0, ctrl_states) is always zero.
+    loop {
+        let accepted = zero_matrix[0] & *a;
+        if accepted != 0 {
+            deps.reject = deps.rows[0][0]
+                | deps.accept[accepted.trailing_zeros() as usize];
+            return false;
+        }
+        let next_accept =
+            direct_far_matrix_times_vec(zero_matrix, *a, nfa_states);
+        if next_accept == *a {
+            return true;
+        }
+        let mut added = next_accept & !*a;
+        while added != 0 {
+            let src = added.trailing_zeros() as usize;
+            let dst = (zero_matrix[src] & *a).trailing_zeros() as usize;
+            deps.accept[src] = deps.rows[0][src] | deps.accept[dst];
+            added &= added - 1;
+        }
+        *a = next_accept;
+    }
+}
+
+// A row mask supports every currently present edge in that row. This is a
+// conservative union of dependencies, not a minimal witness. Existing proofs
+// remain valid when later edges acquire additional dependencies.
+#[derive(Clone)]
+struct DirectFarDeps {
+    rows: Vec<Vec<u32>>,
+    accept: Vec<u32>,
+    reject: u32,
+}
+
+struct DirectFarReject {
+    entries: u32,
+    value_mask: u128,
+    values: u128,
+}
+
+#[derive(Default)]
+struct DirectFarRejectCache {
+    witnesses: Vec<DirectFarReject>,
+    next_replace: usize,
+}
+
+impl DirectFarRejectCache {
+    fn rejects(&self, assignments: u128, fixed: u32) -> bool {
+        self.witnesses.iter().any(|witness| {
+            witness.entries & !fixed == 0
+                && assignments & witness.value_mask == witness.values
+        })
+    }
+
+    fn remember(
+        &mut self,
+        entries: u32,
+        assignments: u128,
+        fixed: u32,
+    ) {
+        debug_assert_eq!(entries & !fixed, 0);
+        // Entry zero is fixed to zero in every candidate. A witness depending
+        // on every other prefix entry cannot recur in this depth-first search.
+        let entries = entries & !1;
+        if entries == (fixed & !1) {
+            return;
+        }
+        if self.rejects(assignments, entries) {
+            return;
+        }
+        let mut remaining = entries;
+        let mut value_mask = 0_u128;
+        while remaining != 0 {
+            value_mask |= 15_u128 << (4 * remaining.trailing_zeros());
+            remaining &= remaining - 1;
+        }
+        let witness = DirectFarReject {
+            entries,
+            value_mask,
+            values: assignments & value_mask,
+        };
+        if self.witnesses.len() < DIRECT_FAR_MAX_REJECTS {
+            self.witnesses.push(witness);
+        } else {
+            self.witnesses[self.next_replace] = witness;
+            self.next_replace =
+                (self.next_replace + 1) % DIRECT_FAR_MAX_REJECTS;
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------
 // Public method on Prog
 // -----------------------------------------------------------------------------
@@ -214,10 +426,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// - `true` iff FAR or MITM/WFAR proved the machine cannot halt.
     /// - `false` otherwise.
     pub fn far_cant_halt(&self, block: usize) -> bool {
-        self.far_sweep(block, Goal::Halt)
-            || self.far_macro_cps_sweep(block, Goal::Halt)
-            || self.mitm_cant_halt()
-            || self.direct_far_cant_target(Goal::Halt)
+        self.far_cant_target(block, Goal::Halt)
     }
 
     /// FAR blank-tape prover.
@@ -228,14 +437,12 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// transition that reads a nonzero symbol, writes zero, and leaves every other
     /// tape cell zero.  FAR, MITM, and direct FAR all use that last-erasing
     /// transition as the target rather than a history-tagged all-zero endpoint.
-    /// Lossy summary states still use the exact zero-only DFA reachability relation
-    /// to decide whether the surrounding block context may be all zero.
+    /// For summary FAR, Blank uses a product DFA whose state contains both the
+    /// configured history summary and an exact all-semantically-blank bit.  This
+    /// keeps zero-context provenance correlated with the same DFA path even when
+    /// LRU/RWL/RNGS summaries merge different concrete stacks.
     pub fn far_cant_blank(&self, block: usize) -> bool {
-        self.far_sweep(block, Goal::Blank)
-            || self.far_macro_cps_sweep(block, Goal::Blank)
-            || self.mitm_cant_blank()
-            || self.direct_far_cant_target(Goal::Blank)
-            || self.far_conditional_blank_sweep(block)
+        self.far_cant_target(block, Goal::Blank)
     }
 
     /// FAR spinout prover.
@@ -243,10 +450,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
     /// Returns `true` iff FAR proves that the machine can never enter a
     /// one-sided all-zero same-state drift.
     pub fn far_cant_spinout(&self, block: usize) -> bool {
-        self.far_sweep(block, Goal::Spinout)
-            || self.far_macro_cps_sweep(block, Goal::Spinout)
-            || self.mitm_cant_spinout()
-            || self.direct_far_cant_target(Goal::Spinout)
+        self.far_cant_target(block, Goal::Spinout)
     }
 }
 
@@ -357,31 +561,42 @@ struct WordUpdateLemma {
     hit_blank: bool,
 }
 
-/// Cached result of an exact simulation within one FAR block.
+/// Cached result of an exact simulation within one FAR block.  `hit_blank` on
+/// a local loop is used only by the deferred-Blank closure; ordinary FAR stops
+/// at the first target and therefore never returns a target-bearing local loop.
 #[derive(Clone, Copy, Debug)]
 enum WordUpdateOutcome {
     Exit(WordUpdateLemma),
     /// The exact local configuration repeated before leaving the block.
     /// Determinism then guarantees that this branch stays in the block forever.
-    LocalLoop,
+    LocalLoop {
+        hit_blank: bool,
+    },
     /// The simulation reached its step bound.
     Incomplete,
 }
 
-/// Result of a Blank block simulation when blanking is recorded as a
-/// conditional outcome instead of immediately aborting the FAR closure.
-#[derive(Clone, Copy, Debug)]
-enum DeferredBlankOutcome {
-    Exit(WordUpdateLemma),
-    LocalLoop { hit_blank: bool },
-    Incomplete,
+/// Whether an exact block simulation should stop at a target immediately or
+/// merely remember Blank targets while continuing to the ordinary exit/loop
+/// boundary.  Keeping this policy explicit lets both FAR paths share one exact
+/// simulator without weakening the conditional-Blank closure.
+#[derive(Clone, Copy)]
+enum BlockTargetMode {
+    Immediate(Goal),
+    DeferredBlank,
 }
 
-#[derive(Clone, Debug)]
-enum RawDeferredBlankOutcome {
-    Exit(RawWordUpdateLemma),
-    LocalLoop { hit_blank: bool },
-    Incomplete,
+impl BlockTargetMode {
+    const fn goal(self) -> Goal {
+        match self {
+            Self::Immediate(goal) => goal,
+            Self::DeferredBlank => Goal::Blank,
+        }
+    }
+
+    const fn defers_blank(self) -> bool {
+        matches!(self, Self::DeferredBlank)
+    }
 }
 
 /// Non-interned result used only while computing a cache miss.
@@ -396,7 +611,7 @@ struct RawWordUpdateLemma {
 #[derive(Clone, Debug)]
 enum RawWordUpdateOutcome {
     Exit(RawWordUpdateLemma),
-    LocalLoop,
+    LocalLoop { hit_blank: bool },
     Incomplete,
 }
 
@@ -429,11 +644,10 @@ trait Summary: Clone + Eq + Hash {
         words: &mut WordInterner,
     ) -> Result<(), SummaryOverflow>;
 
-    /// True iff this finite summary is compatible with a concrete stack whose
-    /// stored blocks are all zero.  FAR summaries are lossy history summaries:
-    /// after a non-zero block is erased, the summary may still be non-initial
-    /// while the represented concrete stack is all-zero.  Blank-tape goal
-    /// detection must therefore use this predicate instead of `id == initial`.
+    /// Conservative summary-level all-zero compatibility.  Blank target
+    /// detection does not trust this lossy predicate by itself: Blank's DFA key
+    /// is producted with an exact semantic all-blank bit.  The predicate remains
+    /// useful for summaries and for consistency checks on canonical-zero goals.
     fn may_be_all_zero_context(&self, words: &WordInterner) -> bool;
 }
 
@@ -689,14 +903,91 @@ impl Summary for SetPairSummary {
     }
 }
 
+const UINT63_MASK: u64 = (1_u64 << 63) - 1;
+
+#[inline]
+const fn uint63_succ(x: u64) -> u64 {
+    x.wrapping_add(1) & UINT63_MASK
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct RwlModWord {
+    w: WordId,
+    n: u64,
+    phase: u64,
+}
+
+impl RwlModWord {
+    const fn new(w: WordId) -> Self {
+        // BusyCoq RWL_mod starts a fresh run at (word, 1, 1) without first
+        // reducing the phase modulo `mod_`.
+        Self { w, n: 1, phase: 1 }
+    }
+}
+
+/// Exact BusyCoq RWL_mod summary.
+///
+/// State is a newest-first list of `(word, saturated_count, modular_phase)`.
+/// The four parameters are independent:
+/// - `mnc`: saturation threshold for the exact repetition count,
+/// - `modulus`: phase modulus,
+/// - `len1`: protected newest-prefix length,
+/// - `len2`: retained suffix length after the protected prefix.
+///
+/// BusyCoq's `limit_length len1 len2` does *not* simply drop the oldest entry:
+/// if the suffix is too long it drops the first entry immediately after the
+/// protected prefix.  Thus `(len1=8,len2=0)` is the ordinary "keep newest 8"
+/// case, while `(len1=0,len2=8)` preferentially keeps older history.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RwlModSummary {
-    q: Vec<RepeatWord>,
+    q: Vec<RwlModWord>,
+    mnc: u64,
+    modulus: u64,
+    len1: usize,
+    len2: usize,
+}
+
+impl RwlModSummary {
+    fn with_profile(
+        mnc: u64,
+        modulus: u64,
+        len1: usize,
+        len2: usize,
+    ) -> Self {
+        assert!(mnc <= UINT63_MASK, "RWL_mod mnc must fit Uint63");
+        assert!(
+            modulus <= UINT63_MASK,
+            "RWL_mod modulus must fit Uint63"
+        );
+        Self {
+            q: Vec::new(),
+            mnc,
+            modulus,
+            len1,
+            len2,
+        }
+    }
+
+    fn limit_length(&mut self) {
+        if self.q.len() <= self.len1 {
+            return;
+        }
+
+        let suffix_len = self.q.len() - self.len1;
+        if suffix_len > self.len2 {
+            self.q.remove(self.len1);
+        }
+    }
 }
 
 impl Summary for RwlModSummary {
     fn new() -> Self {
-        Self { q: Vec::new() }
+        Self::with_profile(
+            FAR_RWL_DEFAULT_MNC,
+            1,
+            FAR_RWL_DEFAULT_LEN1,
+            FAR_RWL_DEFAULT_LEN2,
+        )
     }
 
     fn push(
@@ -704,24 +995,34 @@ impl Summary for RwlModSummary {
         w: WordId,
         words: &mut WordInterner,
     ) -> Result<(), SummaryOverflow> {
+        // Upstream's distinguished state is the empty list, with a self-loop
+        // on an all-zero FAR block.
         if self.q.is_empty() {
             if !words.get(w).is_zero() {
-                self.q.push(RepeatWord::new(w, 1));
+                self.q.push(RwlModWord::new(w));
             }
             return Ok(());
         }
 
-        if let Some(last) = self.q.last_mut()
-            && last.w == w
-        {
-            last.n = last.n.saturating_add(1).min(FAR_RWL_MNC);
-            return Ok(());
+        if self.q[0].w == w {
+            let head = &mut self.q[0];
+            head.n = if head.n < self.mnc {
+                uint63_succ(head.n)
+            } else {
+                self.mnc
+            };
+            let phase = uint63_succ(head.phase);
+            // Rocq's Uint63 remainder returns its dividend on divisor zero.
+            head.phase = if self.modulus == 0 {
+                phase
+            } else {
+                phase % self.modulus
+            };
+        } else {
+            self.q.insert(0, RwlModWord::new(w));
         }
 
-        self.q.push(RepeatWord::new(w, 1));
-        if self.q.len() > FAR_RWL_LEN_H {
-            self.q.remove(0);
-        }
+        self.limit_length();
         Ok(())
     }
 
@@ -730,14 +1031,96 @@ impl Summary for RwlModSummary {
     }
 }
 
+/// Exact BB6/BusyCoq CPS_LRU FAR summary.
+///
+/// Upstream state is `(x12, x3)`.  While `x3.len() < len3`, pushes prepend to
+/// `x3`.  Afterwards a push applies
+/// `upd_skipn_LRU len1 len2 LRU_n (w :: x12)`: the first `len1` entries are
+/// protected exactly, and the remaining suffix keeps at most `len2` entries
+/// after removing the `LRU_n`-th duplicate of its new head.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
-struct CpsLruSummary {
-    ls: Vec<WordId>,
+struct UpstreamCpsLruSummary {
+    x12: Vec<WordId>,
+    x3: Vec<WordId>,
+    len1: usize,
+    len2: usize,
+    len3: usize,
+    lru_n: usize,
 }
 
-impl Summary for CpsLruSummary {
+impl UpstreamCpsLruSummary {
+    const fn with_profile(
+        len1: usize,
+        len2: usize,
+        len3: usize,
+        lru_n: usize,
+    ) -> Self {
+        Self {
+            x12: Vec::new(),
+            x3: Vec::new(),
+            len1,
+            len2,
+            len3,
+            lru_n,
+        }
+    }
+
+    const fn is_initial(&self) -> bool {
+        self.x12.is_empty() && self.x3.is_empty()
+    }
+
+    /// Exact specialization of BusyCoq's
+    /// `upd_skipn len1 (upd_LRU len2 LRU_n)` to `WordId`.
+    fn update_x12(&mut self, w: WordId) {
+        self.x12.insert(0, w);
+
+        // `upd_skipn` preserves a list shorter than the protected prefix.
+        if self.x12.len() <= self.len1 {
+            return;
+        }
+
+        // `upd_LRU 0 ...` drops the entire suffix after the protected prefix.
+        if self.len2 == 0 {
+            self.x12.truncate(self.len1);
+            return;
+        }
+
+        let head = self.x12[self.len1];
+        let mut out =
+            Vec::with_capacity(self.len1.saturating_add(self.len2));
+        out.extend_from_slice(&self.x12[..self.len1]);
+        out.push(head);
+
+        let mut matching_seen = 0_usize;
+        let mut removed = false;
+        for &item in &self.x12[self.len1 + 1..] {
+            if !removed && item == head {
+                if matching_seen == self.lru_n {
+                    removed = true;
+                    continue;
+                }
+                matching_seen += 1;
+            }
+
+            if out.len() - self.len1 == self.len2 {
+                break;
+            }
+            out.push(item);
+        }
+
+        self.x12 = out;
+    }
+}
+
+impl Summary for UpstreamCpsLruSummary {
     fn new() -> Self {
-        Self { ls: Vec::new() }
+        let &(len1, len2, len3) = FAR_CPS_LRU_EXACT_PROFILES
+            .first()
+            .expect("exact CPS_LRU portfolio must not be empty");
+        let &lru_n = FAR_CPS_LRU_EXACT_LRU_NS
+            .first()
+            .expect("exact CPS_LRU LRU_n portfolio must not be empty");
+        Self::with_profile(len1, len2, len3, lru_n)
     }
 
     fn push(
@@ -745,33 +1128,108 @@ impl Summary for CpsLruSummary {
         w: WordId,
         words: &mut WordInterner,
     ) -> Result<(), SummaryOverflow> {
-        if self.ls.is_empty() && words.get(w).is_zero() {
+        // Match upstream `is_s0`: the empty summary has a self-loop on the
+        // canonical all-zero block.
+        if self.is_initial() && words.get(w).is_zero() {
             return Ok(());
         }
-        self.ls.insert(0, w);
-        if self.ls.len() <= FAR_CPS_LRU_LEN_H_NO_LRU {
-            return Ok(());
-        }
-        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU];
-        let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
-        let mut remove_idx = None;
-        for i in start..self.ls.len() {
-            if self.ls[i] == key {
-                remove_idx = Some(i);
-                break;
-            }
-        }
-        if remove_idx.is_none() && self.ls.len() > FAR_CPS_LRU_LEN_H {
-            remove_idx = Some(self.ls.len() - 1);
-        }
-        if let Some(i) = remove_idx {
-            self.ls.remove(i);
+
+        if self.x3.len() < self.len3 {
+            self.x3.insert(0, w);
+        } else {
+            self.update_x12(w);
         }
         Ok(())
     }
 
     fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.x12.iter().all(|&w| words.get(w).is_zero())
+            && self.x3.iter().all(|&w| words.get(w).is_zero())
+    }
+}
+
+#[derive(
+    Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Default,
+)]
+struct CpsLruCore {
+    ls: Vec<WordId>,
+}
+
+impl CpsLruCore {
+    fn push(&mut self, w: WordId, is_zero: bool) {
+        if self.ls.is_empty() && is_zero {
+            return;
+        }
+
+        self.ls.insert(0, w);
+        if self.ls.len() <= FAR_CPS_LRU_LEN_H_NO_LRU {
+            return;
+        }
+
+        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU];
+        let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
+        let remove_idx = self.ls[start..]
+            .iter()
+            .position(|&old| old == key)
+            .map(|i| start + i)
+            .or_else(|| {
+                (self.ls.len() > FAR_CPS_LRU_LEN_H)
+                    .then_some(self.ls.len() - 1)
+            });
+
+        if let Some(i) = remove_idx {
+            self.ls.remove(i);
+        }
+    }
+
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
         self.ls.iter().all(|&w| words.get(w).is_zero())
+    }
+}
+
+fn cps_lru_update_signature(
+    sig: &mut [u16; FAR_CPS_SIG_REFINEMENTS.len()],
+    word: &Word,
+) {
+    // The block is prepended to the represented hidden stack.  Iterate the
+    // block from farthest to nearest so repeated single-cell prepend updates
+    // produce the polynomial residue of [word || old_tail].
+    for &color in word.cells.iter().rev() {
+        for (slot, &(base, modulus)) in
+            sig.iter_mut().zip(FAR_CPS_SIG_REFINEMENTS.iter())
+        {
+            let value =
+                u64::from(color) + u64::from(base) * u64::from(*slot);
+            *slot = u16::try_from(value % u64::from(modulus)).expect(
+                "CPS-LRU tail-signature residue must fit in u16",
+            );
+        }
+    }
+}
+
+#[derive(
+    Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Default,
+)]
+struct CpsLruSummary {
+    core: CpsLruCore,
+}
+
+impl Summary for CpsLruSummary {
+    fn new() -> Self {
+        Self::default()
+    }
+
+    fn push(
+        &mut self,
+        w: WordId,
+        words: &mut WordInterner,
+    ) -> Result<(), SummaryOverflow> {
+        self.core.push(w, words.get(w).is_zero());
+        Ok(())
+    }
+
+    fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
+        self.core.may_be_all_zero_context(words)
     }
 }
 
@@ -781,70 +1239,34 @@ impl Summary for CpsLruSummary {
 /// eviction.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct CpsLruSigSummary {
-    ls: Vec<WordId>,
+    core: CpsLruCore,
     sig: [u16; FAR_CPS_SIG_REFINEMENTS.len()],
 }
 
 impl Summary for CpsLruSigSummary {
     fn new() -> Self {
         Self {
-            ls: Vec::new(),
+            core: CpsLruCore::default(),
             sig: [0; FAR_CPS_SIG_REFINEMENTS.len()],
         }
     }
 
-    #[expect(clippy::unwrap_in_result)]
     fn push(
         &mut self,
         w: WordId,
         words: &mut WordInterner,
     ) -> Result<(), SummaryOverflow> {
         let word = words.get(w);
-
-        // The block is prepended to the represented hidden stack.  Iterate the
-        // block from farthest to nearest so repeated single-cell prepend updates
-        // produce the polynomial residue of [word || old_tail].
-        for &color in word.cells.iter().rev() {
-            for (slot, &(base, modulus)) in
-                self.sig.iter_mut().zip(FAR_CPS_SIG_REFINEMENTS.iter())
-            {
-                let value = u64::from(color)
-                    + u64::from(base) * u64::from(*slot);
-                *slot = u16::try_from(value % u64::from(modulus))
-                    .expect("CPS-LRU tail-signature residue must fit in u16");
-            }
-        }
+        cps_lru_update_signature(&mut self.sig, word);
 
         // Preserve the ordinary CPS-LRU convention that an arbitrarily long
-        // leading all-zero tail is represented by the initial state.  The
-        // polynomial residues are also unchanged by prepended zero blocks while
-        // they are zero.
-        if self.ls.is_empty() && word.is_zero() {
+        // leading all-zero tail is represented by the initial state.  Zero
+        // blocks also leave the polynomial signature at zero in that state.
+        let initial_zero = self.core.ls.is_empty() && word.is_zero();
+        if initial_zero {
             debug_assert!(self.sig.iter().all(|&x| x == 0));
-            return Ok(());
         }
-
-        self.ls.insert(0, w);
-        if self.ls.len() <= FAR_CPS_LRU_LEN_H_NO_LRU {
-            return Ok(());
-        }
-
-        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU];
-        let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
-        let mut remove_idx = None;
-        for i in start..self.ls.len() {
-            if self.ls[i] == key {
-                remove_idx = Some(i);
-                break;
-            }
-        }
-        if remove_idx.is_none() && self.ls.len() > FAR_CPS_LRU_LEN_H {
-            remove_idx = Some(self.ls.len() - 1);
-        }
-        if let Some(i) = remove_idx {
-            self.ls.remove(i);
-        }
-
+        self.core.push(w, word.is_zero());
         Ok(())
     }
 
@@ -853,7 +1275,7 @@ impl Summary for CpsLruSigSummary {
         // collide to zero, which is harmless: the exact zero_context DFA
         // reachability remains the authoritative blank-context test.
         self.sig.iter().all(|&x| x == 0)
-            && self.ls.iter().all(|&w| words.get(w).is_zero())
+            && self.core.may_be_all_zero_context(words)
     }
 }
 
@@ -916,7 +1338,7 @@ impl FarCpsColorSummary {
 /// proof on the current holdout set.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct CpsLruSigColorSummary {
-    ls: Vec<WordId>,
+    core: CpsLruCore,
     sig: [u16; FAR_CPS_SIG_REFINEMENTS.len()],
     colors: FarCpsColorSummary,
 }
@@ -924,81 +1346,137 @@ struct CpsLruSigColorSummary {
 impl Summary for CpsLruSigColorSummary {
     fn new() -> Self {
         Self {
-            ls: Vec::new(),
+            core: CpsLruCore::default(),
             sig: [0; FAR_CPS_SIG_REFINEMENTS.len()],
             colors: FarCpsColorSummary::default(),
         }
     }
 
-    #[expect(clippy::unwrap_in_result)]
     fn push(
         &mut self,
         w: WordId,
         words: &mut WordInterner,
     ) -> Result<(), SummaryOverflow> {
         let word = words.get(w);
-
-        for &color in word.cells.iter().rev() {
-            for (slot, &(base, modulus)) in
-                self.sig.iter_mut().zip(FAR_CPS_SIG_REFINEMENTS.iter())
-            {
-                let value = u64::from(color)
-                    + u64::from(base) * u64::from(*slot);
-                *slot = u16::try_from(value % u64::from(modulus))
-                    .expect("CPS-LRU tail-signature residue must fit in u16");
-            }
-        }
+        cps_lru_update_signature(&mut self.sig, word);
         self.colors.add_word(word);
 
-        if self.ls.is_empty() && word.is_zero() {
+        let initial_zero = self.core.ls.is_empty() && word.is_zero();
+        if initial_zero {
             debug_assert!(self.sig.iter().all(|&x| x == 0));
             debug_assert!(self.colors.is_empty());
-            return Ok(());
         }
-
-        self.ls.insert(0, w);
-        if self.ls.len() <= FAR_CPS_LRU_LEN_H_NO_LRU {
-            return Ok(());
-        }
-
-        let key = self.ls[FAR_CPS_LRU_LEN_H_NO_LRU];
-        let start = FAR_CPS_LRU_LEN_H_NO_LRU + 1;
-        let mut remove_idx = None;
-        for i in start..self.ls.len() {
-            if self.ls[i] == key {
-                remove_idx = Some(i);
-                break;
-            }
-        }
-        if remove_idx.is_none() && self.ls.len() > FAR_CPS_LRU_LEN_H {
-            remove_idx = Some(self.ls.len() - 1);
-        }
-        if let Some(i) = remove_idx {
-            self.ls.remove(i);
-        }
-
+        self.core.push(w, word.is_zero());
         Ok(())
     }
 
     fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
         self.colors.is_empty()
             && self.sig.iter().all(|&x| x == 0)
-            && self.ls.iter().all(|&w| words.get(w).is_zero())
+            && self.core.may_be_all_zero_context(words)
     }
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct RngsModWord {
+    /// One upstream n-gram symbol.  This is a sequence of FAR block IDs, not a
+    /// concatenation of the raw cells inside those blocks.
+    w: Vec<WordId>,
+    n: u64,
+    phase: u64,
+}
+
+impl RngsModWord {
+    const fn new(w: Vec<WordId>) -> Self {
+        Self { w, n: 1, phase: 1 }
+    }
+}
+
+/// Exact BusyCoq RNGS_mod summary.
+///
+/// Upstream state is `(x0, x2, x1)`:
+/// - `x0`: newest-first n-gram of the last `NG_n` FAR block symbols,
+/// - `x2`: exact staging queue of n-gram symbols, capacity `bs_n`,
+/// - `x1`: bounded repeated-ngram history, capacity `len_h`.
+///
+/// Once `x2` is full, its oldest n-gram is promoted into `x1`.  A repeated
+/// promoted n-gram is removed from its old position, its saturated count and
+/// modular phase are updated, and it is moved to the front.  This is materially
+/// different from the old Rust approximation, which concatenated raw block
+/// cells and had no staging queue or modular phase.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RngsModSummary {
-    q: Vec<RepeatWord>,
-    w1: Option<WordId>,
+    x0: Vec<WordId>,
+    x2: Vec<Vec<WordId>>,
+    x1: Vec<RngsModWord>,
+    mnc: u64,
+    modulus: u64,
+    ng_n: usize,
+    len_h: usize,
+    bs_n: usize,
+}
+
+impl RngsModSummary {
+    fn with_profile(
+        mnc: u64,
+        modulus: u64,
+        ng_n: usize,
+        len_h: usize,
+        bs_n: usize,
+    ) -> Self {
+        assert!(mnc <= UINT63_MASK, "RNGS_mod mnc must fit Uint63");
+        assert!(
+            modulus <= UINT63_MASK,
+            "RNGS_mod modulus must fit Uint63"
+        );
+        Self {
+            x0: Vec::new(),
+            x2: Vec::new(),
+            x1: Vec::new(),
+            mnc,
+            modulus,
+            ng_n,
+            len_h,
+            bs_n,
+        }
+    }
+
+    fn ngram_is_all_zero(
+        ngram: &[WordId],
+        words: &WordInterner,
+    ) -> bool {
+        ngram.iter().all(|&wid| words.get(wid).is_zero())
+    }
+
+    fn promote_ngram(&mut self, w: Vec<WordId>) {
+        if let Some(pos) = self
+            .x1
+            .iter()
+            .position(|old| old.w.as_slice() == w.as_slice())
+        {
+            let mut old = self.x1.remove(pos);
+            old.n = uint63_succ(old.n).min(self.mnc);
+            if self.modulus != 0 {
+                old.phase = uint63_succ(old.phase) % self.modulus;
+            }
+            self.x1.insert(0, old);
+        } else {
+            self.x1.insert(0, RngsModWord::new(w));
+        }
+
+        self.x1.truncate(self.len_h);
+    }
 }
 
 impl Summary for RngsModSummary {
     fn new() -> Self {
-        Self {
-            q: Vec::new(),
-            w1: None,
-        }
+        Self::with_profile(
+            FAR_RNGS_DEFAULT_MNC,
+            FAR_RNGS_DEFAULT_MOD,
+            FAR_RNGS_DEFAULT_NG_N,
+            FAR_RNGS_DEFAULT_LEN_H,
+            FAR_RNGS_DEFAULT_BS_N,
+        )
     }
 
     fn push(
@@ -1006,25 +1484,43 @@ impl Summary for RngsModSummary {
         w: WordId,
         words: &mut WordInterner,
     ) -> Result<(), SummaryOverflow> {
-        if self.w1.is_none() && words.get(w).is_zero() {
+        // Match upstream exactly: the distinguished zero self-loop tests only
+        // whether x0 is empty.  In particular NG_n=0 intentionally leaves x0
+        // empty forever, so later zero pushes are no-ops even if x1/x2 are live.
+        if self.x0.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
 
-        let key = ngram_word_id(w, self.w1, words);
-        self.w1 = Some(key);
+        self.x0.insert(0, w);
+        self.x0.truncate(self.ng_n);
+        let current_ngram = self.x0.clone();
 
-        promote_repeat_word(
-            &mut self.q,
-            key,
-            FAR_RNGS_LEN_H,
-            FAR_RNGS_MNC,
-            false,
-        )
+        if self.x2.len() == self.bs_n {
+            // `removelast (y::x2)` / `last (y::x2) y`: prepend the current
+            // n-gram, keep exactly bs_n staging entries, and promote the oldest.
+            self.x2.insert(0, current_ngram);
+            let promoted = self.x2.pop().expect(
+                "RNGS_mod staging queue must contain current n-gram",
+            );
+            self.promote_ngram(promoted);
+        } else {
+            debug_assert!(self.x2.len() < self.bs_n);
+            self.x2.insert(0, current_ngram);
+        }
+
+        Ok(())
     }
 
     fn may_be_all_zero_context(&self, words: &WordInterner) -> bool {
-        self.w1.is_none_or(|w| words.get(w).is_zero())
-            && self.q.iter().all(|rw| words.get(rw.w).is_zero())
+        self.x0.iter().all(|&wid| words.get(wid).is_zero())
+            && self
+                .x2
+                .iter()
+                .all(|ngram| Self::ngram_is_all_zero(ngram, words))
+            && self
+                .x1
+                .iter()
+                .all(|rw| Self::ngram_is_all_zero(&rw.w, words))
     }
 }
 
@@ -1073,22 +1569,6 @@ impl Summary for RsModSummary {
     }
 }
 
-fn ngram_word_id(
-    head: WordId,
-    tail: Option<WordId>,
-    words: &mut WordInterner,
-) -> WordId {
-    let mut cells = Vec::with_capacity(FAR_RNGS_NG_N);
-    cells.extend(words.get(head).cells.iter().copied());
-    if cells.len() < FAR_RNGS_NG_N
-        && let Some(tail) = tail
-    {
-        cells.extend(words.get(tail).cells.iter().copied());
-    }
-    cells.truncate(FAR_RNGS_NG_N);
-    words.intern(Word { cells })
-}
-
 fn promote_repeat_word(
     q: &mut Vec<RepeatWord>,
     key: WordId,
@@ -1113,6 +1593,18 @@ fn promote_repeat_word(
         q.remove(0);
     }
     Ok(())
+}
+
+/// FAR DFA state.  For Blank, `blank_all_zero` is an exact product-state
+/// component for the regular language of stacks whose every represented cell is
+/// semantically blank.  Keeping it inside the DFA state prevents a lossy history
+/// summary from merging a zero-only stack with a nonzero stack and then borrowing
+/// the zero-context witness from the other representative.  Other goals keep the
+/// bit false so their DFA state space and behavior are unchanged.
+#[derive(Clone, Eq, PartialEq, Hash)]
+struct DfaSummaryState<S: Summary> {
+    summary: S,
+    blank_all_zero: bool,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
@@ -1304,11 +1796,13 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
     // Separate cache for the conditional Blank pass. These simulations keep
     // running after a local blanking event so the ordinary return closure is
     // still saturated while the blank event is propagated as B2/B3 facts.
-    deferred_blank_step_cache: Map<StepKey, DeferredBlankOutcome>,
+    deferred_blank_step_cache: Map<StepKey, WordUpdateOutcome>,
 
-    // DFA
-    id: Map<S, usize>,
-    idr: Vec<S>,
+    // DFA.  Blank uses the product of the configured history summary with an
+    // exact two-state all-semantically-blank automaton; other goals keep the
+    // product bit false.
+    id: Map<DfaSummaryState<S>, usize>,
+    idr: Vec<DfaSummaryState<S>>,
 
     pop: Vec<Vec<DfaEdge>>,
     push: Map<(WordId, usize), usize>,
@@ -1343,12 +1837,10 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
     // For each DFA state r, which machine states have H2(s,r).
     r_s: Vec<Set<State>>,
 
-    // Exact existential zero-context information for the lossy summary DFA.
-    // `zero_context[r]` means that state `r` is reachable from the initial
-    // summary using only all-zero blocks.  Looking only at the contents of a
-    // lossy summary is too permissive: a forgotten non-zero block can leave a
-    // summary that happens to contain only zero-looking data even though no
-    // all-zero stack reaches that state.
+    // Legacy exact existential canonical-zero reachability used by Spinout.
+    // Blank does not use this side table: its semantic-zero provenance is part
+    // of `DfaSummaryState` itself, so it cannot be recombined across a lossy
+    // summary merge.
     zero_context: Vec<bool>,
     zero_push: Vec<Vec<usize>>,
 
@@ -1362,12 +1854,18 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
 }
 
 impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
-    fn with_init_dfa(mut self) -> Result<Self, StopReason> {
+    fn with_init_dfa(
+        mut self,
+        initial_summary: S,
+    ) -> Result<Self, StopReason> {
         self.ensure_dfa_capacity(0);
 
-        let id0 = self.get_id(S::new());
+        let blank_product = self.goal.is_blank();
+        let id0 = self.get_id(initial_summary, blank_product);
         debug_assert_eq!(id0, 1);
-        self.mark_zero_context(id0);
+        if !blank_product {
+            self.mark_zero_context(id0);
+        }
 
         let blank = Word::zero(self.block_len);
         let id1 = self.dfa_push(blank, id0)?;
@@ -1425,7 +1923,11 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
-    fn get_id(&mut self, st: S) -> usize {
+    fn get_id(&mut self, summary: S, blank_all_zero: bool) -> usize {
+        let st = DfaSummaryState {
+            summary,
+            blank_all_zero: self.goal.is_blank() && blank_all_zero,
+        };
         if let Some(&id) = self.id.get(&st) {
             return id;
         }
@@ -1455,14 +1957,25 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
             return Ok(to);
         }
 
-        let mut st = self.idr[ls].clone();
-        st.push(wid, &mut self.words)
+        // For Blank this is the exact product transition for the all-blank
+        // language.  The predecessor's provenance and the *semantic* blankness
+        // of the pushed block travel through the same transition as the history
+        // summary, so an LRU merge cannot detach one from the other.
+        let blank_all_zero = self.goal.is_blank()
+            && self.idr[ls].blank_all_zero
+            && self.word_is_zero_context(wid);
+
+        let mut summary = self.idr[ls].summary.clone();
+        summary
+            .push(wid, &mut self.words)
             .map_err(|_| StopReason::SummaryOverflow)?;
-        let to = self.get_id(st);
+        let to = self.get_id(summary, blank_all_zero);
         self.push.insert(key, to);
         self.new_pops.push((to, DfaEdge { w: wid, prev: ls }));
 
-        if self.word_is_zero_context(wid) {
+        // Spinout still uses canonical-zero existential reachability.  Blank's
+        // semantic-zero property is already exact in the product DFA state.
+        if !self.goal.is_blank() && self.word_is_zero_context(wid) {
             self.ensure_dfa_capacity(ls.max(to));
             if !self.zero_push[ls].contains(&to) {
                 self.zero_push[ls].push(to);
@@ -1476,13 +1989,14 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
     }
 
     fn summary_may_be_all_zero_context(&self, r: usize) -> bool {
-        // `zero_context` is authoritative. On transcript/LRU macros, Blank
-        // context also includes decorated colors for which `is_blank` is true,
-        // while legacy Summary predicates know only canonical color 0.
+        if self.goal.is_blank() {
+            return self.idr.get(r).is_some_and(|st| st.blank_all_zero);
+        }
+
         let exact = self.zero_context.get(r).copied().unwrap_or(false);
-        if exact && !self.goal.is_blank() {
+        if exact {
             debug_assert!(self.idr.get(r).is_some_and(|st| {
-                st.may_be_all_zero_context(&self.words)
+                st.summary.may_be_all_zero_context(&self.words)
             }));
         }
         exact
@@ -1574,6 +2088,75 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
+    fn intern_raw_word_update_outcome(
+        &mut self,
+        outcome: RawWordUpdateOutcome,
+    ) -> WordUpdateOutcome {
+        match outcome {
+            RawWordUpdateOutcome::Exit(raw) => {
+                WordUpdateOutcome::Exit(WordUpdateLemma {
+                    w1: self.words.intern(raw.w1),
+                    s1: raw.s1,
+                    is_back: raw.is_back,
+                    hit_blank: raw.hit_blank,
+                })
+            },
+            RawWordUpdateOutcome::LocalLoop { hit_blank } => {
+                WordUpdateOutcome::LocalLoop { hit_blank }
+            },
+            RawWordUpdateOutcome::Incomplete => {
+                WordUpdateOutcome::Incomplete
+            },
+        }
+    }
+
+    fn tm_step_outcome(
+        &mut self,
+        w: WordId,
+        s: State,
+        sgn: i8,
+        ctx: StepContext,
+        target_mode: BlockTargetMode,
+    ) -> Result<WordUpdateOutcome, StopReason> {
+        self.bump()?;
+
+        let key = StepKey { w, s, sgn, ctx };
+        let cached = match target_mode {
+            BlockTargetMode::Immediate(_) => {
+                self.step_cache.get(&key).copied()
+            },
+            BlockTargetMode::DeferredBlank => {
+                self.deferred_blank_step_cache.get(&key).copied()
+            },
+        };
+        if let Some(outcome) = cached {
+            return Ok(outcome);
+        }
+
+        let raw = far_raw_word_update_lemma(
+            self.prog,
+            self.words.clone_word(key.w),
+            key.s,
+            key.sgn,
+            self.block_step_limit,
+            target_mode,
+            key.ctx,
+            self.mirrored,
+        );
+        let outcome = self.intern_raw_word_update_outcome(raw);
+
+        match target_mode {
+            BlockTargetMode::Immediate(_) => {
+                self.step_cache.insert(key, outcome);
+            },
+            BlockTargetMode::DeferredBlank => {
+                self.deferred_blank_step_cache.insert(key, outcome);
+            },
+        }
+
+        Ok(outcome)
+    }
+
     /// Conditional-Blank local simulation. Unlike `tm_step`, a local blank
     /// event is remembered but does not terminate the block simulation; this is
     /// necessary to keep the return relations closed even when the event's
@@ -1587,45 +2170,15 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
     ) -> Result<(Option<WordUpdateLemma>, bool), StopReason> {
         debug_assert!(self.goal.is_blank());
         debug_assert!(self.defer_blank_targets);
-        self.bump()?;
 
-        let key = StepKey { w, s, sgn, ctx };
-        let outcome = if let Some(&cached) =
-            self.deferred_blank_step_cache.get(&key)
-        {
-            cached
-        } else {
-            let computed =
-                match far_raw_word_update_lemma_deferred_blank(
-                    self.prog,
-                    self.words.clone_word(key.w),
-                    key.s,
-                    key.sgn,
-                    self.block_step_limit,
-                    key.ctx,
-                    self.mirrored,
-                ) {
-                    RawDeferredBlankOutcome::Exit(raw) => {
-                        DeferredBlankOutcome::Exit(WordUpdateLemma {
-                            w1: self.words.intern(raw.w1),
-                            s1: raw.s1,
-                            is_back: raw.is_back,
-                            hit_blank: raw.hit_blank,
-                        })
-                    },
-                    RawDeferredBlankOutcome::LocalLoop {
-                        hit_blank,
-                    } => DeferredBlankOutcome::LocalLoop { hit_blank },
-                    RawDeferredBlankOutcome::Incomplete => {
-                        DeferredBlankOutcome::Incomplete
-                    },
-                };
-            self.deferred_blank_step_cache.insert(key, computed);
-            computed
-        };
-
-        match outcome {
-            DeferredBlankOutcome::Exit(res) => {
+        match self.tm_step_outcome(
+            w,
+            s,
+            sgn,
+            ctx,
+            BlockTargetMode::DeferredBlank,
+        )? {
+            WordUpdateOutcome::Exit(res) => {
                 let hit_blank = res.hit_blank;
                 if res.s1.is_none() {
                     Ok((None, hit_blank))
@@ -1633,10 +2186,10 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
                     Ok((Some(res), hit_blank))
                 }
             },
-            DeferredBlankOutcome::LocalLoop { hit_blank } => {
+            WordUpdateOutcome::LocalLoop { hit_blank } => {
                 Ok((None, hit_blank))
             },
-            DeferredBlankOutcome::Incomplete => {
+            WordUpdateOutcome::Incomplete => {
                 Err(StopReason::BlockTimeout)
             },
         }
@@ -1649,45 +2202,17 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         sgn: i8,
         ctx: StepContext,
     ) -> Result<Option<WordUpdateLemma>, StopReason> {
-        self.bump()?;
-
-        let key = StepKey { w, s, sgn, ctx };
-
-        let outcome = if let Some(&cached) = self.step_cache.get(&key) {
-            cached
-        } else {
-            let computed = match far_raw_word_update_lemma(
-                self.prog,
-                self.words.clone_word(key.w),
-                key.s,
-                key.sgn,
-                self.block_step_limit,
-                self.goal,
-                key.ctx,
-                self.mirrored,
-            ) {
-                RawWordUpdateOutcome::Exit(raw) => {
-                    WordUpdateOutcome::Exit(WordUpdateLemma {
-                        w1: self.words.intern(raw.w1),
-                        s1: raw.s1,
-                        is_back: raw.is_back,
-                        hit_blank: raw.hit_blank,
-                    })
-                },
-                RawWordUpdateOutcome::LocalLoop => {
-                    WordUpdateOutcome::LocalLoop
-                },
-                RawWordUpdateOutcome::Incomplete => {
-                    WordUpdateOutcome::Incomplete
-                },
-            };
-            self.step_cache.insert(key, computed);
-            computed
-        };
+        let outcome = self.tm_step_outcome(
+            w,
+            s,
+            sgn,
+            ctx,
+            BlockTargetMode::Immediate(self.goal),
+        )?;
 
         let res = match outcome {
             WordUpdateOutcome::Exit(res) => res,
-            WordUpdateOutcome::LocalLoop => return Ok(None),
+            WordUpdateOutcome::LocalLoop { .. } => return Ok(None),
             WordUpdateOutcome::Incomplete => {
                 return Err(StopReason::BlockTimeout);
             },
@@ -2142,122 +2667,13 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
     }
 }
 
-/// Exact one-block simulation for the conditional Blank pass. A blanking
-/// event is accumulated in `hit_blank`, but the simulation continues until the
-/// same exit/loop boundary used by the ordinary FAR closure. This lets target
-/// obligations and return relations reach a common fixed point.
-#[expect(
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::cast_sign_loss
-)]
-fn far_raw_word_update_lemma_deferred_blank<P: GetInstr>(
-    prog: &P,
-    w: Word,
-    s: State,
-    sgn: i8,
-    max_steps: usize,
-    ctx: StepContext,
-    mirrored: bool,
-) -> RawDeferredBlankOutcome {
-    debug_assert!(sgn == 1 || sgn == -1);
-    let context_may_be_all_zero = match ctx {
-        StepContext::Blank {
-            context_may_be_all_zero,
-        } => context_may_be_all_zero,
-        _ => false,
-    };
-
-    let len = w.len() as i32;
-    let mut w1 = w;
-    let mut nonblank_count = w1
-        .cells
-        .iter()
-        .filter(|&&color| !prog.is_blank(color))
-        .count();
-    let mut s1 = s;
-    let mut pos: i32 = 0;
-    let mut hit_blank = false;
-
-    let mut local_words = Map::new();
-    local_words.insert(w1.clone(), 0_usize);
-    let mut local_word_id = 0_usize;
-    let mut seen = Set::new();
-    let mut steps = 0_usize;
-
-    loop {
-        if !seen.insert((local_word_id, s1, pos)) {
-            return RawDeferredBlankOutcome::LocalLoop { hit_blank };
-        }
-        if steps == max_steps {
-            return RawDeferredBlankOutcome::Incomplete;
-        }
-        steps += 1;
-
-        let input = w1.get(pos as usize);
-        let (out_color, shift_right, next_state) =
-            match prog.get_instr(&(s1, input)) {
-                Err(_) => return RawDeferredBlankOutcome::Incomplete,
-                Ok(None) => {
-                    return RawDeferredBlankOutcome::Exit(
-                        RawWordUpdateLemma::exit_oriented(
-                            w1, None, false, hit_blank,
-                        ),
-                    );
-                },
-                Ok(Some(instr)) => instr,
-            };
-
-        let dir: i32 = if shift_right { 1 } else { -1 };
-        let dir = if mirrored { -dir } else { dir };
-        let block_dir = dir * i32::from(sgn);
-
-        let input_nonblank = !prog.is_blank(input);
-        let output_nonblank = !prog.is_blank(out_color);
-        let erased_final_nonblank = input_nonblank && !output_nonblank;
-
-        if input != out_color {
-            if input_nonblank {
-                nonblank_count -= 1;
-            }
-            if output_nonblank {
-                nonblank_count += 1;
-            }
-            w1.set(pos as usize, out_color);
-
-            local_word_id = if let Some(&id) = local_words.get(&w1) {
-                id
-            } else {
-                let id = local_words.len();
-                local_words.insert(w1.clone(), id);
-                id
-            };
-        }
-        s1 = next_state;
-
-        if erased_final_nonblank
-            && nonblank_count == 0
-            && context_may_be_all_zero
-        {
-            hit_blank = true;
-        }
-
-        pos += block_dir;
-        if pos < 0 || pos >= len {
-            return RawDeferredBlankOutcome::Exit(
-                RawWordUpdateLemma::exit_oriented(
-                    w1,
-                    Some(s1),
-                    pos < 0,
-                    hit_blank,
-                ),
-            );
-        }
-    }
-}
-
-/// Exact one-block simulation shared by the raw TM and transcript/LRU macro
-/// machines through `GetInstr`.
+/// Exact one-block simulation shared by ordinary FAR and the conditional-Blank
+/// closure, over either the raw TM or a finite-history macro through `GetInstr`.
+///
+/// In `Immediate` mode the first Blank/Spinout target ends the simulation, as
+/// ordinary FAR requires.  `DeferredBlank` instead records a blanking event in
+/// `hit_blank` and continues to the same exit/local-loop boundary, so the B2/B3
+/// conditional closure can saturate its ordinary return relations as well.
 ///
 /// A macro instruction lookup may fail with `Err`; as in standalone CPS this
 /// makes the proof attempt inconclusive rather than turning the macro error into
@@ -2273,11 +2689,23 @@ fn far_raw_word_update_lemma<P: GetInstr>(
     s: State,
     sgn: i8,
     max_steps: usize,
-    goal: Goal,
+    target_mode: BlockTargetMode,
     ctx: StepContext,
     mirrored: bool,
 ) -> RawWordUpdateOutcome {
     debug_assert!(sgn == 1 || sgn == -1);
+
+    let goal = target_mode.goal();
+    let defer_blank_targets = target_mode.defers_blank();
+    debug_assert!(!defer_blank_targets || goal.is_blank());
+
+    let context_may_be_all_zero = match ctx {
+        StepContext::Blank {
+            context_may_be_all_zero,
+        } => context_may_be_all_zero,
+        _ => false,
+    };
+
     let len = w.len() as i32;
     let mut w1 = w;
     let mut nonblank_count = match goal {
@@ -2292,6 +2720,7 @@ fn far_raw_word_update_lemma<P: GetInstr>(
     };
     let mut s1 = s;
     let mut pos: i32 = 0;
+    let mut hit_blank = false;
 
     let mut local_words = Map::new();
     local_words.insert(w1.clone(), 0_usize);
@@ -2301,7 +2730,7 @@ fn far_raw_word_update_lemma<P: GetInstr>(
 
     loop {
         if !seen.insert((local_word_id, s1, pos)) {
-            return RawWordUpdateOutcome::LocalLoop;
+            return RawWordUpdateOutcome::LocalLoop { hit_blank };
         }
         if steps == max_steps {
             return RawWordUpdateOutcome::Incomplete;
@@ -2315,7 +2744,7 @@ fn far_raw_word_update_lemma<P: GetInstr>(
                 Ok(None) => {
                     return RawWordUpdateOutcome::Exit(
                         RawWordUpdateLemma::exit_oriented(
-                            w1, None, false, false,
+                            w1, None, false, hit_blank,
                         ),
                     );
                 },
@@ -2327,7 +2756,8 @@ fn far_raw_word_update_lemma<P: GetInstr>(
         let block_dir = dir * i32::from(sgn);
 
         // Spinout is specifically a same-state transition while scanning the
-        // canonical macro zero, with a canonical-zero ray ahead.
+        // canonical macro zero, with a canonical-zero ray ahead. Deferred mode
+        // is Blank-only, so Spinout targets are always immediate.
         if goal.is_spinout() && input == 0 && next_state == s1 {
             let zero_ray_ahead = match ctx {
                 StepContext::Spinout {
@@ -2388,15 +2818,13 @@ fn far_raw_word_update_lemma<P: GetInstr>(
         }
         s1 = next_state;
 
-        if erased_final_nonblank && nonblank_count == 0 {
-            let blank_hit = match ctx {
-                StepContext::Blank {
-                    context_may_be_all_zero,
-                } => context_may_be_all_zero,
-                _ => false,
-            };
-
-            if blank_hit {
+        if erased_final_nonblank
+            && nonblank_count == 0
+            && context_may_be_all_zero
+        {
+            if defer_blank_targets {
+                hit_blank = true;
+            } else {
                 return RawWordUpdateOutcome::Exit(
                     RawWordUpdateLemma::exit_oriented(
                         w1,
@@ -2415,7 +2843,7 @@ fn far_raw_word_update_lemma<P: GetInstr>(
                     w1,
                     Some(s1),
                     pos < 0,
-                    false,
+                    hit_blank,
                 ),
             );
         }
@@ -2424,11 +2852,18 @@ fn far_raw_word_update_lemma<P: GetInstr>(
 
 /// Build one summary-FAR decider over any raw or macro machine implementing
 /// the same instruction interface used by standalone CPS.
-fn far_decider_for<P: GetInstr, S: Summary>(
+fn far_decider_for_with_summary<P: GetInstr, S: Summary>(
     prog: &P,
     params: FarRunParams,
+    initial_summary: S,
 ) -> Result<FarDecider<'_, P, S>, StopReason> {
-    let idr = vec![S::new()];
+    // Index 0 remains the historical unused sentinel.  It deliberately carries
+    // `blank_all_zero = false`; the real initial product state is interned by
+    // `with_init_dfa` at index 1.
+    let idr = vec![DfaSummaryState {
+        summary: initial_summary.clone(),
+        blank_all_zero: false,
+    }];
     let decider = FarDecider {
         prog,
         goal: params.goal,
@@ -2467,17 +2902,81 @@ fn far_decider_for<P: GetInstr, S: Summary>(
         scratch_h2b: Vec::new(),
         scratch_h3: Vec::new(),
     };
-    decider.with_init_dfa()
+    decider.with_init_dfa(initial_summary)
+}
+
+fn far_decide_with_initial<P: GetInstr, S: Summary>(
+    prog: &P,
+    params: FarRunParams,
+    initial: S,
+) -> bool {
+    let Ok(decider) =
+        far_decider_for_with_summary(prog, params, initial)
+    else {
+        return false;
+    };
+    decider.run().is_ok()
 }
 
 fn far_decide_with_for<P: GetInstr, S: Summary>(
     prog: &P,
     params: FarRunParams,
 ) -> bool {
-    let Ok(decider) = far_decider_for::<P, S>(prog, params) else {
-        return false;
-    };
-    decider.run().is_ok()
+    far_decide_with_initial(prog, params, S::new())
+}
+
+fn far_decide_rwl_mod_profile<P: GetInstr>(
+    prog: &P,
+    params: FarRunParams,
+    profile: (u64, u64, usize, usize),
+) -> bool {
+    let (mnc, modulus, len1, len2) = profile;
+    let initial = RwlModSummary::with_profile(mnc, modulus, len1, len2);
+    far_decide_with_initial(prog, params, initial)
+}
+
+/// Cheap RWL_mod profiles retained in the hot raw-summary portfolio.  These are
+/// exactly the old keep-newest-8 behavior, now expressed through BusyCoq's
+/// general `(mnc, mod_, len1, len2)` rule.
+fn far_decide_rwl_mod_default_portfolio<P: GetInstr>(
+    prog: &P,
+    params: FarRunParams,
+) -> bool {
+    FAR_RWL_DEFAULT_MODS.iter().copied().any(|modulus| {
+        far_decide_rwl_mod_profile(
+            prog,
+            params,
+            (
+                FAR_RWL_DEFAULT_MNC,
+                modulus as u64,
+                FAR_RWL_DEFAULT_LEN1,
+                FAR_RWL_DEFAULT_LEN2,
+            ),
+        )
+    })
+}
+
+fn far_decide_rngs_mod_profile<P: GetInstr>(
+    prog: &P,
+    params: FarRunParams,
+    profile: (u64, u64, usize, usize, usize),
+) -> bool {
+    let (mnc, modulus, ng_n, len_h, bs_n) = profile;
+    let initial =
+        RngsModSummary::with_profile(mnc, modulus, ng_n, len_h, bs_n);
+    far_decide_with_initial(prog, params, initial)
+}
+
+fn far_decide_upstream_cps_lru(
+    prog: &impl GetInstr,
+    params: FarRunParams,
+    profile: (usize, usize, usize),
+    lru_n: usize,
+) -> bool {
+    let (len1, len2, len3) = profile;
+    let initial =
+        UpstreamCpsLruSummary::with_profile(len1, len2, len3, lru_n);
+    far_decide_with_initial(prog, params, initial)
 }
 
 /// Full raw summary portfolio. The extra CPS experiments that produced no new
@@ -2495,7 +2994,7 @@ fn far_decide_summary_portfolio<P: GetInstr>(
         || far_decide_with_for::<_, CpsLruSummary>(prog, params)
         || far_decide_with_for::<_, CpsLruSigSummary>(prog, params)
         || far_decide_with_for::<_, CpsLruSigColorSummary>(prog, params)
-        || far_decide_with_for::<_, RwlModSummary>(prog, params)
+        || far_decide_rwl_mod_default_portfolio(prog, params)
         || far_decide_with_for::<
             _,
             NgSummary<FAR_NG_TAIL_H_MED, FAR_NG_POS_MOD_3>,
@@ -2505,50 +3004,6 @@ fn far_decide_summary_portfolio<P: GetInstr>(
         || far_decide_with_for::<_, SetPairSummary>(prog, params)
         || far_decide_with_for::<_, RngsModSummary>(prog, params)
         || far_decide_with_for::<_, RsModSummary>(prog, params)
-}
-
-/// Macro FAR intentionally tries only the FAR-CPS family. These summaries are
-/// the ones designed to benefit from the richer transcript/LRU macro alphabet,
-/// and restricting the portfolio avoids multiplying every expensive FAR pass by
-/// all four macro machines.
-fn far_decide_macro_cps_portfolio<P: GetInstr>(
-    prog: &P,
-    params: FarRunParams,
-) -> bool {
-    far_decide_with_for::<_, CpsLruSummary>(prog, params)
-        || far_decide_with_for::<_, CpsLruSigSummary>(prog, params)
-        || far_decide_with_for::<_, CpsLruSigColorSummary>(prog, params)
-}
-
-fn far_macro_cps_sweep_for<P: GetInstr>(
-    prog: &P,
-    block: usize,
-    goal: Goal,
-) -> bool {
-    let block = block
-        .min(FAR_BLOCK_LEN_CAP_COLORS_5_8)
-        .min(FAR_BLOCK_LEN_HARD_CAP);
-
-    for block_len in 1..=block {
-        let params_base = FarRunParams {
-            block_len,
-            max_work: FAR_WORK_PER_LEN * block_len,
-            block_step_limit: FAR_STEP_PER_LEN * block_len,
-            goal,
-            mirrored: false,
-            defer_blank_targets: false,
-        };
-        for mirrored in [true, false] {
-            let params = FarRunParams {
-                mirrored,
-                ..params_base
-            };
-            if far_decide_macro_cps_portfolio(prog, params) {
-                return true;
-            }
-        }
-    }
-    false
 }
 
 #[expect(clippy::multiple_inherent_impl)]
@@ -2561,19 +3016,35 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         }
     }
 
-    fn far_sweep(&self, block: usize, goal: Goal) -> bool {
-        let reached = self.far_reached_params();
-
-        let cap_by_colors = if reached.colors <= 2 {
+    fn far_block_len_cap(&self) -> usize {
+        let colors = self.far_reached_params().colors;
+        if colors <= 2 {
             FAR_BLOCK_LEN_CAP_COLORS_2
-        } else if reached.colors <= 4 {
+        } else if colors <= 4 {
             FAR_BLOCK_LEN_CAP_COLORS_3_4
         } else {
             FAR_BLOCK_LEN_CAP_COLORS_5_8
-        };
+        }
+    }
 
-        let block =
-            block.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
+    /// Run every summary-based FAR family block-major.  Small block lengths are
+    /// exhausted across all summary families before any family is allowed to
+    /// spend time on a larger block.  This preserves every distinct proof attempt
+    /// while allowing late summaries to prove easy cases before raw FAR has swept
+    /// all requested block sizes.
+    #[expect(clippy::excessive_nesting)]
+    fn far_summary_sweep(
+        &self,
+        block: usize,
+        goal: Goal,
+        defer_blank_targets: bool,
+    ) -> bool {
+        debug_assert!(!defer_blank_targets || goal.is_blank());
+
+        let block = block
+            .min(self.far_block_len_cap())
+            .min(FAR_BLOCK_LEN_HARD_CAP);
+        let history = self.make_lru_macro();
 
         for block_len in 1..=block {
             let params_base = FarRunParams {
@@ -2582,8 +3053,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 block_step_limit: FAR_STEP_PER_LEN * block_len,
                 goal,
                 mirrored: false,
-                defer_blank_targets: false,
+                defer_blank_targets,
             };
+
+            // Keep the cheap/hot raw portfolio ahead of every late family in
+            // both orientations at this block size.
             for mirrored in [true, false] {
                 let params = FarRunParams {
                     mirrored,
@@ -2593,66 +3067,100 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     return true;
                 }
             }
-        }
 
-        false
-    }
+            // Exact BusyCoq CPS_LRU profiles.  The old experimental
+            // `(LRUH,H,tH)` sweep was exactly the LRU_n=0 subset under
+            // `(len1,len2,len3)=(H,LRUH,tH)`, so it is intentionally absent.
+            if block_len <= FAR_CPS_LRU_EXACT_BLOCK_LEN_CAP {
+                // LRU_n=0 first across all profiles: this is exactly the old
+                // experimental transform portfolio and was historically useful.
+                for (lru_idx, &lru_n) in
+                    FAR_CPS_LRU_EXACT_LRU_NS.iter().enumerate()
+                {
+                    for &profile in FAR_CPS_LRU_EXACT_PROFILES {
+                        let (_, len2, _) = profile;
+                        // Only `len2` distinct duplicate-removal positions can
+                        // affect a suffix of capacity len2.  All later LRU_n
+                        // values are equivalent; keep one representative at 0
+                        // when len2 itself is zero.
+                        let distinct_lru_ns = len2
+                            .max(1)
+                            .min(FAR_CPS_LRU_EXACT_LRU_NS.len());
+                        if lru_idx >= distinct_lru_ns {
+                            continue;
+                        }
 
-    /// Late Blank-only pass that keeps the ordinary H2/H3 return sharing but
-    /// propagates local blanking as conditional B2/B3 outcomes. The condition
-    /// is discharged only when it reaches `pre3l`, i.e. a context connected to
-    /// the concrete initial blank ray.
-    fn far_conditional_blank_sweep(&self, block: usize) -> bool {
-        let reached = self.far_reached_params();
-        let cap_by_colors = if reached.colors <= 2 {
-            FAR_BLOCK_LEN_CAP_COLORS_2
-        } else if reached.colors <= 4 {
-            FAR_BLOCK_LEN_CAP_COLORS_3_4
-        } else {
-            FAR_BLOCK_LEN_CAP_COLORS_5_8
-        };
-        let block =
-            block.min(cap_by_colors).min(FAR_BLOCK_LEN_HARD_CAP);
+                        for mirrored in [true, false] {
+                            let params = FarRunParams {
+                                mirrored,
+                                ..params_base
+                            };
+                            if far_decide_upstream_cps_lru(
+                                self, params, profile, lru_n,
+                            ) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
 
-        for block_len in 1..=block {
-            let params_base = FarRunParams {
-                block_len,
-                max_work: FAR_WORK_PER_LEN * block_len,
-                block_step_limit: FAR_STEP_PER_LEN * block_len,
-                goal: Goal::Blank,
-                mirrored: false,
-                defer_blank_targets: true,
-            };
-            for mirrored in [true, false] {
-                let params = FarRunParams {
-                    mirrored,
-                    ..params_base
-                };
-                if far_decide_summary_portfolio(self, params) {
-                    return true;
+            if block_len <= FAR_RWL_GENERAL_BLOCK_LEN_CAP {
+                for &profile in FAR_RWL_GENERAL_PROFILES {
+                    for mirrored in [true, false] {
+                        let params = FarRunParams {
+                            mirrored,
+                            ..params_base
+                        };
+                        if far_decide_rwl_mod_profile(
+                            self, params, profile,
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            if block_len <= FAR_RNGS_GENERAL_BLOCK_LEN_CAP {
+                for &profile in FAR_RNGS_GENERAL_PROFILES {
+                    for mirrored in [true, false] {
+                        let params = FarRunParams {
+                            mirrored,
+                            ..params_base
+                        };
+                        if far_decide_rngs_mod_profile(
+                            self, params, profile,
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // Full per-cell finite history remains a distinct tape macro, but
+            // shares the same summary portfolio and current block size.
+            if block_len <= FAR_HISTORY_BLOCK_LEN_CAP {
+                for mirrored in [true, false] {
+                    let params = FarRunParams {
+                        mirrored,
+                        ..params_base
+                    };
+                    if far_decide_summary_portfolio(&history, params) {
+                        return true;
+                    }
                 }
             }
         }
+
         false
     }
 
-    /// Run the useful FAR-CPS summaries over the same tape macros used by
-    /// standalone CPS: transcript macros 1/4/16 and the LRU macro.
-    ///
-    /// This is deliberately a late pass in the public FAR methods so machines
-    /// already solved by raw FAR/MITM/direct FAR pay no macro overhead.
-    fn far_macro_cps_sweep(&self, block: usize, goal: Goal) -> bool {
-        [1, 4, 16].into_iter().any(|tr| {
-            far_macro_cps_sweep_for(
-                &self.make_transcript_macro(tr),
-                block,
-                goal,
-            )
-        }) || far_macro_cps_sweep_for(
-            &self.make_lru_macro(),
-            block,
-            goal,
-        )
+    fn far_cant_target(&self, block: usize, goal: Goal) -> bool {
+        self.far_summary_sweep(block, goal, false)
+            || self.mitm_cant_target(goal)
+            || self.direct_far_cant_target(goal)
+            || (goal.is_blank()
+                && self.far_summary_sweep(block, Goal::Blank, true))
     }
 
     fn direct_far_cant_target(&self, goal: Goal) -> bool {
@@ -2741,7 +3249,25 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
         let dfa_entries = reached.colors * dfa_states;
         let mut dfa = vec![0_usize; dfa_entries];
-        self.direct_far_search(params, &mut dfa, 0, 0, &r, a, fuel)
+        debug_assert!(dfa_entries < u32::BITS as usize);
+        debug_assert!(dfa_states <= 16);
+        let deps = DirectFarDeps {
+            rows: vec![vec![0; nfa_states]; reached.colors],
+            accept: vec![0; nfa_states],
+            reject: 0,
+        };
+        self.direct_far_search(
+            params,
+            &mut dfa,
+            0,
+            0,
+            &r,
+            a,
+            &deps,
+            0,
+            &mut DirectFarRejectCache::default(),
+            fuel,
+        )
     }
 
     fn direct_far_init_targets(
@@ -2851,103 +3377,57 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         }
     }
 
-    fn direct_far_search(
-        &self,
-        params: DirectFarParams,
-        dfa: &mut [usize],
-        entry: usize,
-        max_seen: usize,
-        r: &[Vec<u128>],
-        a: u128,
-        fuel: &mut usize,
-    ) -> bool {
-        if *fuel == 0 {
-            return false;
-        }
-
-        let dfa_entries = params.reached.colors * params.dfa_states;
-        if entry == dfa_entries {
-            return max_seen + 1 == params.dfa_states;
-        }
-
-        // Exact-state search: if even introducing one fresh state per remaining
-        // transition cannot reach `dfa_states`, this branch cannot be canonical.
-        let remaining = dfa_entries - entry;
-        if max_seen + 1 + remaining < params.dfa_states {
-            return false;
-        }
-
-        let max_to_state = if entry == 0 {
-            0
-        } else {
-            (max_seen + 1).min(params.dfa_states - 1)
-        };
-
-        for to_state in 0..=max_to_state {
-            if *fuel == 0 {
-                return false;
-            }
-            *fuel -= 1;
-
-            dfa[entry] = to_state;
-            let mut next_r = r.to_vec();
-            let mut next_a = a;
-            if !self.direct_far_extend_nfa(
-                params,
-                dfa,
-                &mut next_r,
-                &mut next_a,
-                entry,
-            ) {
-                continue;
-            }
-
-            if self.direct_far_search(
-                params,
-                dfa,
-                entry + 1,
-                max_seen.max(to_state),
-                &next_r,
-                next_a,
-                fuel,
-            ) {
-                return true;
-            }
-        }
-
-        false
-    }
-
-    fn direct_far_extend_nfa(
+    /// Exact validator for direct-FAR pruning and final acceptance.  `fixed`
+    /// selects arbitrary DFA entries whose current values in `dfa` are available.
+    /// It rebuilds the target NFA from scratch and computes the ordinary full
+    /// left-rule fixed point, so neither dirty-row propagation nor dependency
+    /// bookkeeping is proof-critical.
+    fn direct_far_mask_rejected_exact(
         &self,
         params: DirectFarParams,
         dfa: &[usize],
-        r: &mut [Vec<u128>],
-        a: &mut u128,
-        entry: usize,
+        mut fixed: u32,
     ) -> bool {
-        let dfa_src = entry / params.reached.colors;
-        let write_symbol = entry % params.reached.colors;
-        let dfa_dst = dfa[entry];
-        let fixed_entries = entry + 1;
+        // Entry zero is canonical and fixed to zero in every enumerated DFA.
+        // Rejection witnesses omit it so they can recur at later DFS prefixes.
+        fixed |= 1;
 
-        // Right-rule for the one newly fixed DFA transition.
-        for ctrl in 0..params.ctrl_states {
-            let state = ctrl;
-            for read_symbol in 0..params.reached.colors {
-                #[expect(clippy::cast_possible_truncation)]
-                let slot: Slot = (state as State, read_symbol as Color);
-                let Some(&(write, shift_right, next_state)) =
-                    self.get(&slot)
-                else {
-                    continue;
-                };
+        let mut r = vec![
+            vec![0_u128; params.nfa_states];
+            params.reached.colors
+        ];
+        let mut a = direct_far_bit(params.any_sink)
+            | direct_far_bit(params.zero_sink);
+        self.direct_far_init_targets(params, &mut r);
 
-                let written = write as usize;
-                if direct_far_move_code(shift_right) == params.direction
-                    && written == write_symbol
-                {
-                    let next_ctrl = next_state as usize;
+        // Right rules for exactly the selected DFA transitions.
+        let mut entries = fixed;
+        while entries != 0 {
+            let entry = entries.trailing_zeros() as usize;
+            entries &= entries - 1;
+            debug_assert!(entry < dfa.len());
+
+            let dfa_src = entry / params.reached.colors;
+            let write_symbol = entry % params.reached.colors;
+            let dfa_dst = dfa[entry];
+
+            for ctrl in 0..params.ctrl_states {
+                for read_symbol in 0..params.reached.colors {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let slot: Slot =
+                        (ctrl as State, read_symbol as Color);
+                    let Some(&(write, shift_right, next_state)) =
+                        self.get(&slot)
+                    else {
+                        continue;
+                    };
+                    if direct_far_move_code(shift_right)
+                        != params.direction
+                        || write as usize != write_symbol
+                    {
+                        continue;
+                    }
+
                     let src = direct_far_idx(
                         dfa_src,
                         ctrl,
@@ -2955,7 +3435,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     );
                     let dst = direct_far_idx(
                         dfa_dst,
-                        next_ctrl,
+                        next_state as usize,
                         params.ctrl_states,
                     );
                     r[read_symbol][src] |= direct_far_bit(dst);
@@ -2963,31 +3443,33 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             }
         }
 
-        // Left-rule closure over all currently fixed DFA transitions.
+        // Full exact left-rule closure over the selected DFA transitions.
         loop {
             let mut changed = false;
-
             for ctrl in 0..params.ctrl_states {
-                let state = ctrl;
                 for read_symbol in 0..params.reached.colors {
                     #[expect(clippy::cast_possible_truncation)]
                     let slot: Slot =
-                        (state as State, read_symbol as Color);
+                        (ctrl as State, read_symbol as Color);
                     let Some(&(write, shift_right, next_state)) =
                         self.get(&slot)
                     else {
                         continue;
                     };
-
-                    let written = write as usize;
                     if direct_far_move_code(shift_right)
                         == params.direction
                     {
                         continue;
                     }
 
+                    let written = write as usize;
                     let next_ctrl = next_state as usize;
-                    for fixed_entry in 0..fixed_entries {
+                    let mut entries = fixed;
+                    while entries != 0 {
+                        let fixed_entry =
+                            entries.trailing_zeros() as usize;
+                        entries &= entries - 1;
+
                         let fixed_src =
                             fixed_entry / params.reached.colors;
                         let fixed_symbol =
@@ -3015,42 +3497,300 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                     }
                 }
             }
-
             if !changed {
                 break;
             }
         }
 
-        let mut prev_accept = *a;
         loop {
             let next_accept = direct_far_matrix_times_vec(
                 &r[0],
-                prev_accept,
+                a,
                 params.nfa_states,
             );
-            *a = next_accept;
-            if next_accept == prev_accept {
+            if next_accept == a {
                 break;
             }
-            prev_accept = next_accept;
+            a = next_accept;
         }
 
-        // If the initial all-zero configuration is already accepted by this
-        // partial DFA/NFA lower bound, no completion can prove the target absent.
         let start_idx = direct_far_idx(0, 0, params.ctrl_states);
-        (r[0][start_idx] & *a) == 0
+        r[0][start_idx] & a != 0
     }
 
-    fn mitm_cant_halt(&self) -> bool {
-        self.mitm_cant_target(Goal::Halt)
+    #[expect(clippy::too_many_arguments)]
+    fn direct_far_search(
+        &self,
+        params: DirectFarParams,
+        dfa: &mut [usize],
+        entry: usize,
+        max_seen: usize,
+        r: &[Vec<u128>],
+        a: u128,
+        deps: &DirectFarDeps,
+        assignments: u128,
+        rejects: &mut DirectFarRejectCache,
+        fuel: &mut usize,
+    ) -> bool {
+        if *fuel == 0 {
+            return false;
+        }
+
+        let dfa_entries = params.reached.colors * params.dfa_states;
+        if entry == dfa_entries {
+            if max_seen + 1 != params.dfa_states {
+                return false;
+            }
+            let all_fixed = (1_u32 << dfa_entries) - 1;
+            // Only the exact full-closure verifier is allowed to certify a DFA.
+            return !self.direct_far_mask_rejected_exact(
+                params, dfa, all_fixed,
+            );
+        }
+
+        // Exact-state search: if even introducing one fresh state per remaining
+        // transition cannot reach `dfa_states`, this branch cannot be canonical.
+        let remaining = dfa_entries - entry;
+        if max_seen + 1 + remaining < params.dfa_states {
+            return false;
+        }
+
+        let max_to_state = if entry == 0 {
+            0
+        } else {
+            (max_seen + 1).min(params.dfa_states - 1)
+        };
+
+        for to_state in 0..=max_to_state {
+            if *fuel == 0 {
+                return false;
+            }
+            *fuel -= 1;
+
+            dfa[entry] = to_state;
+            let next_assignments =
+                assignments | ((to_state as u128) << (4 * entry));
+            let fixed = (1_u32 << (entry + 1)) - 1;
+
+            // Cached dependency witnesses are rejection-only hints. They can
+            // prune this completion subtree but never certify a successful DFA.
+            if rejects.rejects(next_assignments, fixed) {
+                continue;
+            }
+
+            let mut next_r = r.to_vec();
+            let mut next_a = a;
+            let mut next_deps = deps.clone();
+            if !self.direct_far_extend_nfa(
+                params,
+                dfa,
+                &mut next_r,
+                &mut next_a,
+                entry,
+                &mut next_deps,
+            ) {
+                // Rejection witnesses only prune search. Even if dependency
+                // bookkeeping were overly conservative, it cannot certify a
+                // non-target result; all successful leaves are exact-verified.
+                rejects.remember(
+                    next_deps.reject,
+                    next_assignments,
+                    fixed,
+                );
+                continue;
+            }
+
+            if self.direct_far_search(
+                params,
+                dfa,
+                entry + 1,
+                max_seen.max(to_state),
+                &next_r,
+                next_a,
+                &next_deps,
+                next_assignments,
+                rejects,
+                fuel,
+            ) {
+                return true;
+            }
+        }
+
+        false
     }
 
-    fn mitm_cant_blank(&self) -> bool {
-        self.mitm_cant_target(Goal::Blank)
-    }
+    /// Fast direct-FAR propagation. Dirty-row scheduling and dependency tracking
+    /// are search accelerators only: they may prune candidates, but they can never
+    /// certify a proof. Any eventual success is rebuilt and checked by the exact
+    /// complete-DFA validator in `direct_far_search`.
+    #[expect(clippy::excessive_nesting)]
+    fn direct_far_extend_nfa(
+        &self,
+        params: DirectFarParams,
+        dfa: &[usize],
+        r: &mut [Vec<u128>],
+        a: &mut u128,
+        entry: usize,
+        deps: &mut DirectFarDeps,
+    ) -> bool {
+        let dfa_src = entry / params.reached.colors;
+        let write_symbol = entry % params.reached.colors;
+        let dfa_dst = dfa[entry];
+        let fixed_entries = entry + 1;
 
-    fn mitm_cant_spinout(&self) -> bool {
-        self.mitm_cant_target(Goal::Spinout)
+        // Each color has at most DIRECT_FAR_MAX_DFA_ENTRIES NFA-relevant rows
+        // under the public caps. The parent branch is already saturated, so only
+        // newly changed rows need to seed this propagation round.
+        let mut dirty_rows = [0_u128; DIRECT_FAR_MAX_DFA_ENTRIES];
+        let mut dirty = &mut dirty_rows[..params.reached.colors];
+
+        // Right-rule for the one newly fixed DFA transition.
+        for ctrl in 0..params.ctrl_states {
+            for read_symbol in 0..params.reached.colors {
+                #[expect(clippy::cast_possible_truncation)]
+                let slot: Slot = (ctrl as State, read_symbol as Color);
+                let Some(&(write, shift_right, next_state)) =
+                    self.get(&slot)
+                else {
+                    continue;
+                };
+
+                let written = write as usize;
+                if direct_far_move_code(shift_right) == params.direction
+                    && written == write_symbol
+                {
+                    let src = direct_far_idx(
+                        dfa_src,
+                        ctrl,
+                        params.ctrl_states,
+                    );
+                    let dst = direct_far_idx(
+                        dfa_dst,
+                        next_state as usize,
+                        params.ctrl_states,
+                    );
+                    let bit = direct_far_bit(dst);
+                    if r[read_symbol][src] & bit == 0 {
+                        r[read_symbol][src] |= bit;
+                        deps.rows[read_symbol][src] |= 1_u32 << entry;
+                        dirty[read_symbol] |= direct_far_bit(src);
+                    }
+                }
+            }
+        }
+
+        if !direct_far_extend_accept(&r[0], a, params.nfa_states, deps)
+        {
+            return false;
+        }
+
+        // A left rule reads one row as a set of intermediate states, then unions
+        // the corresponding rows of the written-symbol matrix. It can change only
+        // if either input row changed since the parent branch was saturated.
+        let mut next_dirty_rows = [0_u128; DIRECT_FAR_MAX_DFA_ENTRIES];
+        let mut next_dirty =
+            &mut next_dirty_rows[..params.reached.colors];
+        let mut first_pass = true;
+        loop {
+            let mut changed = false;
+            let mut zero_changed = false;
+            next_dirty.fill(0);
+
+            for ctrl in 0..params.ctrl_states {
+                for read_symbol in 0..params.reached.colors {
+                    #[expect(clippy::cast_possible_truncation)]
+                    let slot: Slot =
+                        (ctrl as State, read_symbol as Color);
+                    let Some(&(write, shift_right, next_state)) =
+                        self.get(&slot)
+                    else {
+                        continue;
+                    };
+
+                    let written = write as usize;
+                    if direct_far_move_code(shift_right)
+                        == params.direction
+                    {
+                        continue;
+                    }
+
+                    let next_ctrl = next_state as usize;
+                    for fixed_entry in 0..fixed_entries {
+                        let fixed_src =
+                            fixed_entry / params.reached.colors;
+                        let fixed_symbol =
+                            fixed_entry % params.reached.colors;
+                        let fixed_dst = dfa[fixed_entry];
+                        let middle = direct_far_idx(
+                            fixed_src,
+                            next_ctrl,
+                            params.ctrl_states,
+                        );
+                        let via = r[fixed_symbol][middle];
+                        if !(first_pass && fixed_entry == entry)
+                            && dirty[fixed_symbol]
+                                & direct_far_bit(middle)
+                                == 0
+                            && via & dirty[written] == 0
+                        {
+                            continue;
+                        }
+                        let src = direct_far_idx(
+                            fixed_dst,
+                            ctrl,
+                            params.ctrl_states,
+                        );
+                        let inferred = direct_far_vec_times_matrix(
+                            via,
+                            &r[written],
+                        );
+                        let new_bits = inferred & !r[read_symbol][src];
+                        if new_bits != 0 {
+                            let mut support = (1_u32 << fixed_entry)
+                                | deps.rows[fixed_symbol][middle];
+                            let mut via_support =
+                                r[fixed_symbol][middle];
+                            let mut uncovered = new_bits;
+                            while uncovered != 0 && via_support != 0 {
+                                let idx = via_support.trailing_zeros()
+                                    as usize;
+                                let contributed =
+                                    r[written][idx] & uncovered;
+                                if contributed != 0 {
+                                    support |= deps.rows[written][idx];
+                                    uncovered &= !contributed;
+                                }
+                                via_support &= via_support - 1;
+                            }
+                            deps.rows[read_symbol][src] |= support;
+                            r[read_symbol][src] |= inferred;
+                            let row_bit = direct_far_bit(src);
+                            dirty[read_symbol] |= row_bit;
+                            next_dirty[read_symbol] |= row_bit;
+                            changed = true;
+                            zero_changed |= read_symbol == 0;
+                        }
+                    }
+                }
+            }
+
+            if zero_changed
+                && !direct_far_extend_accept(
+                    &r[0],
+                    a,
+                    params.nfa_states,
+                    deps,
+                )
+            {
+                return false;
+            }
+
+            if !changed {
+                return true;
+            }
+            first_pass = false;
+            core::mem::swap(&mut dirty, &mut next_dirty);
+        }
     }
 
     fn mitm_cant_target(&self, goal: Goal) -> bool {
@@ -3115,6 +3855,10 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         &self.mitm_reachable_weight_slots(left, right),
                         0,
                         params.max_weight_pairs,
+                        &mut vec![
+                            MitmRejectCache::default();
+                            MITM_MEMORY_PROFILES.len()
+                        ],
                     )
             },
             Some((MitmSide::Left, state, color)) => {
@@ -3355,8 +4099,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         weight_slots: &MitmWeightSlots,
         current_weight_pairs: usize,
         max_weight_pairs: usize,
+        reject_caches: &mut [MitmRejectCache],
     ) -> bool {
-        if self.mitm_check_memory_profiles(goal, left, right) {
+        if self.mitm_check_memory_profiles(
+            goal,
+            left,
+            right,
+            reject_caches,
+        ) {
             return true;
         }
 
@@ -3385,6 +4135,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         weight_slots,
                         current_weight_pairs + 1,
                         max_weight_pairs,
+                        reject_caches,
                     ) {
                         right.trans[rs][rc] = (rt, old_rw);
                         left.trans[ls][lc] = (lt, old_lw);
@@ -3405,35 +4156,59 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
+        reject_caches: &mut [MitmRejectCache],
     ) -> bool {
-        MITM_MEMORY_PROFILES.iter().any(|memory| {
-            self.mitm_check_weight_candidate(goal, left, right, *memory)
-        })
-    }
+        debug_assert_eq!(
+            reject_caches.len(),
+            MITM_MEMORY_PROFILES.len()
+        );
 
-    fn mitm_check_weight_candidate(
-        &self,
-        goal: Goal,
-        left: &MitmWfa,
-        right: &MitmWfa,
-        memory: MitmMemory,
-    ) -> bool {
-        if memory.left == 0 && memory.right == 0 {
-            return self
-                .mitm_check_weight_candidate_exact(goal, left, right);
+        // Build each one-sided expansion only once for this weight candidate.
+        // Rejection paths persist across weight candidates, separately for each
+        // memory profile, and are replayed exactly before full saturation.
+        let mut left_memory = Vec::<MitmWfa>::new();
+        let mut right_memory = Vec::<MitmWfa>::new();
+
+        for (profile_idx, &memory) in
+            MITM_MEMORY_PROFILES.iter().enumerate()
+        {
+            while left_memory.len() < memory.left {
+                let next = left_memory.last().map_or_else(
+                    || left.with_memory(),
+                    MitmWfa::with_memory,
+                );
+                left_memory.push(next);
+            }
+            while right_memory.len() < memory.right {
+                let next = right_memory.last().map_or_else(
+                    || right.with_memory(),
+                    MitmWfa::with_memory,
+                );
+                right_memory.push(next);
+            }
+
+            let try_left = if memory.left == 0 {
+                left
+            } else {
+                &left_memory[memory.left - 1]
+            };
+            let try_right = if memory.right == 0 {
+                right
+            } else {
+                &right_memory[memory.right - 1]
+            };
+
+            if self.mitm_check_weight_candidate_exact(
+                goal,
+                try_left,
+                try_right,
+                &mut reject_caches[profile_idx],
+            ) {
+                return true;
+            }
         }
 
-        let mut try_left = left.clone();
-        let mut try_right = right.clone();
-        for _ in 0..memory.left {
-            try_left = try_left.with_memory();
-        }
-        for _ in 0..memory.right {
-            try_right = try_right.with_memory();
-        }
-        self.mitm_check_weight_candidate_exact(
-            goal, &try_left, &try_right,
-        )
+        false
     }
 
     fn mitm_check_weight_candidate_exact(
@@ -3441,6 +4216,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         goal: Goal,
         left: &MitmWfa,
         right: &MitmWfa,
+        reject_cache: &mut MitmRejectCache,
     ) -> bool {
         let left_special = left.derive_special();
         let right_special = right.derive_special();
@@ -3449,6 +4225,21 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             || !left.verify_special(&left_special)
             || !right.verify_special(&right_special)
         {
+            return false;
+        }
+
+        // A cached path can only reject this candidate after exact replay under
+        // this candidate's current transition weights and special-state bounds.
+        if reject_cache.paths.iter().any(|path| {
+            self.mitm_replay_reject_path(
+                goal,
+                path,
+                left,
+                right,
+                &left_special,
+                &right_special,
+            )
+        }) {
             return false;
         }
 
@@ -3462,9 +4253,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             &right_rev,
             &left_special,
             &right_special,
+            reject_cache,
         )
     }
 
+    #[expect(clippy::too_many_arguments)]
     fn mitm_build_accept_set_exact(
         &self,
         goal: Goal,
@@ -3474,6 +4267,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         right_rev: &MitmRev,
         left_special: &MitmSpecial,
         right_special: &MitmSpecial,
+        reject_cache: &mut MitmRejectCache,
     ) -> bool {
         let start = MitmConfig::start();
         let start_bounds = MitmBounds {
@@ -3485,6 +4279,11 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         }
 
         let mut accept = MitmAccept::new();
+        // First-discovery predecessors are only candidate rejection witnesses.
+        // A path is stored only after exact no-join/no-widen replay validates it.
+        let track_paths =
+            reject_cache.paths.len() < MITM_MAX_REJECT_PATHS;
+        let mut parents = Map::new();
         let mut todo = vec![start];
         let mut nexts = Vec::new();
         accept.insert(start, start_bounds);
@@ -3511,7 +4310,26 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 if goal.is_blank()
                     && mitm_blank_transition_possible(&next)
                 {
+                    self.mitm_remember_reject_path(
+                        goal,
+                        cur,
+                        next.cfg,
+                        &parents,
+                        left,
+                        right,
+                        left_special,
+                        right_special,
+                        reject_cache,
+                    );
                     return false;
+                }
+
+                if track_paths
+                    && parents.len() < MITM_MAX_REJECT_PARENTS
+                    && !accept.contains_key(&next.cfg)
+                    && (cur == start || parents.contains_key(&cur))
+                {
+                    parents.insert(next.cfg, cur);
                 }
 
                 let Some((cfg, _)) =
@@ -3521,6 +4339,17 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 };
 
                 if !self.mitm_config_allowed(goal, &cfg) {
+                    self.mitm_remember_reject_path(
+                        goal,
+                        cur,
+                        cfg,
+                        &parents,
+                        left,
+                        right,
+                        left_special,
+                        right_special,
+                        reject_cache,
+                    );
                     return false;
                 }
                 todo.push(cfg);
@@ -3528,6 +4357,131 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         }
 
         true
+    }
+
+    /// Replay one abstract path with exact singleton weight bounds. Unlike the
+    /// normal accept-set saturation this performs no joins or widening, so it is
+    /// safe to use solely as an early rejection test for another weight candidate.
+    fn mitm_replay_reject_path(
+        &self,
+        goal: Goal,
+        path: &[MitmConfig],
+        left: &MitmWfa,
+        right: &MitmWfa,
+        left_special: &MitmSpecial,
+        right_special: &MitmSpecial,
+    ) -> bool {
+        let mut cur = MitmConfig::start();
+        let mut weight = 0_i32;
+        if !self.mitm_config_allowed(goal, &cur) {
+            return true;
+        }
+
+        for &cfg in path {
+            let Some(&(write, shift, next_st)) =
+                self.get(&(cur.st, cur.co))
+            else {
+                return false;
+            };
+            if cfg.st != next_st {
+                return false;
+            }
+
+            let written = usize::from(write);
+            let scanned = usize::from(cfg.co);
+            let delta = if shift {
+                let (to, pushed) = left.trans[cur.left][written];
+                let (back, popped) = right.trans[cfg.right][scanned];
+                if to != cfg.left || back != cur.right {
+                    return false;
+                }
+                pushed - popped
+            } else {
+                let (to, pushed) = right.trans[cur.right][written];
+                let (back, popped) = left.trans[cfg.left][scanned];
+                if to != cfg.right || back != cur.left {
+                    return false;
+                }
+                pushed - popped
+            };
+
+            let Some(next_weight) = weight.checked_add(delta) else {
+                return false;
+            };
+            let Some(next) = mitm_step_bounds(
+                MitmNext {
+                    config: cfg,
+                    weight: delta,
+                    erased_nonzero: goal.is_blank()
+                        && cur.co != 0
+                        && write == 0,
+                },
+                MitmBounds {
+                    lo: Some(weight),
+                    hi: Some(weight),
+                },
+                left_special,
+                right_special,
+            ) else {
+                return false;
+            };
+
+            if (goal.is_blank()
+                && mitm_blank_transition_possible(&next))
+                || !self.mitm_config_allowed(goal, &cfg)
+            {
+                return true;
+            }
+            weight = next_weight;
+            cur = cfg;
+        }
+        false
+    }
+
+    #[expect(clippy::too_many_arguments)]
+    fn mitm_remember_reject_path(
+        &self,
+        goal: Goal,
+        mut cur: MitmConfig,
+        target: MitmConfig,
+        parents: &Map<MitmConfig, MitmConfig>,
+        left: &MitmWfa,
+        right: &MitmWfa,
+        left_special: &MitmSpecial,
+        right_special: &MitmSpecial,
+        cache: &mut MitmRejectCache,
+    ) {
+        if cache.paths.len() >= MITM_MAX_REJECT_PATHS {
+            return;
+        }
+        let start = MitmConfig::start();
+        let mut path = vec![target];
+        while cur != start {
+            if path.len() >= MITM_MAX_REJECT_PATH_LEN {
+                return;
+            }
+            path.push(cur);
+            let Some(&parent) = parents.get(&cur) else {
+                return;
+            };
+            cur = parent;
+        }
+        path.reverse();
+
+        // Store only a path that independently reproduces the rejection exactly
+        // in the candidate that discovered it.
+        if !cache.paths.contains(&path)
+            && self.mitm_replay_reject_path(
+                goal,
+                &path,
+                left,
+                right,
+                left_special,
+                right_special,
+            )
+        {
+            cache.paths.push(path);
+        }
     }
 
     fn mitm_config_allowed(
@@ -3669,6 +4623,11 @@ struct MitmNext {
 struct MitmSearchParams {
     goal_transitions: usize,
     max_weight_pairs: usize,
+}
+
+#[derive(Clone, Default)]
+struct MitmRejectCache {
+    paths: Vec<Vec<MitmConfig>>,
 }
 
 #[derive(Clone, Copy)]
