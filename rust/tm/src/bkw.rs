@@ -478,6 +478,79 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
     }
 }
 
+/// Ordered three-cell whole-side summaries, conditioned on the same exact
+/// local window as `SidePossible`.
+///
+/// `mask(..., side, a, b)` is a bitmask of colors `c` for which the oriented
+/// near-to-far triple `(a, b, c)` occurs somewhere on that side in at least one
+/// forward execution represented by the exact window.  This is deliberately a
+/// separate sparse-ish product from `WindowSideSummary`: for large alphabets
+/// the C^2 table per window would dominate the cheap color/pair domain.  The
+/// refinement is therefore enabled only for modest alphabets; when disabled,
+/// backward queries conservatively accept everything.
+const SIDE_TRIPLE_MAX_COLORS: usize = 8;
+
+struct SideTriplePossible<const S: usize, const C: usize> {
+    enabled: bool,
+    masks: Vec<u64>,
+}
+
+impl<const S: usize, const C: usize> SideTriplePossible<S, C> {
+    const fn window_index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    const fn index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        side: usize,
+        near: usize,
+        middle: usize,
+    ) -> usize {
+        (((Self::window_index(st, scan, left, right) * 2 + side) * C
+            + near)
+            * C)
+            + middle
+    }
+
+    fn new() -> Self {
+        let enabled = C <= SIDE_TRIPLE_MAX_COLORS && C <= 64;
+        let len = if enabled {
+            S * C * C * C * 2 * C * C
+        } else {
+            0
+        };
+        Self {
+            enabled,
+            masks: vec![0; len],
+        }
+    }
+
+    fn mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        side: usize,
+        near: usize,
+        middle: usize,
+    ) -> u64 {
+        if !self.enabled {
+            return u64::MAX;
+        }
+        self.masks
+            [Self::index(st, scan, left, right, side, near, middle)]
+    }
+}
+
 #[expect(clippy::multiple_inherent_impl)]
 impl<const S: usize, const C: usize> WinPossible<S, C> {
     /// Replace the coarse exact-window reachability relation with the stronger
@@ -2653,8 +2726,15 @@ where
         }
     }
 
+    let side_triple_possible = prog
+        .side_triple_possible_from_blank(&win_possible, &side_possible);
+
     configs.retain(|Config { state, tape }| {
-        tape.obeys_side_prefix_possible(*state, &side_prefix_possible)
+        tape.obeys_state_triples(*state, &side_triple_possible)
+            && tape.obeys_side_prefix_possible(
+                *state,
+                &side_prefix_possible,
+            )
             && tape.obeys_joint_short_possible(
                 *state,
                 &joint_short_possible,
@@ -2755,6 +2835,7 @@ where
             &mut blanks,
             &win_possible,
             &side_possible,
+            &side_triple_possible,
             &side_prefix_possible,
             &joint_short_possible,
             joint_side_prefix_possible.as_ref(),
@@ -3123,6 +3204,7 @@ fn step_instrs<
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
+    side_triple_possible: &SideTriplePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
     joint_short_possible: &JointShortPossible<s, c>,
     joint_side_prefix_possible: Option<&JointSidePrefixPossible<s, c>>,
@@ -3220,6 +3302,7 @@ fn step_instrs<
 
         if !window_possible(state, &tape, win_possible)
             || !tape.obeys_state_side(state, side_possible)
+            || !tape.obeys_state_triples(state, side_triple_possible)
             || !tape
                 .obeys_blank_side_possible(state, blank_side_possible)
             || !tape.obeys_tail_presence(
@@ -3257,6 +3340,7 @@ fn step_configs<
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
+    side_triple_possible: &SideTriplePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
     joint_short_possible: &JointShortPossible<s, c>,
     joint_side_prefix_possible: Option<&JointSidePrefixPossible<s, c>>,
@@ -3291,6 +3375,7 @@ fn step_configs<
                 blanks,
                 win_possible,
                 side_possible,
+                side_triple_possible,
                 side_prefix_possible,
                 joint_short_possible,
                 joint_side_prefix_possible,
@@ -3320,6 +3405,7 @@ fn step_configs<
                 blanks,
                 win_possible,
                 side_possible,
+                side_triple_possible,
                 side_prefix_possible,
                 joint_short_possible,
                 joint_side_prefix_possible,
@@ -3345,6 +3431,7 @@ fn step_configs<
             blanks,
             win_possible,
             side_possible,
+            side_triple_possible,
             side_prefix_possible,
             joint_short_possible,
             joint_side_prefix_possible,
@@ -4193,6 +4280,185 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                         queued[target_index] = true;
                         q.push_back((ns, left, new_left, pr));
                     }
+                }
+            }
+        }
+
+        possible
+    }
+
+    /// Compute ordered whole-side triples `(a,b,c)` for every exact reachable
+    /// local window.  This is the length-3 companion to `SidePossible::pairs`.
+    ///
+    /// Existing source triples are copied conservatively across a head move.
+    /// On the side the head moves away from, the newly written cell creates an
+    /// exact new boundary prefix `print, old_neighbor`; every color already
+    /// allowed to follow `old_neighbor` by the source pair summary therefore
+    /// supplies a sound third cell.  Pulling from the opposite side needs no
+    /// special deletion: retaining triples that involved the consumed nearest
+    /// cell is an over-approximation and cannot make the backward proof unsound.
+    fn side_triple_possible_from_blank(
+        &self,
+        windows: &WinPossible<s, c>,
+        sides: &SidePossible<s, c>,
+    ) -> SideTriplePossible<s, c> {
+        let mut possible = SideTriplePossible::new();
+        if !possible.enabled {
+            return possible;
+        }
+
+        let mut trans = [[None; c]; s];
+        for ((state, read), &(print, shift, next_state)) in self.iter()
+        {
+            trans[state as usize][read as usize] =
+                Some((print as usize, shift, next_state as usize));
+        }
+
+        // On the true blank tape, both oriented sides contain 000 everywhere.
+        for side in [LEFT_SIDE, RIGHT_SIDE] {
+            let index = SideTriplePossible::<s, c>::index(
+                0, 0, 0, 0, side, 0, 0,
+            );
+            possible.masks[index] |= 1;
+        }
+
+        let slot_count = s * c * c * c;
+        let mut queued = vec![false; slot_count];
+        let mut q = VecDeque::new();
+        let initial =
+            SideTriplePossible::<s, c>::window_index(0, 0, 0, 0);
+        queued[initial] = true;
+        q.push_back((0_usize, 0_usize, 0_usize, 0_usize));
+
+        while let Some((st, scan, left, right)) = q.pop_front() {
+            let source_window =
+                SideTriplePossible::<s, c>::window_index(
+                    st, scan, left, right,
+                );
+            queued[source_window] = false;
+
+            let source_side = sides.window(st, scan, left, right);
+            if !source_side.reachable {
+                continue;
+            }
+
+            let Some((print, shift, next_state)) = trans[st][scan]
+            else {
+                continue;
+            };
+
+            let mut merge_target =
+                |target_left: usize,
+                 target_scan: usize,
+                 target_right: usize,
+                 push_side: usize,
+                 old_neighbor: usize,
+                 possible: &mut SideTriplePossible<s, c>| {
+                    let target_window =
+                        SideTriplePossible::<s, c>::window_index(
+                            next_state,
+                            target_scan,
+                            target_left,
+                            target_right,
+                        );
+                    let mut changed = false;
+
+                    // Every triple wholly inside an old side remains a sound
+                    // possible triple after the move.  Some copied triples on
+                    // the pulled side may have involved its consumed nearest
+                    // cell; keeping them is conservative.
+                    for side in [LEFT_SIDE, RIGHT_SIDE] {
+                        for near in 0..c {
+                            for middle in 0..c {
+                                let source_index =
+                                    SideTriplePossible::<s, c>::index(
+                                        st,
+                                        scan,
+                                        left,
+                                        right,
+                                        side,
+                                        near,
+                                        middle,
+                                    );
+                                let target_index =
+                                    SideTriplePossible::<s, c>::index(
+                                        next_state,
+                                        target_scan,
+                                        target_left,
+                                        target_right,
+                                        side,
+                                        near,
+                                        middle,
+                                    );
+                                let source_mask =
+                                    possible.masks[source_index];
+                                let old = possible.masks[target_index];
+                                possible.masks[target_index] |= source_mask;
+                                changed |= possible.masks[target_index] != old;
+                            }
+                        }
+                    }
+
+                    // The pushed side begins `print, old_neighbor, ...`.
+                    // `SidePossible` already over-approximates every possible
+                    // third color following that exact old neighbor.
+                    let boundary =
+                        source_side.pairs[push_side][old_neighbor];
+                    let target_index = SideTriplePossible::<s, c>::index(
+                        next_state,
+                        target_scan,
+                        target_left,
+                        target_right,
+                        push_side,
+                        print,
+                        old_neighbor,
+                    );
+                    let old = possible.masks[target_index];
+                    possible.masks[target_index] |= boundary;
+                    changed |= possible.masks[target_index] != old;
+
+                    if changed && !queued[target_window] {
+                        queued[target_window] = true;
+                        q.push_back((
+                            next_state,
+                            target_scan,
+                            target_left,
+                            target_right,
+                        ));
+                    }
+                };
+
+            if shift {
+                let mut new_rights = source_side.pairs[RIGHT_SIDE]
+                    [right]
+                    & windows.right[next_state][right][print];
+                while new_rights != 0 {
+                    let new_right =
+                        new_rights.trailing_zeros() as usize;
+                    new_rights &= new_rights - 1;
+                    merge_target(
+                        print,
+                        right,
+                        new_right,
+                        LEFT_SIDE,
+                        left,
+                        &mut possible,
+                    );
+                }
+            } else {
+                let mut new_lefts = source_side.pairs[LEFT_SIDE][left]
+                    & windows.left[next_state][left][print];
+                while new_lefts != 0 {
+                    let new_left = new_lefts.trailing_zeros() as usize;
+                    new_lefts &= new_lefts - 1;
+                    merge_target(
+                        new_left,
+                        left,
+                        print,
+                        RIGHT_SIDE,
+                        right,
+                        &mut possible,
+                    );
                 }
             }
         }
@@ -7713,6 +7979,222 @@ impl Tape {
         }
     }
 
+    /// Check ordered triples forced by the explicit portions of both tape
+    /// sides against one compatible exact-window triple summary.
+    ///
+    /// Only triples present in *every* concrete tape denoted by a backward span
+    /// are required.  In particular, an `AtLeast(1)` run does not contribute a
+    /// cross-block suffix pair, because its concrete length may be one or more.
+    /// This keeps the filter an under-approximation of the backward
+    /// requirements and therefore sound for pruning.
+    fn obeys_state_triples<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &SideTriplePossible<S, C>,
+    ) -> bool {
+        if !possible.enabled {
+            return true;
+        }
+
+        struct TripleRequirements<const C: usize> {
+            masks: [[u64; C]; C],
+        }
+
+        impl<const C: usize> TripleRequirements<C> {
+            fn add(&mut self, a: usize, b: usize, c: usize) {
+                self.masks[a][b] |= 1_u64 << c;
+            }
+        }
+
+        #[derive(Clone, Copy)]
+        struct BlockBoundary {
+            first: usize,
+            last: usize,
+            prefix2: Option<(usize, usize)>,
+            suffix2: Option<(usize, usize)>,
+            exactly_one_cell: bool,
+        }
+
+        fn compile_span<const C: usize>(
+            span: &Span,
+        ) -> TripleRequirements<C> {
+            let mut req = TripleRequirements { masks: [[0; C]; C] };
+            let mut previous_last: Option<usize> = None;
+            let mut previous_suffix2: Option<(usize, usize)> = None;
+
+            for block in span.span.iter() {
+                let boundary = match block {
+                    Block::Run { color, count } => {
+                        let color = *color as usize;
+                        let minimum = usize::from(count.minimum());
+                        if minimum >= 3 {
+                            req.add(color, color, color);
+                        }
+
+                        BlockBoundary {
+                            first: color,
+                            last: color,
+                            prefix2: (minimum >= 2)
+                                .then_some((color, color)),
+                            suffix2: (minimum >= 2)
+                                .then_some((color, color)),
+                            exactly_one_cell: matches!(
+                                *count,
+                                BlockCount::Exact(1)
+                            ),
+                        }
+                    },
+                    Block::Word { word, count } => {
+                        let first = word[0] as usize;
+                        let last = *word.last().unwrap() as usize;
+                        let minimum = count.minimum();
+
+                        // Every concrete member contains at least `minimum`
+                        // whole copies.  Three copies suffice to expose every
+                        // possible length-3 window of a periodic word.
+                        let copies = minimum.min(3);
+                        let mut a = None;
+                        let mut b = None;
+                        for _ in 0..copies {
+                            for &color in word.iter() {
+                                let color = color as usize;
+                                if let (Some(a), Some(b)) = (a, b) {
+                                    req.add(a, b, color);
+                                }
+                                a = b;
+                                b = Some(color);
+                            }
+                        }
+
+                        let prefix2 = if word.len() >= 2 {
+                            Some((word[0] as usize, word[1] as usize))
+                        } else if minimum >= 2 {
+                            Some((first, first))
+                        } else {
+                            None
+                        };
+                        let suffix2 = if word.len() >= 2 {
+                            Some((
+                                word[word.len() - 2] as usize,
+                                word[word.len() - 1] as usize,
+                            ))
+                        } else if minimum >= 2 {
+                            Some((last, last))
+                        } else {
+                            None
+                        };
+
+                        BlockBoundary {
+                            first,
+                            last,
+                            prefix2,
+                            suffix2,
+                            exactly_one_cell: word.len() == 1
+                                && matches!(
+                                    *count,
+                                    WordCount::Exact(1)
+                                ),
+                        }
+                    },
+                };
+
+                // Triples crossing the block boundary are required only when
+                // the necessary two-cell suffix/prefix is fixed for every
+                // concretization of the adjacent blocks.
+                if let Some((a, b)) = previous_suffix2 {
+                    req.add(a, b, boundary.first);
+                }
+                if let (Some(a), Some((b, c))) =
+                    (previous_last, boundary.prefix2)
+                {
+                    req.add(a, b, c);
+                }
+
+                let combined_suffix2 =
+                    if let Some(pair) = boundary.suffix2 {
+                        Some(pair)
+                    } else if boundary.exactly_one_cell {
+                        previous_last.map(|a| (a, boundary.last))
+                    } else {
+                        None
+                    };
+
+                previous_last = Some(boundary.last);
+                previous_suffix2 = combined_suffix2;
+            }
+
+            if matches!(&span.end, &TapeEnd::Blanks) {
+                // The infinite blank suffix guarantees every boundary triple
+                // that can be formed from the fixed explicit suffix, plus 000.
+                if let Some((a, b)) = previous_suffix2 {
+                    req.add(a, b, 0);
+                }
+                if let Some(a) = previous_last {
+                    req.add(a, 0, 0);
+                }
+                req.add(0, 0, 0);
+            }
+
+            req
+        }
+
+        fn side_ok<const S: usize, const C: usize>(
+            req: &TripleRequirements<C>,
+            possible: &SideTriplePossible<S, C>,
+            st: usize,
+            sc: usize,
+            left: usize,
+            right: usize,
+            side: usize,
+        ) -> bool {
+            for near in 0..C {
+                for middle in 0..C {
+                    let required = req.masks[near][middle];
+                    if required == 0 {
+                        continue;
+                    }
+                    if required
+                        & !possible.mask(
+                            st, sc, left, right, side, near, middle,
+                        )
+                        != 0
+                    {
+                        return false;
+                    }
+                }
+            }
+            true
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let left_req = compile_span::<C>(&self.lspan);
+        let right_req = compile_span::<C>(&self.rspan);
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        let matches_window = |left: usize, right: usize| {
+            side_ok(&left_req, possible, st, sc, left, right, LEFT_SIDE)
+                && side_ok(
+                    &right_req, possible, st, sc, left, right,
+                    RIGHT_SIDE,
+                )
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => matches_window(left, right),
+            (Some(left), None) => {
+                (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
+    }
+
     /// Match the ordered two-run-plus-spill forward prefixes on both sides
     /// against one compatible exact local window.
     fn obeys_side_prefix_possible<const S: usize, const C: usize>(
@@ -10207,6 +10689,53 @@ fn test_per_color_tail_count_filter() {
     // A different hidden color is also rejected.
     let hidden_two: Tape = "? 2 1 [0] 0+".into();
     assert!(!hidden_two.obeys_color_tail_count(1, &count));
+}
+
+#[test]
+fn test_forward_side_triple_propagation() {
+    // After A0 -> 1RB and B0 -> 2RC, state C scans blank with left side
+    // near-to-far `2,1,0,...`; therefore the exact triple (2,1,0) is reachable.
+    let prog =
+        Prog::<3, 3>::from("1RB ... ...  2RC ... ...  ... ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let sides = prog.side_possible_from_blank(&windows);
+    let triples =
+        prog.side_triple_possible_from_blank(&windows, &sides);
+
+    let mask = triples.mask(2, 0, 2, 0, LEFT_SIDE, 2, 1);
+    assert_ne!(mask & 1, 0);
+}
+
+#[test]
+fn test_state_side_triple_filter() {
+    let mut triples = SideTriplePossible::<1, 3>::new();
+    let left = 2;
+    let right = 0;
+
+    // Make every triple possible at this exact window, then specifically forbid
+    // far color 2 after the left-side prefix (2,1), while keeping far 0 valid.
+    for side in [LEFT_SIDE, RIGHT_SIDE] {
+        for near in 0..3 {
+            for middle in 0..3 {
+                let index = SideTriplePossible::<1, 3>::index(
+                    0, 0, left, right, side, near, middle,
+                );
+                triples.masks[index] = 0b111;
+            }
+        }
+    }
+    let index = SideTriplePossible::<1, 3>::index(
+        0, 0, left, right, LEFT_SIDE, 2, 1,
+    );
+    triples.masks[index] = 0b001;
+
+    let allowed: Tape = "0+ 1 2 [0] 0+".into();
+    assert!(allowed.obeys_state_triples(0, &triples));
+
+    let rejected: Tape = "0+ 2 1 2 [0] 0+".into();
+    assert!(!rejected.obeys_state_triples(0, &triples));
 }
 
 #[test]
