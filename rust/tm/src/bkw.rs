@@ -521,7 +521,7 @@ impl<const S: usize, const C: usize> SideTriplePossible<S, C> {
     }
 
     fn new() -> Self {
-        let enabled = C <= SIDE_TRIPLE_MAX_COLORS && C <= 64;
+        let enabled = C <= SIDE_TRIPLE_MAX_COLORS;
         let len = if enabled {
             S * C * C * C * 2 * C * C
         } else {
@@ -548,6 +548,164 @@ impl<const S: usize, const C: usize> SideTriplePossible<S, C> {
         }
         self.masks
             [Self::index(st, scan, left, right, side, near, middle)]
+    }
+}
+
+/// Cross-side co-occurrence relation for ordered whole-side triples.
+///
+/// For one exact local window, bit `(l, r)` means that left-side triple `l`
+/// and right-side triple `r` can occur together in the same forward abstract
+/// execution.  This is strictly stronger than checking the two projected
+/// `SideTriplePossible` masks independently.  The domain is intentionally
+/// limited to three-color machines: 27 triples per side give 729 pair bits,
+/// i.e. only 12 u64 words per exact window.
+const JOINT_SIDE_TRIPLE_MAX_COLORS: usize = 3;
+
+struct JointSideTriplePossible<const S: usize, const C: usize> {
+    enabled: bool,
+    words_per_window: usize,
+    bits: Vec<u64>,
+}
+
+impl<const S: usize, const C: usize> JointSideTriplePossible<S, C> {
+    const fn window_index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    const fn triple_id(a: usize, b: usize, c: usize) -> usize {
+        (a * C + b) * C + c
+    }
+
+    const fn triple_count() -> usize {
+        C * C * C
+    }
+
+    fn new() -> Self {
+        let enabled = C <= JOINT_SIDE_TRIPLE_MAX_COLORS;
+        let triple_count = Self::triple_count();
+        let pair_bits = triple_count * triple_count;
+        let words_per_window =
+            if enabled { pair_bits.div_ceil(64) } else { 0 };
+        let windows = S * C * C * C;
+        Self {
+            enabled,
+            words_per_window,
+            bits: vec![0; windows * words_per_window],
+        }
+    }
+
+    const fn word_base(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        Self::window_index(st, scan, left, right)
+            * self.words_per_window
+    }
+
+    fn contains_ids(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        left_id: usize,
+        right_id: usize,
+    ) -> bool {
+        if !self.enabled {
+            return true;
+        }
+        let triple_count = Self::triple_count();
+        let pair = left_id * triple_count + right_id;
+        let base = self.word_base(st, scan, left, right);
+        self.bits[base + pair / 64] & (1_u64 << (pair % 64)) != 0
+    }
+
+    fn insert_ids(
+        &mut self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        left_id: usize,
+        right_id: usize,
+    ) -> bool {
+        if !self.enabled {
+            return false;
+        }
+        let triple_count = Self::triple_count();
+        let pair = left_id * triple_count + right_id;
+        let base = self.word_base(st, scan, left, right);
+        let word = &mut self.bits[base + pair / 64];
+        let bit = 1_u64 << (pair % 64);
+        let old = *word;
+        *word |= bit;
+        *word != old
+    }
+
+    #[expect(clippy::too_many_arguments)]
+    fn copy_window(
+        &mut self,
+        src_st: usize,
+        src_scan: usize,
+        src_left: usize,
+        src_right: usize,
+        dst_st: usize,
+        dst_scan: usize,
+        dst_left: usize,
+        dst_right: usize,
+    ) -> bool {
+        if !self.enabled {
+            return false;
+        }
+        let src = self.word_base(src_st, src_scan, src_left, src_right);
+        let dst = self.word_base(dst_st, dst_scan, dst_left, dst_right);
+        let mut changed = false;
+        for offset in 0..self.words_per_window {
+            let value = self.bits[src + offset];
+            let old = self.bits[dst + offset];
+            self.bits[dst + offset] |= value;
+            changed |= self.bits[dst + offset] != old;
+        }
+        changed
+    }
+
+    /// Project one exact-window relation to the individual triples currently
+    /// known possible on each side.  Because every concrete blank-start tape
+    /// has a far-away 000 triple on both sides, the relation has a natural
+    /// anchor and these projections safely cover every concrete side triple.
+    fn projections(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> (u64, u64) {
+        if !self.enabled {
+            return (u64::MAX, u64::MAX);
+        }
+        let triple_count = Self::triple_count();
+        debug_assert!(triple_count <= 64);
+        let mut left_mask = 0_u64;
+        let mut right_mask = 0_u64;
+        for left_id in 0..triple_count {
+            for right_id in 0..triple_count {
+                if self.contains_ids(
+                    st, scan, left, right, left_id, right_id,
+                ) {
+                    left_mask |= 1_u64 << left_id;
+                    right_mask |= 1_u64 << right_id;
+                }
+            }
+        }
+        (left_mask, right_mask)
     }
 }
 
@@ -810,6 +968,49 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
     fn refine_joint_side_prefix_reachability_relation(
         &mut self,
         joint: &JointSidePrefixPossible<S, C>,
+    ) -> bool {
+        let mut changed = false;
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let old = self.right[st][scan][left];
+                    if old == 0 {
+                        continue;
+                    }
+
+                    let mut keep = old;
+                    let mut rights = old;
+                    while rights != 0 {
+                        let right = rights.trailing_zeros() as usize;
+                        rights &= rights - 1;
+                        if joint
+                            .window(st, scan, left, right)
+                            .is_empty()
+                        {
+                            keep &= !(1_u64 << right);
+                        }
+                    }
+
+                    changed |= keep != old;
+                    self.right[st][scan][left] = keep;
+                }
+            }
+        }
+
+        if changed {
+            self.rebuild_window_relation();
+        }
+        changed
+    }
+
+    /// Remove exact local windows for which the joint ordered word-prefix
+    /// product has no forward witness. This is stronger than checking the two
+    /// `word_windows` projections independently because the left and right
+    /// alternatives remain paired from the same execution.
+    fn refine_joint_side_word_reachability_relation(
+        &mut self,
+        joint: &JointSideWordPrefixPossible<S, C>,
     ) -> bool {
         let mut changed = false;
 
@@ -1754,6 +1955,89 @@ impl SideWordPrefix {
     }
 }
 
+fn side_word_requirement(span: &Span) -> SideWordPrefix {
+    let mut cells = [0; SIDE_WORD_LITERAL_CELLS];
+    let mut len = 0_usize;
+    let mut skip = 1_usize;
+
+    let append = |cells: &mut [Color; SIDE_WORD_LITERAL_CELLS],
+                  len: &mut usize,
+                  color: Color|
+     -> bool {
+        if *len == SIDE_WORD_LITERAL_CELLS {
+            return false;
+        }
+        cells[*len] = color;
+        *len += 1;
+        true
+    };
+
+    for block in span.span.iter() {
+        match block {
+            Block::Run { color, count } => {
+                let minimum = usize::from(count.minimum());
+                let start = skip.min(minimum);
+                skip -= start;
+                for _ in start..minimum {
+                    if !append(&mut cells, &mut len, *color) {
+                        return SideWordPrefix::from_literal(
+                            cells,
+                            len,
+                            SideWordTail::Unknown,
+                        );
+                    }
+                }
+                if count.is_indef() {
+                    return SideWordPrefix::from_literal(
+                        cells,
+                        len,
+                        SideWordTail::Unknown,
+                    );
+                }
+            },
+            Block::Word { word, count } => {
+                let width = word.len();
+                let minimum = count.minimum().saturating_mul(width);
+                let start = skip.min(minimum);
+                skip -= start;
+                for offset in start..minimum {
+                    if !append(
+                        &mut cells,
+                        &mut len,
+                        word[offset % width],
+                    ) {
+                        return SideWordPrefix::from_literal(
+                            cells,
+                            len,
+                            SideWordTail::Unknown,
+                        );
+                    }
+                }
+                if count.is_indef() {
+                    return SideWordPrefix::from_literal(
+                        cells,
+                        len,
+                        SideWordTail::Unknown,
+                    );
+                }
+            },
+        }
+    }
+
+    if skip != 0 {
+        return match span.end {
+            TapeEnd::Blanks => SideWordPrefix::blank(),
+            TapeEnd::Unknown => SideWordPrefix::unknown(),
+        };
+    }
+
+    let tail = match span.end {
+        TapeEnd::Blanks => SideWordTail::Blank,
+        TapeEnd::Unknown => SideWordTail::Unknown,
+    };
+    SideWordPrefix::from_literal(cells, len, tail)
+}
+
 /// Same exact-window conditioning as `SidePossible`, but keeps alternatives
 /// instead of unioning their ordered near-tail run structure.
 const SIDE_PREFIX_HAS_BLANK: u8 = 1;
@@ -2110,6 +2394,89 @@ struct JointSidePrefixNode {
     left: usize,
     right: usize,
     prefix: JointSidePrefix,
+}
+
+// Joint version of the richer ordered cell/word-prefix domain. Unlike the
+// independent `SidePrefixPossible::word_windows`, each left/right pair below
+// comes from one forward execution. This prevents the backward prover from
+// combining a left periodic/literal prefix from one run with an incompatible
+// right prefix from another run.
+const JOINT_SIDE_WORD_MAX_ALTS_PER_WINDOW: usize = 64;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum JointSideWordPrefix {
+    Specific {
+        left: SideWordPrefix,
+        right: SideWordPrefix,
+    },
+    // Conservative top used only when the paired antichain overflows.
+    Unknown,
+}
+
+impl JointSideWordPrefix {
+    const fn blank() -> Self {
+        Self::Specific {
+            left: SideWordPrefix::blank(),
+            right: SideWordPrefix::blank(),
+        }
+    }
+
+    fn subsumes(self, other: Self) -> bool {
+        match (self, other) {
+            (Self::Unknown, _) => true,
+            (_, Self::Unknown) => false,
+            (
+                Self::Specific {
+                    left: a_l,
+                    right: a_r,
+                },
+                Self::Specific {
+                    left: b_l,
+                    right: b_r,
+                },
+            ) => a_l.subsumes(b_l) && a_r.subsumes(b_r),
+        }
+    }
+}
+
+struct JointSideWordPrefixPossible<const S: usize, const C: usize> {
+    windows: Vec<Vec<JointSideWordPrefix>>,
+}
+
+impl<const S: usize, const C: usize> JointSideWordPrefixPossible<S, C> {
+    const fn index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C) + scan) * C + left) * C + right
+    }
+
+    fn new() -> Self {
+        Self {
+            windows: (0..S * C * C * C).map(|_| Vec::new()).collect(),
+        }
+    }
+
+    fn window(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> &[JointSideWordPrefix] {
+        &self.windows[Self::index(st, scan, left, right)]
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct JointSideWordPrefixNode {
+    st: usize,
+    scan: usize,
+    left: usize,
+    right: usize,
+    prefix: JointSideWordPrefix,
 }
 
 /// Bit `p` of `possible[state]` is set when the transition graph admits a
@@ -2612,6 +2979,7 @@ where
         side_prefix_possible,
         joint_short_possible,
         joint_side_prefix_fixed,
+        joint_side_word_prefix_possible,
     ) = loop {
         let prefixes = prog.side_prefix_possible_from_blank(
             &win_possible,
@@ -2664,7 +3032,23 @@ where
             continue;
         }
 
-        break (prefixes, joint, joint_side);
+        let joint_word = prog
+            .joint_side_word_prefix_possible_from_blank(&win_possible);
+        if win_possible
+            .refine_joint_side_word_reachability_relation(&joint_word)
+        {
+            prefix_refined_windows = true;
+            side_possible =
+                prog.side_possible_from_blank(&win_possible);
+            win_possible
+                .refine_side_reachability_relation(&side_possible);
+            color_tail_count =
+                color_tail_count_from_blank(prog, &win_possible);
+            side_possible.refine_zero_tail_pairs(&color_tail_count);
+            continue;
+        }
+
+        break (prefixes, joint, joint_side, joint_word);
     };
 
     // Preserve the old lazy backward check: only retain the expensive joint
@@ -2728,9 +3112,18 @@ where
 
     let side_triple_possible = prog
         .side_triple_possible_from_blank(&win_possible, &side_possible);
+    let joint_side_triple_possible = prog
+        .joint_side_triple_possible_from_blank(
+            &win_possible,
+            &side_possible,
+        );
 
     configs.retain(|Config { state, tape }| {
         tape.obeys_state_triples(*state, &side_triple_possible)
+            && tape.obeys_joint_state_triples(
+                *state,
+                &joint_side_triple_possible,
+            )
             && tape.obeys_side_prefix_possible(
                 *state,
                 &side_prefix_possible,
@@ -2742,6 +3135,10 @@ where
             && tape.obeys_joint_side_prefix_possible(
                 *state,
                 joint_side_prefix_possible.as_ref(),
+            )
+            && tape.obeys_joint_side_word_prefix_possible(
+                *state,
+                &joint_side_word_prefix_possible,
             )
     });
 
@@ -2836,9 +3233,11 @@ where
             &win_possible,
             &side_possible,
             &side_triple_possible,
+            &joint_side_triple_possible,
             &side_prefix_possible,
             &joint_short_possible,
             joint_side_prefix_possible.as_ref(),
+            &joint_side_word_prefix_possible,
             &blank_side_possible,
             &color_tail_count,
             &pair_tail_presence,
@@ -3205,9 +3604,11 @@ fn step_instrs<
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     side_triple_possible: &SideTriplePossible<s, c>,
+    joint_side_triple_possible: &JointSideTriplePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
     joint_short_possible: &JointShortPossible<s, c>,
     joint_side_prefix_possible: Option<&JointSidePrefixPossible<s, c>>,
+    joint_side_word_prefix_possible: &JointSideWordPrefixPossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -3303,6 +3704,10 @@ fn step_instrs<
         if !window_possible(state, &tape, win_possible)
             || !tape.obeys_state_side(state, side_possible)
             || !tape.obeys_state_triples(state, side_triple_possible)
+            || !tape.obeys_joint_state_triples(
+                state,
+                joint_side_triple_possible,
+            )
             || !tape
                 .obeys_blank_side_possible(state, blank_side_possible)
             || !tape.obeys_tail_presence(
@@ -3317,6 +3722,10 @@ fn step_instrs<
             || !tape.obeys_joint_side_prefix_possible(
                 state,
                 joint_side_prefix_possible,
+            )
+            || !tape.obeys_joint_side_word_prefix_possible(
+                state,
+                joint_side_word_prefix_possible,
             )
         {
             continue;
@@ -3341,9 +3750,11 @@ fn step_configs<
     win_possible: &WinPossible<s, c>,
     side_possible: &SidePossible<s, c>,
     side_triple_possible: &SideTriplePossible<s, c>,
+    joint_side_triple_possible: &JointSideTriplePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
     joint_short_possible: &JointShortPossible<s, c>,
     joint_side_prefix_possible: Option<&JointSidePrefixPossible<s, c>>,
+    joint_side_word_prefix_possible: &JointSideWordPrefixPossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
     pair_tail_presence: &PairTailPresencePossible<s, c>,
@@ -3376,9 +3787,11 @@ fn step_configs<
                 win_possible,
                 side_possible,
                 side_triple_possible,
+                joint_side_triple_possible,
                 side_prefix_possible,
                 joint_short_possible,
                 joint_side_prefix_possible,
+                joint_side_word_prefix_possible,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -3406,9 +3819,11 @@ fn step_configs<
                 win_possible,
                 side_possible,
                 side_triple_possible,
+                joint_side_triple_possible,
                 side_prefix_possible,
                 joint_short_possible,
                 joint_side_prefix_possible,
+                joint_side_word_prefix_possible,
                 blank_side_possible,
                 color_tail_count,
                 pair_tail_presence,
@@ -3432,9 +3847,11 @@ fn step_configs<
             win_possible,
             side_possible,
             side_triple_possible,
+            joint_side_triple_possible,
             side_prefix_possible,
             joint_short_possible,
             joint_side_prefix_possible,
+            joint_side_word_prefix_possible,
             blank_side_possible,
             color_tail_count,
             pair_tail_presence,
@@ -4466,6 +4883,183 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         possible
     }
 
+    /// Compute cross-side co-occurrence of whole-side triples for every exact
+    /// reachable local window. Existing joint pairs are copied across each
+    /// head move. When a new boundary triple is created on the pushed side, it
+    /// is paired only with triples projected from the opposite side of the same
+    /// source joint relation, rather than with the global Cartesian product of
+    /// the independent side summaries.
+    fn joint_side_triple_possible_from_blank(
+        &self,
+        windows: &WinPossible<s, c>,
+        sides: &SidePossible<s, c>,
+    ) -> JointSideTriplePossible<s, c> {
+        let mut possible = JointSideTriplePossible::new();
+        if !possible.enabled {
+            return possible;
+        }
+
+        let mut trans = [[None; c]; s];
+        for ((state, read), &(print, shift, next_state)) in self.iter()
+        {
+            trans[state as usize][read as usize] =
+                Some((print as usize, shift, next_state as usize));
+        }
+
+        let blank = JointSideTriplePossible::<s, c>::triple_id(0, 0, 0);
+        possible.insert_ids(0, 0, 0, 0, blank, blank);
+
+        let slot_count = s * c * c * c;
+        let mut queued = vec![false; slot_count];
+        let mut q = VecDeque::new();
+        let initial =
+            JointSideTriplePossible::<s, c>::window_index(0, 0, 0, 0);
+        queued[initial] = true;
+        q.push_back((0_usize, 0_usize, 0_usize, 0_usize));
+
+        while let Some((st, scan, left, right)) = q.pop_front() {
+            let source_window =
+                JointSideTriplePossible::<s, c>::window_index(
+                    st, scan, left, right,
+                );
+            queued[source_window] = false;
+
+            let source_side = sides.window(st, scan, left, right);
+            if !source_side.reachable {
+                continue;
+            }
+
+            let Some((print, shift, next_state)) = trans[st][scan]
+            else {
+                continue;
+            };
+
+            // Capture these before mutating target windows. If a transition
+            // loops back to the same exact window, newly added target pairs
+            // must be discovered by a later worklist iteration, not folded
+            // recursively into this edge.
+            let (source_left_triples, source_right_triples) =
+                possible.projections(st, scan, left, right);
+
+            let mut merge_target =
+                |target_left: usize,
+                 target_scan: usize,
+                 target_right: usize,
+                 push_side: usize,
+                 old_neighbor: usize,
+                 possible: &mut JointSideTriplePossible<s, c>| {
+                    let target_window =
+                        JointSideTriplePossible::<s, c>::window_index(
+                            next_state,
+                            target_scan,
+                            target_left,
+                            target_right,
+                        );
+                    let mut changed = possible.copy_window(
+                        st,
+                        scan,
+                        left,
+                        right,
+                        next_state,
+                        target_scan,
+                        target_left,
+                        target_right,
+                    );
+
+                    let mut boundary =
+                        source_side.pairs[push_side][old_neighbor];
+                    while boundary != 0 {
+                        let far = boundary.trailing_zeros() as usize;
+                        boundary &= boundary - 1;
+                        let new_id =
+                            JointSideTriplePossible::<s, c>::triple_id(
+                                print,
+                                old_neighbor,
+                                far,
+                            );
+
+                        if push_side == LEFT_SIDE {
+                            let mut opposite = source_right_triples;
+                            while opposite != 0 {
+                                let right_id =
+                                    opposite.trailing_zeros() as usize;
+                                opposite &= opposite - 1;
+                                changed |= possible.insert_ids(
+                                    next_state,
+                                    target_scan,
+                                    target_left,
+                                    target_right,
+                                    new_id,
+                                    right_id,
+                                );
+                            }
+                        } else {
+                            let mut opposite = source_left_triples;
+                            while opposite != 0 {
+                                let left_id =
+                                    opposite.trailing_zeros() as usize;
+                                opposite &= opposite - 1;
+                                changed |= possible.insert_ids(
+                                    next_state,
+                                    target_scan,
+                                    target_left,
+                                    target_right,
+                                    left_id,
+                                    new_id,
+                                );
+                            }
+                        }
+                    }
+
+                    if changed && !queued[target_window] {
+                        queued[target_window] = true;
+                        q.push_back((
+                            next_state,
+                            target_scan,
+                            target_left,
+                            target_right,
+                        ));
+                    }
+                };
+
+            if shift {
+                let mut new_rights = source_side.pairs[RIGHT_SIDE]
+                    [right]
+                    & windows.right[next_state][right][print];
+                while new_rights != 0 {
+                    let new_right =
+                        new_rights.trailing_zeros() as usize;
+                    new_rights &= new_rights - 1;
+                    merge_target(
+                        print,
+                        right,
+                        new_right,
+                        LEFT_SIDE,
+                        left,
+                        &mut possible,
+                    );
+                }
+            } else {
+                let mut new_lefts = source_side.pairs[LEFT_SIDE][left]
+                    & windows.left[next_state][left][print];
+                while new_lefts != 0 {
+                    let new_left = new_lefts.trailing_zeros() as usize;
+                    new_lefts &= new_lefts - 1;
+                    merge_target(
+                        new_left,
+                        left,
+                        print,
+                        RIGHT_SIDE,
+                        right,
+                        &mut possible,
+                    );
+                }
+            }
+        }
+
+        possible
+    }
+
     /// Reachable two-run-plus-spill prefixes strictly beyond each immediate
     /// neighbor.
     ///
@@ -5349,6 +5943,204 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
         possible
     }
+
+    #[expect(clippy::cast_possible_truncation)]
+    fn joint_side_word_prefix_possible_from_blank(
+        &self,
+        windows: &WinPossible<S, C>,
+    ) -> JointSideWordPrefixPossible<S, C> {
+        let mut trans = [[None; C]; S];
+        for ((state, read), &(print, shift, next_state)) in self.iter()
+        {
+            trans[state as usize][read as usize] =
+                Some((print as usize, shift, next_state as usize));
+        }
+
+        let mut possible = JointSideWordPrefixPossible::new();
+        let mut q = VecDeque::new();
+
+        let push =
+            |node: JointSideWordPrefixNode,
+             possible: &mut JointSideWordPrefixPossible<S, C>,
+             q: &mut VecDeque<JointSideWordPrefixNode>| {
+                if windows.right[node.st][node.scan][node.left]
+                    & (1_u64 << node.right)
+                    == 0
+                {
+                    return;
+                }
+
+                let index = JointSideWordPrefixPossible::<S, C>::index(
+                    node.st, node.scan, node.left, node.right,
+                );
+                let alts = &mut possible.windows[index];
+
+                if alts
+                    .iter()
+                    .copied()
+                    .any(|old| old.subsumes(node.prefix))
+                {
+                    return;
+                }
+                alts.retain(|&old| !node.prefix.subsumes(old));
+
+                if node.prefix != JointSideWordPrefix::Unknown
+                    && alts.len() >= JOINT_SIDE_WORD_MAX_ALTS_PER_WINDOW
+                {
+                    alts.clear();
+                    alts.push(JointSideWordPrefix::Unknown);
+                    q.push_back(JointSideWordPrefixNode {
+                        prefix: JointSideWordPrefix::Unknown,
+                        ..node
+                    });
+                    return;
+                }
+
+                alts.push(node.prefix);
+                q.push_back(node);
+            };
+
+        push(
+            JointSideWordPrefixNode {
+                st: 0,
+                scan: 0,
+                left: 0,
+                right: 0,
+                prefix: JointSideWordPrefix::blank(),
+            },
+            &mut possible,
+            &mut q,
+        );
+
+        while let Some(node) = q.pop_front() {
+            let index = JointSideWordPrefixPossible::<S, C>::index(
+                node.st, node.scan, node.left, node.right,
+            );
+            if !possible.windows[index].contains(&node.prefix) {
+                continue;
+            }
+
+            let Some((print, shift, tr)) = trans[node.st][node.scan]
+            else {
+                continue;
+            };
+
+            match node.prefix {
+                JointSideWordPrefix::Unknown => {
+                    if shift {
+                        let mut rights =
+                            windows.right[tr][node.right][print];
+                        while rights != 0 {
+                            let new_right =
+                                rights.trailing_zeros() as usize;
+                            rights &= rights - 1;
+                            push(
+                                JointSideWordPrefixNode {
+                                    st: tr,
+                                    scan: node.right,
+                                    left: print,
+                                    right: new_right,
+                                    prefix:
+                                        JointSideWordPrefix::Unknown,
+                                },
+                                &mut possible,
+                                &mut q,
+                            );
+                        }
+                    } else {
+                        let mut lefts =
+                            windows.left[tr][node.left][print];
+                        while lefts != 0 {
+                            let new_left =
+                                lefts.trailing_zeros() as usize;
+                            lefts &= lefts - 1;
+                            push(
+                                JointSideWordPrefixNode {
+                                    st: tr,
+                                    scan: node.left,
+                                    left: new_left,
+                                    right: print,
+                                    prefix:
+                                        JointSideWordPrefix::Unknown,
+                                },
+                                &mut possible,
+                                &mut q,
+                            );
+                        }
+                    }
+                },
+                JointSideWordPrefix::Specific { left, right } => {
+                    if shift {
+                        let mut left_next = Vec::new();
+                        left.for_each_prepend(
+                            node.left as Color,
+                            |p| {
+                                left_next.push(p);
+                            },
+                        );
+                        right.for_each_pull::<C>(|new_right, right_next| {
+                            if windows.right[tr][node.right][print]
+                                & (1_u64 << usize::from(new_right))
+                                == 0
+                            {
+                                return;
+                            }
+                            for &left_next in &left_next {
+                                push(
+                                    JointSideWordPrefixNode {
+                                        st: tr,
+                                        scan: node.right,
+                                        left: print,
+                                        right: usize::from(new_right),
+                                        prefix: JointSideWordPrefix::Specific {
+                                            left: left_next,
+                                            right: right_next,
+                                        },
+                                    },
+                                    &mut possible,
+                                    &mut q,
+                                );
+                            }
+                        });
+                    } else {
+                        let mut right_next = Vec::new();
+                        right.for_each_prepend(
+                            node.right as Color,
+                            |p| {
+                                right_next.push(p);
+                            },
+                        );
+                        left.for_each_pull::<C>(|new_left, left_next| {
+                            if windows.left[tr][node.left][print]
+                                & (1_u64 << usize::from(new_left))
+                                == 0
+                            {
+                                return;
+                            }
+                            for &right_next in &right_next {
+                                push(
+                                    JointSideWordPrefixNode {
+                                        st: tr,
+                                        scan: node.left,
+                                        left: usize::from(new_left),
+                                        right: print,
+                                        prefix: JointSideWordPrefix::Specific {
+                                            left: left_next,
+                                            right: right_next,
+                                        },
+                                    },
+                                    &mut possible,
+                                    &mut q,
+                                );
+                            }
+                        });
+                    }
+                },
+            }
+        }
+
+        possible
+    }
 }
 
 #[cfg(test)]
@@ -5387,6 +6179,56 @@ macro_rules! assert_entrypoints {
             );
         })*
     };
+}
+
+#[test]
+#[expect(clippy::similar_names)]
+fn test_joint_side_word_prefix_keeps_cross_side_pairs_correlated() {
+    let mut possible = JointSideWordPrefixPossible::<1, 3>::new();
+    let index = JointSideWordPrefixPossible::<1, 3>::index(0, 0, 1, 2);
+
+    let mut l_a_cells = [0; SIDE_WORD_LITERAL_CELLS];
+    l_a_cells[0] = 1;
+    l_a_cells[1] = 2;
+    let l_a =
+        SideWordPrefix::from_literal(l_a_cells, 2, SideWordTail::Blank);
+
+    let mut l_b_cells = [0; SIDE_WORD_LITERAL_CELLS];
+    l_b_cells[0] = 2;
+    l_b_cells[1] = 1;
+    let l_b =
+        SideWordPrefix::from_literal(l_b_cells, 2, SideWordTail::Blank);
+
+    let mut r_a_cells = [0; SIDE_WORD_LITERAL_CELLS];
+    r_a_cells[0] = 1;
+    r_a_cells[1] = 1;
+    let r_a =
+        SideWordPrefix::from_literal(r_a_cells, 2, SideWordTail::Blank);
+
+    let mut r_b_cells = [0; SIDE_WORD_LITERAL_CELLS];
+    r_b_cells[0] = 2;
+    r_b_cells[1] = 2;
+    let r_b =
+        SideWordPrefix::from_literal(r_b_cells, 2, SideWordTail::Blank);
+
+    possible.windows[index].push(JointSideWordPrefix::Specific {
+        left: l_a,
+        right: r_a,
+    });
+    possible.windows[index].push(JointSideWordPrefix::Specific {
+        left: l_b,
+        right: r_b,
+    });
+
+    assert!(!possible.windows[index].iter().copied().any(|joint| {
+        match joint {
+            JointSideWordPrefix::Unknown => true,
+            JointSideWordPrefix::Specific { left, right } => {
+                left.prefix_compatible(l_a)
+                    && right.prefix_compatible(r_b)
+            },
+        }
+    }));
 }
 
 #[test]
@@ -7987,6 +8829,10 @@ impl Tape {
     /// cross-block suffix pair, because its concrete length may be one or more.
     /// This keeps the filter an under-approximation of the backward
     /// requirements and therefore sound for pruning.
+    #[expect(
+        clippy::excessive_nesting,
+        clippy::missing_asserts_for_indexing
+    )]
     fn obeys_state_triples<const S: usize, const C: usize>(
         &self,
         state: State,
@@ -8001,7 +8847,7 @@ impl Tape {
         }
 
         impl<const C: usize> TripleRequirements<C> {
-            fn add(&mut self, a: usize, b: usize, c: usize) {
+            const fn add(&mut self, a: usize, b: usize, c: usize) {
                 self.masks[a][b] |= 1_u64 << c;
             }
         }
@@ -8110,14 +8956,16 @@ impl Tape {
                     req.add(a, b, c);
                 }
 
-                let combined_suffix2 =
-                    if let Some(pair) = boundary.suffix2 {
-                        Some(pair)
-                    } else if boundary.exactly_one_cell {
-                        previous_last.map(|a| (a, boundary.last))
-                    } else {
-                        None
-                    };
+                let combined_suffix2 = boundary.suffix2.map_or_else(
+                    || {
+                        if boundary.exactly_one_cell {
+                            previous_last.map(|a| (a, boundary.last))
+                        } else {
+                            None
+                        }
+                    },
+                    Some,
+                );
 
                 previous_last = Some(boundary.last);
                 previous_suffix2 = combined_suffix2;
@@ -8179,6 +9027,194 @@ impl Tape {
                     &right_req, possible, st, sc, left, right,
                     RIGHT_SIDE,
                 )
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => matches_window(left, right),
+            (Some(left), None) => {
+                (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
+    }
+
+    /// Check cross-side correlation between triples forced by the two explicit
+    /// backward spans. Every required left triple must be able to co-occur with
+    /// every required right triple in at least one forward execution of the
+    /// same exact local window. If either side forces no triple, this reduced
+    /// product contributes no extra pruning.
+    #[expect(
+        clippy::excessive_nesting,
+        clippy::missing_asserts_for_indexing
+    )]
+    fn obeys_joint_state_triples<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &JointSideTriplePossible<S, C>,
+    ) -> bool {
+        if !possible.enabled {
+            return true;
+        }
+
+        fn compile_span<const C: usize>(span: &Span) -> u64 {
+            debug_assert!(C * C * C <= 64);
+            let mut bits = 0_u64;
+            let mut add = |a: usize, b: usize, c: usize| {
+                let id = (a * C + b) * C + c;
+                bits |= 1_u64 << id;
+            };
+
+            #[derive(Clone, Copy)]
+            struct BlockBoundary {
+                first: usize,
+                last: usize,
+                prefix2: Option<(usize, usize)>,
+                suffix2: Option<(usize, usize)>,
+                exactly_one_cell: bool,
+            }
+
+            let mut previous_last: Option<usize> = None;
+            let mut previous_suffix2: Option<(usize, usize)> = None;
+
+            for block in span.span.iter() {
+                let boundary = match block {
+                    Block::Run { color, count } => {
+                        let color = *color as usize;
+                        let minimum = usize::from(count.minimum());
+                        if minimum >= 3 {
+                            add(color, color, color);
+                        }
+                        BlockBoundary {
+                            first: color,
+                            last: color,
+                            prefix2: (minimum >= 2)
+                                .then_some((color, color)),
+                            suffix2: (minimum >= 2)
+                                .then_some((color, color)),
+                            exactly_one_cell: matches!(
+                                *count,
+                                BlockCount::Exact(1)
+                            ),
+                        }
+                    },
+                    Block::Word { word, count } => {
+                        let first = word[0] as usize;
+                        let last = *word.last().unwrap() as usize;
+                        let minimum = count.minimum();
+                        let copies = minimum.min(3);
+                        let mut a = None;
+                        let mut b = None;
+                        for _ in 0..copies {
+                            for &color in word.iter() {
+                                let color = color as usize;
+                                if let (Some(a), Some(b)) = (a, b) {
+                                    add(a, b, color);
+                                }
+                                a = b;
+                                b = Some(color);
+                            }
+                        }
+
+                        let prefix2 = if word.len() >= 2 {
+                            Some((word[0] as usize, word[1] as usize))
+                        } else if minimum >= 2 {
+                            Some((first, first))
+                        } else {
+                            None
+                        };
+                        let suffix2 = if word.len() >= 2 {
+                            Some((
+                                word[word.len() - 2] as usize,
+                                word[word.len() - 1] as usize,
+                            ))
+                        } else if minimum >= 2 {
+                            Some((last, last))
+                        } else {
+                            None
+                        };
+
+                        BlockBoundary {
+                            first,
+                            last,
+                            prefix2,
+                            suffix2,
+                            exactly_one_cell: word.len() == 1
+                                && matches!(
+                                    *count,
+                                    WordCount::Exact(1)
+                                ),
+                        }
+                    },
+                };
+
+                if let Some((a, b)) = previous_suffix2 {
+                    add(a, b, boundary.first);
+                }
+                if let (Some(a), Some((b, c))) =
+                    (previous_last, boundary.prefix2)
+                {
+                    add(a, b, c);
+                }
+
+                previous_suffix2 = boundary.suffix2.map_or_else(
+                    || {
+                        if boundary.exactly_one_cell {
+                            previous_last.map(|a| (a, boundary.last))
+                        } else {
+                            None
+                        }
+                    },
+                    Some,
+                );
+                previous_last = Some(boundary.last);
+            }
+
+            if matches!(&span.end, &TapeEnd::Blanks) {
+                if let Some((a, b)) = previous_suffix2 {
+                    add(a, b, 0);
+                }
+                if let Some(a) = previous_last {
+                    add(a, 0, 0);
+                }
+                add(0, 0, 0);
+            }
+
+            bits
+        }
+
+        let left_req = compile_span::<C>(&self.lspan);
+        let right_req = compile_span::<C>(&self.rspan);
+        if left_req == 0 || right_req == 0 {
+            return true;
+        }
+
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        let matches_window = |left: usize, right: usize| {
+            let mut left_bits = left_req;
+            while left_bits != 0 {
+                let left_id = left_bits.trailing_zeros() as usize;
+                left_bits &= left_bits - 1;
+                let mut right_bits = right_req;
+                while right_bits != 0 {
+                    let right_id = right_bits.trailing_zeros() as usize;
+                    right_bits &= right_bits - 1;
+                    if !possible.contains_ids(
+                        st, sc, left, right, left_id, right_id,
+                    ) {
+                        return false;
+                    }
+                }
+            }
+            true
         };
 
         match (known_left, known_right) {
@@ -8891,6 +9927,50 @@ impl Tape {
                 right,
                 RIGHT_SIDE,
                 right_word_req,
+            )
+        };
+
+        match (known_left, known_right) {
+            (Some(left), Some(right)) => matches_window(left, right),
+            (Some(left), None) => {
+                (0..C).any(|right| matches_window(left, right))
+            },
+            (None, Some(right)) => {
+                (0..C).any(|left| matches_window(left, right))
+            },
+            (None, None) => (0..C).any(|left| {
+                (0..C).any(|right| matches_window(left, right))
+            }),
+        }
+    }
+
+    /// Match both ordered word-prefix requirements against one joint forward
+    /// witness. This rejects cross-side joins that pass the two independent
+    /// `word_windows` projections separately.
+    fn obeys_joint_side_word_prefix_possible<
+        const S: usize,
+        const C: usize,
+    >(
+        &self,
+        state: State,
+        possible: &JointSideWordPrefixPossible<S, C>,
+    ) -> bool {
+        let st = state as usize;
+        let sc = self.scan as usize;
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+        let left_req = side_word_requirement(&self.lspan);
+        let right_req = side_word_requirement(&self.rspan);
+
+        let matches_window = |left: usize, right: usize| {
+            possible.window(st, sc, left, right).iter().copied().any(
+                |prefix| match prefix {
+                    JointSideWordPrefix::Unknown => true,
+                    JointSideWordPrefix::Specific { left, right } => {
+                        left.prefix_compatible(left_req)
+                            && right.prefix_compatible(right_req)
+                    },
+                },
             )
         };
 
@@ -10736,6 +11816,55 @@ fn test_state_side_triple_filter() {
 
     let rejected: Tape = "0+ 2 1 2 [0] 0+".into();
     assert!(!rejected.obeys_state_triples(0, &triples));
+}
+
+#[test]
+fn test_joint_side_triple_filter_rejects_cross_side_join() {
+    let mut joint = JointSideTriplePossible::<1, 3>::new();
+    let left = 1;
+    let right = 2;
+    let triple_count = JointSideTriplePossible::<1, 3>::triple_count();
+    let forbidden_left =
+        JointSideTriplePossible::<1, 3>::triple_id(1, 1, 1);
+    let forbidden_right =
+        JointSideTriplePossible::<1, 3>::triple_id(2, 2, 2);
+
+    // Admit every cross-side triple pair at this exact window except 111/222.
+    for left_id in 0..triple_count {
+        for right_id in 0..triple_count {
+            if left_id == forbidden_left && right_id == forbidden_right
+            {
+                continue;
+            }
+            joint.insert_ids(0, 0, left, right, left_id, right_id);
+        }
+    }
+
+    let allowed: Tape = "0+ 1 1 1 [0] 2 2 1 0+".into();
+    assert!(allowed.obeys_joint_state_triples(0, &joint));
+
+    // Each side's triples are individually allowed; only their co-occurrence is
+    // forbidden by the joint relation.
+    let rejected: Tape = "0+ 1 1 1 [0] 2 2 2 0+".into();
+    assert!(!rejected.obeys_joint_state_triples(0, &joint));
+}
+
+#[test]
+fn test_forward_joint_side_triple_propagation() {
+    // A0 -> 1RB, B0 -> 2RC creates left triple 210 while the untouched right
+    // side still contains 000, so the joint relation must contain (210,000).
+    let prog =
+        Prog::<3, 3>::from("1RB ... ...  2RC ... ...  ... ... ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let sides = prog.side_possible_from_blank(&windows);
+    let joint =
+        prog.joint_side_triple_possible_from_blank(&windows, &sides);
+
+    let left_id = JointSideTriplePossible::<3, 3>::triple_id(2, 1, 0);
+    let right_id = JointSideTriplePossible::<3, 3>::triple_id(0, 0, 0);
+    assert!(joint.contains_ids(2, 0, 2, 0, left_id, right_id));
 }
 
 #[test]
