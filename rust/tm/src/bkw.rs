@@ -316,6 +316,137 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
         self.window_by_index(Self::index(st, scan, left, right))
     }
 
+    /// Intersect whole-side color/pair summaries with the independently
+    /// computed per-color tail-count domain.
+    ///
+    /// `ColorTailCountPossible` describes cells strictly beyond the immediate
+    /// neighbors.  If, for one exact local window, a color can only have tail
+    /// count zero on a side, that color cannot occur as the *far* endpoint of
+    /// any oriented pair on that side.  If it is not the immediate neighbor
+    /// either, it cannot occur anywhere on that side at all.
+    ///
+    /// This is a sound reduced-product refinement: both component domains are
+    /// forward over-approximations of the same blank-start executions.  It is
+    /// useful before ordered-prefix propagation because `pairs[side][near]` is
+    /// exactly what exposes the next cell when the head moves into that side.
+    #[expect(clippy::excessive_nesting)]
+    fn refine_zero_tail_pairs(
+        &mut self,
+        counts: &ColorTailCountPossible<S, C>,
+    ) -> bool {
+        // Status is left_count + 3 * right_count with each count in 0..=2.
+        // These masks select statuses where the corresponding side count is 0.
+        const LEFT_ZERO: u16 = (1 << 0) | (1 << 3) | (1 << 6);
+        const RIGHT_ZERO: u16 = (1 << 0) | (1 << 1) | (1 << 2);
+        const ALL_STATUSES: u16 = (1 << 9) - 1;
+
+        let mut changed = false;
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    for right in 0..C {
+                        let index = Self::index(st, scan, left, right);
+                        let compact = self.lookup[index];
+                        if compact == usize::MAX {
+                            continue;
+                        }
+
+                        let summary = &mut self.windows[compact];
+
+                        for color in 1..C {
+                            let count_mask =
+                                counts.exact[ColorTailCountPossible::<
+                                    S,
+                                    C,
+                                >::exact_index(
+                                    st, scan, left, right, color,
+                                )];
+
+                            // A zero mask means the count abstraction itself has
+                            // no witness for this exact window/color.  Do not use
+                            // absence of information as a pruning fact here.
+                            if count_mask == 0 {
+                                continue;
+                            }
+
+                            let bit = 1_u64 << color;
+                            let left_tail_zero = count_mask
+                                & (ALL_STATUSES ^ LEFT_ZERO)
+                                == 0;
+                            let right_tail_zero = count_mask
+                                & (ALL_STATUSES ^ RIGHT_ZERO)
+                                == 0;
+
+                            if left_tail_zero {
+                                // The far endpoint of every oriented pair lies
+                                // strictly beyond the immediate neighbor.
+                                for near in 0..C {
+                                    let old =
+                                        summary.pairs[LEFT_SIDE][near];
+                                    summary.pairs[LEFT_SIDE][near] &=
+                                        !bit;
+                                    changed |= summary.pairs[LEFT_SIDE]
+                                        [near]
+                                        != old;
+                                }
+
+                                // If the exact immediate neighbor is not this
+                                // color either, then the color is absent from the
+                                // complete left side, including as a pair-near.
+                                if left != color {
+                                    let old = summary.colors[LEFT_SIDE];
+                                    summary.colors[LEFT_SIDE] &= !bit;
+                                    changed |= summary.colors
+                                        [LEFT_SIDE]
+                                        != old;
+
+                                    let old =
+                                        summary.pairs[LEFT_SIDE][color];
+                                    summary.pairs[LEFT_SIDE][color] = 0;
+                                    changed |= summary.pairs[LEFT_SIDE]
+                                        [color]
+                                        != old;
+                                }
+                            }
+
+                            if right_tail_zero {
+                                for near in 0..C {
+                                    let old =
+                                        summary.pairs[RIGHT_SIDE][near];
+                                    summary.pairs[RIGHT_SIDE][near] &=
+                                        !bit;
+                                    changed |= summary.pairs
+                                        [RIGHT_SIDE][near]
+                                        != old;
+                                }
+
+                                if right != color {
+                                    let old =
+                                        summary.colors[RIGHT_SIDE];
+                                    summary.colors[RIGHT_SIDE] &= !bit;
+                                    changed |= summary.colors
+                                        [RIGHT_SIDE]
+                                        != old;
+
+                                    let old = summary.pairs[RIGHT_SIDE]
+                                        [color];
+                                    summary.pairs[RIGHT_SIDE][color] =
+                                        0;
+                                    changed |= summary.pairs
+                                        [RIGHT_SIDE][color]
+                                        != old;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        changed
+    }
+
     #[cfg(test)]
     fn window_mut(
         &mut self,
@@ -2357,10 +2488,12 @@ where
     // summary before paying for ordered-prefix propagation.  Easy targets that
     // these summaries already refute never enter the expensive prefix/window
     // feedback fixed point.
-    let mut blank_side_possible =
-        blank_side_possible_from_blank(prog, &win_possible);
     let mut color_tail_count =
         color_tail_count_from_blank(prog, &win_possible);
+    side_possible.refine_zero_tail_pairs(&color_tail_count);
+
+    let mut blank_side_possible =
+        blank_side_possible_from_blank(prog, &win_possible);
     let mut pair_tail_presence =
         pair_tail_presence_from_blank(prog, &win_possible);
 
@@ -2418,6 +2551,9 @@ where
                 prog.side_possible_from_blank(&win_possible);
             win_possible
                 .refine_side_reachability_relation(&side_possible);
+            color_tail_count =
+                color_tail_count_from_blank(prog, &win_possible);
+            side_possible.refine_zero_tail_pairs(&color_tail_count);
             continue;
         }
 
@@ -2429,6 +2565,9 @@ where
                 prog.side_possible_from_blank(&win_possible);
             win_possible
                 .refine_side_reachability_relation(&side_possible);
+            color_tail_count =
+                color_tail_count_from_blank(prog, &win_possible);
+            side_possible.refine_zero_tail_pairs(&color_tail_count);
             continue;
         }
 
@@ -2446,6 +2585,9 @@ where
                 prog.side_possible_from_blank(&win_possible);
             win_possible
                 .refine_side_reachability_relation(&side_possible);
+            color_tail_count =
+                color_tail_count_from_blank(prog, &win_possible);
+            side_possible.refine_zero_tail_pairs(&color_tail_count);
             continue;
         }
 
@@ -2470,6 +2612,7 @@ where
             blank_side_possible_from_blank(prog, &win_possible);
         color_tail_count =
             color_tail_count_from_blank(prog, &win_possible);
+        side_possible.refine_zero_tail_pairs(&color_tail_count);
         pair_tail_presence =
             pair_tail_presence_from_blank(prog, &win_possible);
 
@@ -10064,6 +10207,66 @@ fn test_per_color_tail_count_filter() {
     // A different hidden color is also rejected.
     let hidden_two: Tape = "? 2 1 [0] 0+".into();
     assert!(!hidden_two.obeys_color_tail_count(1, &count));
+}
+
+#[test]
+fn test_tail_count_refines_side_pairs() {
+    let mut sides = SidePossible::<1, 3>::new();
+    let mut summary = WindowSideSummary::empty();
+    summary.reachable = true;
+    summary.colors = [0b111; 2];
+    summary.pairs = [[0b111; 3]; 2];
+    sides.insert_window_by_index(
+        SidePossible::<1, 3>::index(0, 0, 0, 1),
+        summary,
+    );
+
+    let mut counts = ColorTailCountPossible::<1, 3>::new();
+    // For color 1, both strict tails are exactly empty at window `0 [0] 1`.
+    counts.add(0, 0, 0, 1, 1, 0);
+
+    assert!(sides.refine_zero_tail_pairs(&counts));
+    let summary = sides.window(0, 0, 0, 1);
+    let one = 1_u64 << 1;
+
+    // Right immediate neighbor is 1, so whole-side color presence keeps it.
+    assert_ne!(summary.colors[RIGHT_SIDE] & one, 0);
+    // But 1 cannot occur strictly beyond that neighbor, hence never as the
+    // far endpoint of a right-side pair.
+    for near in 0..3 {
+        assert_eq!(summary.pairs[RIGHT_SIDE][near] & one, 0);
+    }
+
+    // On the left, 1 is neither immediate nor in the strict tail, so it is
+    // removed from the whole-side color set as well.
+    assert_eq!(summary.colors[LEFT_SIDE] & one, 0);
+    assert_eq!(summary.pairs[LEFT_SIDE][1], 0);
+}
+
+#[test]
+fn test_machine1_immediate_only_right_one_feeds_side_pairs() {
+    let prog =
+        Prog::<3, 3>::from("1RB 0RA 0LB  0LC 0LA 1RA  1LA 2LC ...");
+    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let mut windows =
+        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let mut sides = prog.side_possible_from_blank(&windows);
+    windows.refine_reachability(&sides);
+
+    let counts = color_tail_count_from_blank(&prog, &windows);
+
+    // The actual macro family contains `0 [A0] 1 ...`.  In this exact local
+    // window, color 1 may be the immediate right neighbor but cannot occur in
+    // the strict right tail.  Right-count-zero statuses are 0,1,2.
+    let mask = counts.mask(0, 0, Some(0), Some(1), 1);
+    assert_ne!(mask, 0);
+    assert_eq!(mask & !0b000_000_111, 0);
+
+    sides.refine_zero_tail_pairs(&counts);
+    let summary = sides.window(0, 0, 0, 1);
+    for near in 0..3 {
+        assert_eq!(summary.pairs[RIGHT_SIDE][near] & (1 << 1), 0);
+    }
 }
 
 #[test]
