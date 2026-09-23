@@ -902,11 +902,11 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         changed
     }
 
-    /// Remove exact local windows for which ordered-prefix propagation found
-    /// no witness on at least one side.  This only edits the compact
-    /// `right/left/any` relation; expensive aggregate tables are rebuilt once
-    /// after the refinement fixed point is complete.
-    fn refine_prefix_reachability_relation(
+    /// Remove exact local windows for which the cheap ordered run-prefix
+    /// projection has no witness on at least one side.  This runs before the
+    /// richer word-prefix projection so windows eliminated here never pay for
+    /// the word fixed point.
+    fn refine_run_prefix_reachability_relation(
         &mut self,
         prefixes: &SidePrefixPossible<S, C>,
     ) -> bool {
@@ -928,20 +928,60 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
 
                         let left_ok = !prefixes
                             .prefixes(st, scan, left, right, LEFT_SIDE)
-                            .is_empty()
-                            && !prefixes
-                                .word_prefixes(
-                                    st, scan, left, right, LEFT_SIDE,
-                                )
-                                .is_empty();
+                            .is_empty();
                         let right_ok = !prefixes
                             .prefixes(st, scan, left, right, RIGHT_SIDE)
-                            .is_empty()
-                            && !prefixes
-                                .word_prefixes(
-                                    st, scan, left, right, RIGHT_SIDE,
-                                )
-                                .is_empty();
+                            .is_empty();
+
+                        if !left_ok || !right_ok {
+                            keep &= !(1_u64 << right);
+                        }
+                    }
+
+                    changed |= keep != old;
+                    self.right[st][scan][left] = keep;
+                }
+            }
+        }
+
+        if changed {
+            self.rebuild_window_relation();
+        }
+        changed
+    }
+
+    /// Once the run-prefix relation is stable, remove exact local windows for
+    /// which the richer ordered cell/word-prefix projection has no witness.
+    fn refine_word_prefix_reachability_relation(
+        &mut self,
+        prefixes: &SidePrefixPossible<S, C>,
+    ) -> bool {
+        let mut changed = false;
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let old = self.right[st][scan][left];
+                    if old == 0 {
+                        continue;
+                    }
+
+                    let mut keep = old;
+                    let mut rights = old;
+                    while rights != 0 {
+                        let right = rights.trailing_zeros() as usize;
+                        rights &= rights - 1;
+
+                        let left_ok = !prefixes
+                            .word_prefixes(
+                                st, scan, left, right, LEFT_SIDE,
+                            )
+                            .is_empty();
+                        let right_ok = !prefixes
+                            .word_prefixes(
+                                st, scan, left, right, RIGHT_SIDE,
+                            )
+                            .is_empty();
 
                         if !left_ok || !right_ok {
                             keep &= !(1_u64 << right);
@@ -1619,6 +1659,165 @@ impl SideWordPrefix {
         }
     }
 
+    /// Compare the first `count` cells guaranteed by two prefixes.
+    ///
+    /// Hot antichain checks call this many times.  Specializing the four
+    /// representation pairs avoids repeated enum dispatch through
+    /// `guaranteed_cell` and avoids `% word_len` for every periodic cell.
+    fn same_guaranteed_prefix(self, other: Self, count: usize) -> bool {
+        debug_assert!(count <= self.guaranteed_len());
+        debug_assert!(count <= other.guaranteed_len());
+
+        match (self, other) {
+            (
+                Self::Literal { cells: a, .. },
+                Self::Literal { cells: b, .. },
+            ) => a[..count] == b[..count],
+            (
+                Self::Literal { cells, .. },
+                Self::Periodic {
+                    word,
+                    word_len,
+                    phase,
+                    ..
+                },
+            ) => {
+                let width = usize::from(word_len);
+                let mut wi = usize::from(phase);
+                debug_assert!(wi < width);
+
+                for &cell in &cells[..count] {
+                    if cell != word[wi] {
+                        return false;
+                    }
+                    wi += 1;
+                    if wi == width {
+                        wi = 0;
+                    }
+                }
+                true
+            },
+            (
+                Self::Periodic {
+                    word,
+                    word_len,
+                    phase,
+                    ..
+                },
+                Self::Literal { cells, .. },
+            ) => {
+                let width = usize::from(word_len);
+                let mut wi = usize::from(phase);
+                debug_assert!(wi < width);
+
+                for &cell in &cells[..count] {
+                    if word[wi] != cell {
+                        return false;
+                    }
+                    wi += 1;
+                    if wi == width {
+                        wi = 0;
+                    }
+                }
+                true
+            },
+            (
+                Self::Periodic {
+                    word: a_word,
+                    word_len: a_len,
+                    phase: a_phase,
+                    ..
+                },
+                Self::Periodic {
+                    word: b_word,
+                    word_len: b_len,
+                    phase: b_phase,
+                    ..
+                },
+            ) => {
+                let a_width = usize::from(a_len);
+                let b_width = usize::from(b_len);
+                let mut ai = usize::from(a_phase);
+                let mut bi = usize::from(b_phase);
+                debug_assert!(ai < a_width);
+                debug_assert!(bi < b_width);
+
+                // Identical primitive cycle and phase is a common antichain
+                // case; avoid walking the guaranteed cells at all.
+                if a_width == b_width
+                    && ai == bi
+                    && a_word[..a_width] == b_word[..a_width]
+                {
+                    return true;
+                }
+
+                for _ in 0..count {
+                    if a_word[ai] != b_word[bi] {
+                        return false;
+                    }
+                    ai += 1;
+                    if ai == a_width {
+                        ai = 0;
+                    }
+                    bi += 1;
+                    if bi == b_width {
+                        bi = 0;
+                    }
+                }
+                true
+            },
+        }
+    }
+
+    /// Equality of the represented prefix state, ignoring unused array cells.
+    /// This replaces derived `self == other` in the hot subsumption path, where
+    /// comparing all 24 literal cells is unnecessary for short literals.
+    fn same_representation(self, other: Self) -> bool {
+        match (self, other) {
+            (
+                Self::Literal {
+                    cells: a,
+                    len: a_len,
+                    tail: a_tail,
+                },
+                Self::Literal {
+                    cells: b,
+                    len: b_len,
+                    tail: b_tail,
+                },
+            ) => {
+                a_len == b_len
+                    && a_tail == b_tail
+                    && a[..usize::from(a_len)]
+                        == b[..usize::from(a_len)]
+            },
+            (
+                Self::Periodic {
+                    word: a_word,
+                    word_len: a_len,
+                    phase: a_phase,
+                    min_cells: a_min,
+                    tail: a_tail,
+                },
+                Self::Periodic {
+                    word: b_word,
+                    word_len: b_len,
+                    phase: b_phase,
+                    min_cells: b_min,
+                    tail: b_tail,
+                },
+            ) => {
+                a_len == b_len
+                    && a_phase == b_phase
+                    && a_min == b_min
+                    && a_tail == b_tail
+                    && a_word[..usize::from(a_len)]
+                        == b_word[..usize::from(a_len)]
+            },
+            _ => false,
+        }
+    }
+
     fn periodic_min(width: usize, len: usize) -> u16 {
         let threshold = SIDE_WORD_MIN_REPEATS * width;
         let residue = len % width;
@@ -1647,13 +1846,13 @@ impl SideWordPrefix {
 
         // Width one is intentionally left to the original run-prefix domain.
         // Search the smallest nontrivial period so the stored cycle is
-        // primitive automatically.
+        // primitive automatically. Comparing the shifted slices is equivalent
+        // to `cells[index] == cells[index % width]`, but avoids a remainder
+        // operation for every cell of every candidate width.
         for width in
             2..=SIDE_WORD_MAX_PATTERN.min(len / SIDE_WORD_MIN_REPEATS)
         {
-            if (0..len)
-                .all(|index| cells[index] == cells[index % width])
-            {
+            if cells[width..len] == cells[..len - width] {
                 // Reject a homogeneous pseudo-word. A smaller width-one period
                 // would only duplicate the existing run abstraction.
                 if cells[..width].iter().all(|&color| color == cells[0])
@@ -1669,6 +1868,51 @@ impl SideWordPrefix {
                         .expect("side word width fits in u8"),
                     phase: 0,
                     min_cells: Self::periodic_min(width, len),
+                    tail,
+                };
+            }
+        }
+
+        Self::Literal {
+            cells,
+            len: u8::try_from(len)
+                .expect("side word literal length fits in u8"),
+            tail,
+        }
+    }
+
+    /// Fast path for prepending to a retained, non-full literal.
+    ///
+    /// The old literal has already failed every period width eligible at its
+    /// old length. If prepending one cell makes the new sequence periodic with
+    /// width `w`, removing that first cell leaves a suffix with the same period.
+    /// Therefore the only width worth testing is one that becomes eligible at
+    /// this exact length. With the three-repeat promotion threshold, that is
+    /// `len / 3` exactly when `len` is divisible by three.
+    fn from_literal_after_prepend(
+        cells: [Color; SIDE_WORD_LITERAL_CELLS],
+        len: usize,
+        tail: SideWordTail,
+    ) -> Self {
+        debug_assert!(0 < len && len <= SIDE_WORD_LITERAL_CELLS);
+
+        if len.is_multiple_of(SIDE_WORD_MIN_REPEATS) {
+            let width = len / SIDE_WORD_MIN_REPEATS;
+            if (2..=SIDE_WORD_MAX_PATTERN).contains(&width)
+                && cells[width..len] == cells[..len - width]
+                && !cells[..width]
+                    .iter()
+                    .all(|&color| color == cells[0])
+            {
+                let mut word = [0; SIDE_WORD_MAX_PATTERN];
+                word[..width].copy_from_slice(&cells[..width]);
+                return Self::Periodic {
+                    word,
+                    word_len: u8::try_from(width)
+                        .expect("side word width fits in u8"),
+                    phase: 0,
+                    min_cells: u16::try_from(len)
+                        .expect("side word literal length fits in u16"),
                     tail,
                 };
             }
@@ -1718,26 +1962,27 @@ impl SideWordPrefix {
         Self::from_literal(cells, take + 1, SideWordTail::Unknown)
     }
 
-    fn for_each_prepend(
-        self,
-        color: Color,
-        mut emit: impl FnMut(Self),
-    ) {
+    /// Prepend one exact cell. Unlike pulling, prepending never branches, so
+    /// return the unique successor directly instead of routing it through a
+    /// callback (and, at joint call sites, a temporary one-element `Vec`).
+    fn prepend(self, color: Color) -> Self {
         match self {
             Self::Literal { cells, len, tail } => {
                 let len = usize::from(len);
                 if len == 0 && tail == SideWordTail::Blank && color == 0
                 {
-                    emit(self);
-                    return;
+                    return self;
                 }
 
                 if len < SIDE_WORD_LITERAL_CELLS {
                     let mut next = [0; SIDE_WORD_LITERAL_CELLS];
                     next[0] = color;
                     next[1..=len].copy_from_slice(&cells[..len]);
-                    emit(Self::from_literal(next, len + 1, tail));
-                    return;
+                    return Self::from_literal_after_prepend(
+                        next,
+                        len + 1,
+                        tail,
+                    );
                 }
 
                 let dropped = cells[SIDE_WORD_LITERAL_CELLS - 1];
@@ -1747,11 +1992,11 @@ impl SideWordPrefix {
                     &cells[..SIDE_WORD_LITERAL_CELLS - 1],
                 );
                 let next_tail = Self::tail_after_dropped(dropped, tail);
-                emit(Self::from_literal(
+                Self::from_literal(
                     next,
                     SIDE_WORD_LITERAL_CELLS,
                     next_tail,
-                ));
+                )
             },
             Self::Periodic {
                 word,
@@ -1765,7 +2010,7 @@ impl SideWordPrefix {
                 if color == word[previous] {
                     let next_min =
                         usize::from(min_cells).saturating_add(1);
-                    emit(Self::Periodic {
+                    Self::Periodic {
                         word,
                         word_len,
                         phase: u8::try_from(previous)
@@ -1774,11 +2019,11 @@ impl SideWordPrefix {
                             width, next_min,
                         ),
                         tail,
-                    });
+                    }
                 } else {
-                    emit(Self::periodic_to_literal_with_prepend(
+                    Self::periodic_to_literal_with_prepend(
                         word, word_len, phase, min_cells, color,
-                    ));
+                    )
                 }
             },
         }
@@ -1898,7 +2143,7 @@ impl SideWordPrefix {
     /// small antichain. In particular, a retained exact prefix followed by an
     /// unknown tail covers every more-specific continuation with that prefix.
     fn subsumes(self, other: Self) -> bool {
-        if self == other || self.is_unconstrained() {
+        if self.is_unconstrained() || self.same_representation(other) {
             return true;
         }
 
@@ -1927,9 +2172,7 @@ impl SideWordPrefix {
             return false;
         }
 
-        (0..required).all(|index| {
-            self.guaranteed_cell(index) == other.guaranteed_cell(index)
-        })
+        self.same_guaranteed_prefix(other, required)
     }
 
     fn prefix_compatible(self, other: Self) -> bool {
@@ -1938,12 +2181,8 @@ impl SideWordPrefix {
         }
 
         let common = self.guaranteed_len().min(other.guaranteed_len());
-        for index in 0..common {
-            if self.guaranteed_cell(index)
-                != other.guaranteed_cell(index)
-            {
-                return false;
-            }
+        if !self.same_guaranteed_prefix(other, common) {
+            return false;
         }
 
         // This deliberately checks only jointly guaranteed cells. Optional
@@ -2083,6 +2322,7 @@ impl<const S: usize, const C: usize> SidePrefixPossible<S, C> {
         Self::window_index(st, scan, left, right) * 2 + side
     }
 
+    #[cfg(test)]
     fn new() -> Self {
         let len = S * C * C * C * 2;
         Self {
@@ -2091,6 +2331,24 @@ impl<const S: usize, const C: usize> SidePrefixPossible<S, C> {
             flags: vec![0; len],
             word_flags: vec![0; len],
         }
+    }
+
+    fn new_run_only() -> Self {
+        let len = S * C * C * C * 2;
+        Self {
+            windows: (0..len).map(|_| Vec::new()).collect(),
+            word_windows: Vec::new(),
+            flags: vec![0; len],
+            word_flags: Vec::new(),
+        }
+    }
+
+    fn init_word_storage(&mut self) {
+        debug_assert_eq!(self.word_windows.len(), 0);
+        debug_assert_eq!(self.word_flags.len(), 0);
+        let len = self.windows.len();
+        self.word_windows = (0..len).map(|_| Vec::new()).collect();
+        self.word_flags = vec![0; len];
     }
 
     fn prefixes(
@@ -2981,12 +3239,18 @@ where
         joint_side_prefix_fixed,
         joint_side_word_prefix_possible,
     ) = loop {
-        let prefixes = prog.side_prefix_possible_from_blank(
-            &win_possible,
-            &side_possible,
-        );
+        let (mut prefixes, prefix_trans, prefix_exposed) = prog
+            .side_run_prefix_possible_from_blank(
+                &win_possible,
+                &side_possible,
+            );
 
-        if win_possible.refine_prefix_reachability_relation(&prefixes) {
+        // First feed back only the cheap run-prefix projection. If that already
+        // removes a window, restart immediately and avoid constructing the much
+        // richer ordered word-prefix fixed point for this round.
+        if win_possible
+            .refine_run_prefix_reachability_relation(&prefixes)
+        {
             prefix_refined_windows = true;
             side_possible =
                 prog.side_possible_from_blank(&win_possible);
@@ -2996,6 +3260,36 @@ where
                 color_tail_count_from_blank(prog, &win_possible);
             side_possible.refine_zero_tail_pairs(&color_tail_count);
             continue;
+        }
+
+        Prog::<s, c>::populate_side_word_prefix_possible_from_blank(
+            &win_possible,
+            &prefix_trans,
+            &prefix_exposed,
+            &mut prefixes,
+        );
+
+        if win_possible
+            .refine_word_prefix_reachability_relation(&prefixes)
+        {
+            prefix_refined_windows = true;
+            side_possible =
+                prog.side_possible_from_blank(&win_possible);
+            win_possible
+                .refine_side_reachability_relation(&side_possible);
+            color_tail_count =
+                color_tail_count_from_blank(prog, &win_possible);
+            side_possible.refine_zero_tail_pairs(&color_tail_count);
+            continue;
+        }
+
+        // Both independent prefix projections are now at the current window
+        // fixed point. Reject targets before paying for stronger joint domains.
+        configs.retain(|Config { state, tape }| {
+            tape.obeys_side_prefix_possible(*state, &prefixes)
+        });
+        if configs.is_empty() {
+            return Refuted(0);
         }
 
         let joint = prog.joint_short_possible_from_blank(&win_possible);
@@ -3010,6 +3304,13 @@ where
                 color_tail_count_from_blank(prog, &win_possible);
             side_possible.refine_zero_tail_pairs(&color_tail_count);
             continue;
+        }
+
+        configs.retain(|Config { state, tape }| {
+            tape.obeys_joint_short_possible(*state, &joint)
+        });
+        if configs.is_empty() {
+            return Refuted(0);
         }
 
         // Feed the stronger parity-aware reduced product back into the local
@@ -3032,6 +3333,16 @@ where
             continue;
         }
 
+        configs.retain(|Config { state, tape }| {
+            tape.obeys_joint_side_prefix_possible(
+                *state,
+                Some(&joint_side),
+            )
+        });
+        if configs.is_empty() {
+            return Refuted(0);
+        }
+
         let joint_word = prog
             .joint_side_word_prefix_possible_from_blank(&win_possible);
         if win_possible
@@ -3046,6 +3357,16 @@ where
                 color_tail_count_from_blank(prog, &win_possible);
             side_possible.refine_zero_tail_pairs(&color_tail_count);
             continue;
+        }
+
+        configs.retain(|Config { state, tape }| {
+            tape.obeys_joint_side_word_prefix_possible(
+                *state,
+                &joint_word,
+            )
+        });
+        if configs.is_empty() {
+            return Refuted(0);
         }
 
         break (prefixes, joint, joint_side, joint_word);
@@ -3112,34 +3433,34 @@ where
 
     let side_triple_possible = prog
         .side_triple_possible_from_blank(&win_possible, &side_possible);
+
+    // Check the cheaper independent triple domain before constructing the
+    // cross-side product. If it already rejects every target, the joint
+    // triple fixed point is pure overhead.
+    configs.retain(|Config { state, tape }| {
+        tape.obeys_state_triples(*state, &side_triple_possible)
+    });
+
+    if configs.is_empty() {
+        return Refuted(0);
+    }
+
     let joint_side_triple_possible = prog
         .joint_side_triple_possible_from_blank(
             &win_possible,
             &side_possible,
         );
 
+    // Prefix/joint domains were already checked as soon as each reached the
+    // final window fixed point above. The final cheap-summary rebuild only
+    // removes configs and does not mutate their tapes, so repeating those hot
+    // matchers here would be redundant. Only the newly constructed joint
+    // triple domain remains to check.
     configs.retain(|Config { state, tape }| {
-        tape.obeys_state_triples(*state, &side_triple_possible)
-            && tape.obeys_joint_state_triples(
-                *state,
-                &joint_side_triple_possible,
-            )
-            && tape.obeys_side_prefix_possible(
-                *state,
-                &side_prefix_possible,
-            )
-            && tape.obeys_joint_short_possible(
-                *state,
-                &joint_short_possible,
-            )
-            && tape.obeys_joint_side_prefix_possible(
-                *state,
-                joint_side_prefix_possible.as_ref(),
-            )
-            && tape.obeys_joint_side_word_prefix_possible(
-                *state,
-                &joint_side_word_prefix_possible,
-            )
+        tape.obeys_joint_state_triples(
+            *state,
+            &joint_side_triple_possible,
+        )
     });
 
     if configs.is_empty() {
@@ -4055,7 +4376,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// concrete run from blank.
     #[expect(
         clippy::cast_possible_truncation,
-        clippy::excessive_nesting
+        clippy::excessive_nesting,
+        clippy::cognitive_complexity
     )]
     fn win_possible_from_blank(
         &self,
@@ -4085,15 +4407,83 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         }
 
         let total = s * 2 * c * c * c * 2;
-        // Four-bit mask per abstract window state.  Each bit is one exact
-        // `(left-side parity, right-side parity)` combination.  Total support
-        // parity is derived from those two bits plus the scanned color.
-        let mut visited = vec![0_u8; total];
-        let mut q = std::collections::VecDeque::new();
 
-        // Start from true blank: both whole sides have even nonblank parity.
-        q.push_back((0, 1, 0, 0, 0, 1, 0_u8));
-        visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = 0b0001;
+        // Each forward worklist stores the complete set of abstract residue
+        // states known at one local-window state.  `processed` records which
+        // bits have already been propagated.  If several predecessors add new
+        // residue bits before a queued window is revisited, they are handled in
+        // one batch rather than as separate queue entries.
+        macro_rules! enqueue_mask {
+            ($visited:ident, $queued:ident, $queue:ident, $n:expr, $mask:expr) => {{
+                let n = $n;
+                let mask = $mask;
+                let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
+                let added = mask & !$visited[id];
+                if added != 0 {
+                    $visited[id] |= added;
+                    if !$queued[id] {
+                        $queued[id] = true;
+                        $queue.push_back(n);
+                    }
+                }
+            }};
+        }
+
+        fn total_parity_mask(side_mask: u8, scan_nonblank: bool) -> u8 {
+            let mut bits = side_mask;
+            let mut out = 0_u8;
+            let scan = u8::from(scan_nonblank);
+            while bits != 0 {
+                let code = bits.trailing_zeros() as u8;
+                bits &= bits - 1;
+                let left = code & 1;
+                let right = (code >> 1) & 1;
+                out |= 1_u8 << (left ^ right ^ scan);
+            }
+            out
+        }
+
+        const fn xor_side_parity_mask(side_mask: u8, xor: u8) -> u8 {
+            let mut bits = side_mask;
+            let mut out = 0_u8;
+            while bits != 0 {
+                let code = bits.trailing_zeros() as u8;
+                bits &= bits - 1;
+                out |= 1_u8 << (code ^ xor);
+            }
+            out
+        }
+
+        const fn shift_mod3_mask(
+            mask: u16,
+            left_add: u8,
+            right_add: u8,
+        ) -> u16 {
+            let mut bits = mask;
+            let mut out = 0_u16;
+            while bits != 0 {
+                let code = bits.trailing_zeros() as u8;
+                bits &= bits - 1;
+                let left = code % 3;
+                let right = code / 3;
+                let next_left = (left + left_add) % 3;
+                let next_right = (right + right_add) % 3;
+                let next = next_left + 3 * next_right;
+                out |= 1_u16 << next;
+            }
+            out
+        }
+
+        const fn xor_color_parity_mask(mask: u64, xor: u8) -> u64 {
+            let mut bits = mask;
+            let mut out = 0_u64;
+            while bits != 0 {
+                let vector = bits.trailing_zeros() as u8;
+                bits &= bits - 1;
+                out |= 1_u64 << (vector ^ xor);
+            }
+            out
+        }
 
         assert!(c <= 64, "window bitmasks support at most 64 colors");
 
@@ -4119,39 +4509,47 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             color_parity_any: [[0; c]; s],
         };
 
-        while let Some((st, lb, l, sc, r, rb, side_parity)) =
-            q.pop_front()
-        {
+        // Four-bit mask per abstract window state. Each bit is one exact
+        // `(left-side parity, right-side parity)` combination. Propagate all
+        // newly discovered combinations for a window together.
+        let mut visited = vec![0_u8; total];
+        let mut processed = vec![0_u8; total];
+        let mut queued = vec![false; total];
+        let mut q = std::collections::VecDeque::new();
+        let initial = idx::<c, s>(0, 1, 0, 0, 0, 1);
+        visited[initial] = 0b0001;
+        queued[initial] = true;
+        q.push_back((0, 1, 0, 0, 0, 1));
+
+        while let Some((st, lb, l, sc, r, rb)) = q.pop_front() {
+            let id = idx::<c, s>(st, lb, l, sc, r, rb);
+            queued[id] = false;
+            let fresh = visited[id] & !processed[id];
+            if fresh == 0 {
+                continue;
+            }
+            processed[id] |= fresh;
+
             possible.right[st][sc][l] |= 1_u64 << r;
             possible.left[st][sc][r] |= 1_u64 << l;
             possible.any[st][sc] = true;
 
-            let left_parity = side_parity & 1;
-            let right_parity = (side_parity >> 1) & 1;
-            let total_parity =
-                left_parity ^ right_parity ^ u8::from(sc != 0);
-            let parity_bit = 1_u8 << total_parity;
-            let side_parity_bit = 1_u8 << side_parity;
             let parity_index =
                 WinPossible::<s, c>::parity_index(st, sc, l, r);
+            let parity = total_parity_mask(fresh, sc != 0);
+            possible.parity[parity_index] |= parity;
+            possible.parity_right[st][sc][l] |= parity;
+            possible.parity_left[st][sc][r] |= parity;
+            possible.parity_any[st][sc] |= parity;
 
-            possible.parity[parity_index] |= parity_bit;
-            possible.parity_right[st][sc][l] |= parity_bit;
-            possible.parity_left[st][sc][r] |= parity_bit;
-            possible.parity_any[st][sc] |= parity_bit;
-
-            possible.side_parity[parity_index] |= side_parity_bit;
-            possible.side_parity_right[st][sc][l] |= side_parity_bit;
-            possible.side_parity_left[st][sc][r] |= side_parity_bit;
-            possible.side_parity_any[st][sc] |= side_parity_bit;
-
-            let st_state = st as State;
-            let sc_color = sc as Color;
+            possible.side_parity[parity_index] |= fresh;
+            possible.side_parity_right[st][sc][l] |= fresh;
+            possible.side_parity_left[st][sc][r] |= fresh;
+            possible.side_parity_any[st][sc] |= fresh;
 
             let Some(&(print, shift, next_state)) =
-                self.get(&(st_state, sc_color))
+                self.get(&(st as State, sc as Color))
             else {
-                // Missing transition: halting sink.
                 continue;
             };
 
@@ -4159,140 +4557,90 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             let ns = next_state as usize;
 
             if shift {
-                // Move Right.
-                // New: left neighbor becomes printed symbol p, scanned becomes old r.
-                // The new left tail starts at old l, so it remains known blank exactly
-                // when old l is blank and the old farther-left tail was known blank.
                 let new_lb = usize::from(lb == 1 && l == 0);
-                let next_left_parity = left_parity ^ u8::from(p != 0);
-                let next_right_parity = right_parity ^ u8::from(r != 0);
-                let next_side_parity =
-                    next_left_parity | (next_right_parity << 1);
-                let next_side_parity_bit = 1_u8 << next_side_parity;
+                let xor = u8::from(p != 0) | (u8::from(r != 0) << 1);
+                let next_mask = xor_side_parity_mask(fresh, xor);
 
                 if rb == 1 {
-                    // The old right tail starts at the newly exposed cell, so both
-                    // that cell and everything beyond it are known blank.  This does
-                    // not depend on the old right neighbor r.
-                    let n = (ns, new_lb, p, r, 0, 1);
-                    let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                    if visited[id] & next_side_parity_bit == 0 {
-                        visited[id] |= next_side_parity_bit;
-                        q.push_back((
-                            n.0,
-                            n.1,
-                            n.2,
-                            n.3,
-                            n.4,
-                            n.5,
-                            next_side_parity,
-                        ));
-                    }
+                    enqueue_mask!(
+                        visited,
+                        queued,
+                        q,
+                        (ns, new_lb, p, r, 0, 1),
+                        next_mask
+                    );
                 } else {
-                    // The newly exposed cell is unknown; conservatively allow any
-                    // right-side color and drop right-tail certainty.
                     for new_r in 0..c {
                         if forbid_right[new_r] {
                             continue;
                         }
-                        let n = (ns, new_lb, p, r, new_r, 0);
-                        let id =
-                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                        if visited[id] & next_side_parity_bit == 0 {
-                            visited[id] |= next_side_parity_bit;
-                            q.push_back((
-                                n.0,
-                                n.1,
-                                n.2,
-                                n.3,
-                                n.4,
-                                n.5,
-                                next_side_parity,
-                            ));
-                        }
+                        enqueue_mask!(
+                            visited,
+                            queued,
+                            q,
+                            (ns, new_lb, p, r, new_r, 0),
+                            next_mask
+                        );
                     }
                 }
             } else {
-                // Move Left.  Symmetrically, the new right tail starts at old r.
                 let new_rb = usize::from(rb == 1 && r == 0);
-                let next_left_parity = left_parity ^ u8::from(l != 0);
-                let next_right_parity = right_parity ^ u8::from(p != 0);
-                let next_side_parity =
-                    next_left_parity | (next_right_parity << 1);
-                let next_side_parity_bit = 1_u8 << next_side_parity;
+                let xor = u8::from(l != 0) | (u8::from(p != 0) << 1);
+                let next_mask = xor_side_parity_mask(fresh, xor);
 
                 if lb == 1 {
-                    // The old left tail starts at the newly exposed cell, so that
-                    // cell and everything beyond it are known blank.
-                    let n = (ns, 1, 0, l, p, new_rb);
-                    let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                    if visited[id] & next_side_parity_bit == 0 {
-                        visited[id] |= next_side_parity_bit;
-                        q.push_back((
-                            n.0,
-                            n.1,
-                            n.2,
-                            n.3,
-                            n.4,
-                            n.5,
-                            next_side_parity,
-                        ));
-                    }
+                    enqueue_mask!(
+                        visited,
+                        queued,
+                        q,
+                        (ns, 1, 0, l, p, new_rb),
+                        next_mask
+                    );
                 } else {
-                    // The newly exposed cell is unknown; conservatively allow any
-                    // left-side color and drop left-tail certainty.
                     for new_l in 0..c {
                         if forbid_left[new_l] {
                             continue;
                         }
-                        let n = (ns, 0, new_l, l, p, new_rb);
-                        let id =
-                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                        if visited[id] & next_side_parity_bit == 0 {
-                            visited[id] |= next_side_parity_bit;
-                            q.push_back((
-                                n.0,
-                                n.1,
-                                n.2,
-                                n.3,
-                                n.4,
-                                n.5,
-                                next_side_parity,
-                            ));
-                        }
+                        enqueue_mask!(
+                            visited,
+                            queued,
+                            q,
+                            (ns, 0, new_l, l, p, new_rb),
+                            next_mask
+                        );
                     }
                 }
             }
         }
 
-        // A second tiny worklist retains joint left/right nonblank counts
-        // modulo 3.  It is intentionally separate from side parity: joining
-        // the two abstractions independently costs 4 + 9 residue states per
-        // abstract window instead of 36, while preserving every existing
-        // parity rejection and adding the mod-3 rejection on top.
+        // Joint left/right nonblank counts modulo 3. As above, one queue item
+        // represents all newly reached residues for its abstract local window.
         let mut mod3_visited = vec![0_u16; total];
+        let mut mod3_processed = vec![0_u16; total];
+        let mut mod3_queued = vec![false; total];
         let mut mod3_q = std::collections::VecDeque::new();
-        mod3_q.push_back((0, 1, 0, 0, 0, 1, 0_u8));
-        mod3_visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = 1;
+        mod3_visited[initial] = 1;
+        mod3_queued[initial] = true;
+        mod3_q.push_back((0, 1, 0, 0, 0, 1));
 
-        while let Some((st, lb, l, sc, r, rb, side_mod3)) =
-            mod3_q.pop_front()
-        {
-            let left_residue = side_mod3 % 3;
-            let right_residue = side_mod3 / 3;
-            let residue_bit = 1_u16 << side_mod3;
+        while let Some((st, lb, l, sc, r, rb)) = mod3_q.pop_front() {
+            let id = idx::<c, s>(st, lb, l, sc, r, rb);
+            mod3_queued[id] = false;
+            let fresh = mod3_visited[id] & !mod3_processed[id];
+            if fresh == 0 {
+                continue;
+            }
+            mod3_processed[id] |= fresh;
+
             let residue_index =
                 WinPossible::<s, c>::parity_index(st, sc, l, r);
+            possible.side_mod3[residue_index] |= fresh;
+            possible.side_mod3_right[st][sc][l] |= fresh;
+            possible.side_mod3_left[st][sc][r] |= fresh;
+            possible.side_mod3_any[st][sc] |= fresh;
 
-            possible.side_mod3[residue_index] |= residue_bit;
-            possible.side_mod3_right[st][sc][l] |= residue_bit;
-            possible.side_mod3_left[st][sc][r] |= residue_bit;
-            possible.side_mod3_any[st][sc] |= residue_bit;
-
-            let st_state = st as State;
-            let sc_color = sc as Color;
             let Some(&(print, shift, next_state)) =
-                self.get(&(st_state, sc_color))
+                self.get(&(st as State, sc as Color))
             else {
                 continue;
             };
@@ -4302,199 +4650,157 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
             if shift {
                 let new_lb = usize::from(lb == 1 && l == 0);
-                let next_left = (left_residue + u8::from(p != 0)) % 3;
-                let next_right =
-                    (right_residue + 3 - u8::from(r != 0)) % 3;
-                let next_code = next_left + 3 * next_right;
-                let next_bit = 1_u16 << next_code;
+                let left_add = u8::from(p != 0);
+                let right_add = 2 * u8::from(r != 0); // -1 mod 3
+                let next_mask =
+                    shift_mod3_mask(fresh, left_add, right_add);
 
                 if rb == 1 {
-                    let n = (ns, new_lb, p, r, 0, 1);
-                    let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                    if mod3_visited[id] & next_bit == 0 {
-                        mod3_visited[id] |= next_bit;
-                        mod3_q.push_back((
-                            n.0, n.1, n.2, n.3, n.4, n.5, next_code,
-                        ));
-                    }
+                    enqueue_mask!(
+                        mod3_visited,
+                        mod3_queued,
+                        mod3_q,
+                        (ns, new_lb, p, r, 0, 1),
+                        next_mask
+                    );
                 } else {
                     for new_r in 0..c {
                         if forbid_right[new_r] {
                             continue;
                         }
-                        let n = (ns, new_lb, p, r, new_r, 0);
-                        let id =
-                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                        if mod3_visited[id] & next_bit == 0 {
-                            mod3_visited[id] |= next_bit;
-                            mod3_q.push_back((
-                                n.0, n.1, n.2, n.3, n.4, n.5, next_code,
-                            ));
-                        }
+                        enqueue_mask!(
+                            mod3_visited,
+                            mod3_queued,
+                            mod3_q,
+                            (ns, new_lb, p, r, new_r, 0),
+                            next_mask
+                        );
                     }
                 }
             } else {
                 let new_rb = usize::from(rb == 1 && r == 0);
-                let next_left =
-                    (left_residue + 3 - u8::from(l != 0)) % 3;
-                let next_right = (right_residue + u8::from(p != 0)) % 3;
-                let next_code = next_left + 3 * next_right;
-                let next_bit = 1_u16 << next_code;
+                let left_add = 2 * u8::from(l != 0); // -1 mod 3
+                let right_add = u8::from(p != 0);
+                let next_mask =
+                    shift_mod3_mask(fresh, left_add, right_add);
 
                 if lb == 1 {
-                    let n = (ns, 1, 0, l, p, new_rb);
-                    let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                    if mod3_visited[id] & next_bit == 0 {
-                        mod3_visited[id] |= next_bit;
-                        mod3_q.push_back((
-                            n.0, n.1, n.2, n.3, n.4, n.5, next_code,
-                        ));
-                    }
+                    enqueue_mask!(
+                        mod3_visited,
+                        mod3_queued,
+                        mod3_q,
+                        (ns, 1, 0, l, p, new_rb),
+                        next_mask
+                    );
                 } else {
                     for new_l in 0..c {
                         if forbid_left[new_l] {
                             continue;
                         }
-                        let n = (ns, 0, new_l, l, p, new_rb);
-                        let id =
-                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                        if mod3_visited[id] & next_bit == 0 {
-                            mod3_visited[id] |= next_bit;
-                            mod3_q.push_back((
-                                n.0, n.1, n.2, n.3, n.4, n.5, next_code,
-                            ));
-                        }
+                        enqueue_mask!(
+                            mod3_visited,
+                            mod3_queued,
+                            mod3_q,
+                            (ns, 0, new_l, l, p, new_rb),
+                            next_mask
+                        );
                     }
                 }
             }
         }
 
-        // Global per-color parity is a separate product component.  Keeping it
-        // independent from side parity/mod-3 avoids multiplying all residue
-        // domains together.  A transition changes global tape composition only
-        // by replacing the scanned color `sc` with `print`; head movement merely
-        // changes which existing cell is scanned.
+        // Global per-color parity. A transition XORs the vector by a fixed
+        // color mask, so the complete set of newly reached vectors can likewise
+        // be permuted and propagated as one u64 bitset.
         if WinPossible::<s, c>::color_parity_enabled() {
             let mut color_visited = vec![0_u64; total];
+            let mut color_processed = vec![0_u64; total];
+            let mut color_queued = vec![false; total];
             let mut color_q = std::collections::VecDeque::new();
-            color_q.push_back((0, 1, 0, 0, 0, 1, 0_u8));
-            color_visited[idx::<c, s>(0, 1, 0, 0, 0, 1)] = 1;
+            color_visited[initial] = 1;
+            color_queued[initial] = true;
+            color_q.push_back((0, 1, 0, 0, 0, 1));
 
-            while let Some((st, lb, l, sc, r, rb, color_parity)) =
-                color_q.pop_front()
+            while let Some((st, lb, l, sc, r, rb)) = color_q.pop_front()
             {
-                let vector_bit = 1_u64 << color_parity;
+                let id = idx::<c, s>(st, lb, l, sc, r, rb);
+                color_queued[id] = false;
+                let fresh = color_visited[id] & !color_processed[id];
+                if fresh == 0 {
+                    continue;
+                }
+                color_processed[id] |= fresh;
+
                 let vector_index =
                     WinPossible::<s, c>::parity_index(st, sc, l, r);
+                possible.color_parity[vector_index] |= fresh;
+                possible.color_parity_right[st][sc][l] |= fresh;
+                possible.color_parity_left[st][sc][r] |= fresh;
+                possible.color_parity_any[st][sc] |= fresh;
 
-                possible.color_parity[vector_index] |= vector_bit;
-                possible.color_parity_right[st][sc][l] |= vector_bit;
-                possible.color_parity_left[st][sc][r] |= vector_bit;
-                possible.color_parity_any[st][sc] |= vector_bit;
-
-                let st_state = st as State;
-                let sc_color = sc as Color;
                 let Some(&(print, shift, next_state)) =
-                    self.get(&(st_state, sc_color))
+                    self.get(&(st as State, sc as Color))
                 else {
                     continue;
                 };
 
                 let p = print as usize;
                 let ns = next_state as usize;
-                let mut next_color_parity = color_parity;
+                let mut xor = 0_u8;
                 if sc != 0 {
-                    next_color_parity ^= 1_u8 << (sc - 1);
+                    xor ^= 1_u8 << (sc - 1);
                 }
                 if p != 0 {
-                    next_color_parity ^= 1_u8 << (p - 1);
+                    xor ^= 1_u8 << (p - 1);
                 }
-                let next_vector_bit = 1_u64 << next_color_parity;
+                let next_mask = xor_color_parity_mask(fresh, xor);
 
                 if shift {
                     let new_lb = usize::from(lb == 1 && l == 0);
-
                     if rb == 1 {
-                        let n = (ns, new_lb, p, r, 0, 1);
-                        let id =
-                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                        if color_visited[id] & next_vector_bit == 0 {
-                            color_visited[id] |= next_vector_bit;
-                            color_q.push_back((
-                                n.0,
-                                n.1,
-                                n.2,
-                                n.3,
-                                n.4,
-                                n.5,
-                                next_color_parity,
-                            ));
-                        }
+                        enqueue_mask!(
+                            color_visited,
+                            color_queued,
+                            color_q,
+                            (ns, new_lb, p, r, 0, 1),
+                            next_mask
+                        );
                     } else {
                         for new_r in 0..c {
                             if forbid_right[new_r] {
                                 continue;
                             }
-                            let n = (ns, new_lb, p, r, new_r, 0);
-                            let id = idx::<c, s>(
-                                n.0, n.1, n.2, n.3, n.4, n.5,
+                            enqueue_mask!(
+                                color_visited,
+                                color_queued,
+                                color_q,
+                                (ns, new_lb, p, r, new_r, 0),
+                                next_mask
                             );
-                            if color_visited[id] & next_vector_bit == 0
-                            {
-                                color_visited[id] |= next_vector_bit;
-                                color_q.push_back((
-                                    n.0,
-                                    n.1,
-                                    n.2,
-                                    n.3,
-                                    n.4,
-                                    n.5,
-                                    next_color_parity,
-                                ));
-                            }
                         }
                     }
                 } else {
                     let new_rb = usize::from(rb == 1 && r == 0);
-
                     if lb == 1 {
-                        let n = (ns, 1, 0, l, p, new_rb);
-                        let id =
-                            idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                        if color_visited[id] & next_vector_bit == 0 {
-                            color_visited[id] |= next_vector_bit;
-                            color_q.push_back((
-                                n.0,
-                                n.1,
-                                n.2,
-                                n.3,
-                                n.4,
-                                n.5,
-                                next_color_parity,
-                            ));
-                        }
+                        enqueue_mask!(
+                            color_visited,
+                            color_queued,
+                            color_q,
+                            (ns, 1, 0, l, p, new_rb),
+                            next_mask
+                        );
                     } else {
                         for new_l in 0..c {
                             if forbid_left[new_l] {
                                 continue;
                             }
-                            let n = (ns, 0, new_l, l, p, new_rb);
-                            let id = idx::<c, s>(
-                                n.0, n.1, n.2, n.3, n.4, n.5,
+                            enqueue_mask!(
+                                color_visited,
+                                color_queued,
+                                color_q,
+                                (ns, 0, new_l, l, p, new_rb),
+                                next_mask
                             );
-                            if color_visited[id] & next_vector_bit == 0
-                            {
-                                color_visited[id] |= next_vector_bit;
-                                color_q.push_back((
-                                    n.0,
-                                    n.1,
-                                    n.2,
-                                    n.3,
-                                    n.4,
-                                    n.5,
-                                    next_color_parity,
-                                ));
-                            }
                         }
                     }
                 }
@@ -5070,15 +5376,16 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// from the prefix. Once two complete runs have been retained, the next
     /// run is kept as a cheap color + 1/2+ spill before farther structure
     /// finally degrades to exact blank/dirty status.
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::excessive_nesting
-    )]
-    fn side_prefix_possible_from_blank(
+    #[expect(clippy::cast_possible_truncation)]
+    fn side_run_prefix_possible_from_blank(
         &self,
         windows: &WinPossible<s, c>,
         sides: &SidePossible<s, c>,
-    ) -> SidePrefixPossible<s, c> {
+    ) -> (
+        SidePrefixPossible<s, c>,
+        [[Option<(usize, Shift, usize)>; c]; s],
+        Vec<u64>,
+    ) {
         let mut trans = [[None; c]; s];
         for ((state, read), &(print, shift, next_state)) in self.iter()
         {
@@ -5123,7 +5430,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             }
         }
 
-        let mut possible = SidePrefixPossible::new();
+        let mut possible = SidePrefixPossible::new_run_only();
         let mut q = VecDeque::new();
         let mut seen_specific: Set<(usize, SidePrefix)> = Set::new();
 
@@ -5338,6 +5645,20 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             }
         }
 
+        (possible, trans, exposed)
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::excessive_nesting
+    )]
+    fn populate_side_word_prefix_possible_from_blank(
+        windows: &WinPossible<s, c>,
+        trans: &[[Option<(usize, Shift, usize)>; c]; s],
+        exposed: &[u64],
+        possible: &mut SidePrefixPossible<s, c>,
+    ) {
+        possible.init_word_storage();
         // A second worklist over the same exact windows retains ordered cell
         // prefixes and promotes repeated non-homogeneous words instead of
         // forgetting them after the run-prefix spill horizon. Keeping this
@@ -5498,7 +5819,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 0,
                 0,
                 SideWordPrefix::blank(),
-                &mut possible,
+                possible,
                 &mut word_q,
             );
         }
@@ -5548,27 +5869,23 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                             st, scan, left, right,
                         );
                     let new_rights = exposed[window];
-                    prefix.for_each_prepend(
-                        left as Color,
-                        |next_prefix| {
-                            let mut colors = new_rights;
-                            while colors != 0 {
-                                let new_right =
-                                    colors.trailing_zeros() as usize;
-                                colors &= colors - 1;
-                                push_word(
-                                    side,
-                                    tr,
-                                    right,
-                                    print,
-                                    new_right,
-                                    next_prefix,
-                                    &mut possible,
-                                    &mut word_q,
-                                );
-                            }
-                        },
-                    );
+                    let next_prefix = prefix.prepend(left as Color);
+                    let mut colors = new_rights;
+                    while colors != 0 {
+                        let new_right =
+                            colors.trailing_zeros() as usize;
+                        colors &= colors - 1;
+                        push_word(
+                            side,
+                            tr,
+                            right,
+                            print,
+                            new_right,
+                            next_prefix,
+                            possible,
+                            &mut word_q,
+                        );
+                    }
                 },
                 (LEFT_SIDE, false) => {
                     prefix.for_each_pull::<c>(
@@ -5580,7 +5897,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                                 usize::from(new_left),
                                 print,
                                 next_prefix,
-                                &mut possible,
+                                possible,
                                 &mut word_q,
                             );
                         },
@@ -5592,27 +5909,22 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                             st, scan, left, right,
                         );
                     let new_lefts = exposed[window];
-                    prefix.for_each_prepend(
-                        right as Color,
-                        |next_prefix| {
-                            let mut colors = new_lefts;
-                            while colors != 0 {
-                                let new_left =
-                                    colors.trailing_zeros() as usize;
-                                colors &= colors - 1;
-                                push_word(
-                                    side,
-                                    tr,
-                                    left,
-                                    new_left,
-                                    print,
-                                    next_prefix,
-                                    &mut possible,
-                                    &mut word_q,
-                                );
-                            }
-                        },
-                    );
+                    let next_prefix = prefix.prepend(right as Color);
+                    let mut colors = new_lefts;
+                    while colors != 0 {
+                        let new_left = colors.trailing_zeros() as usize;
+                        colors &= colors - 1;
+                        push_word(
+                            side,
+                            tr,
+                            left,
+                            new_left,
+                            print,
+                            next_prefix,
+                            possible,
+                            &mut word_q,
+                        );
+                    }
                 },
                 (RIGHT_SIDE, true) => {
                     prefix.for_each_pull::<c>(
@@ -5624,7 +5936,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                                 print,
                                 usize::from(new_right),
                                 next_prefix,
-                                &mut possible,
+                                possible,
                                 &mut word_q,
                             );
                         },
@@ -5633,7 +5945,24 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 _ => unreachable!(),
             }
         }
+    }
 
+    /// Compatibility helper used by tests that want both independent prefix
+    /// projections without staging their window feedback.
+    #[cfg(test)]
+    fn side_prefix_possible_from_blank(
+        &self,
+        windows: &WinPossible<s, c>,
+        sides: &SidePossible<s, c>,
+    ) -> SidePrefixPossible<s, c> {
+        let (mut possible, trans, exposed) =
+            self.side_run_prefix_possible_from_blank(windows, sides);
+        Self::populate_side_word_prefix_possible_from_blank(
+            windows,
+            &trans,
+            &exposed,
+            &mut possible,
+        );
         possible
     }
 }
@@ -6071,13 +6400,8 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 },
                 JointSideWordPrefix::Specific { left, right } => {
                     if shift {
-                        let mut left_next = Vec::new();
-                        left.for_each_prepend(
-                            node.left as Color,
-                            |p| {
-                                left_next.push(p);
-                            },
-                        );
+                        let left_next =
+                            left.prepend(node.left as Color);
                         right.for_each_pull::<C>(|new_right, right_next| {
                             if windows.right[tr][node.right][print]
                                 & (1_u64 << usize::from(new_right))
@@ -6085,31 +6409,24 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                             {
                                 return;
                             }
-                            for &left_next in &left_next {
-                                push(
-                                    JointSideWordPrefixNode {
-                                        st: tr,
-                                        scan: node.right,
-                                        left: print,
-                                        right: usize::from(new_right),
-                                        prefix: JointSideWordPrefix::Specific {
-                                            left: left_next,
-                                            right: right_next,
-                                        },
+                            push(
+                                JointSideWordPrefixNode {
+                                    st: tr,
+                                    scan: node.right,
+                                    left: print,
+                                    right: usize::from(new_right),
+                                    prefix: JointSideWordPrefix::Specific {
+                                        left: left_next,
+                                        right: right_next,
                                     },
-                                    &mut possible,
-                                    &mut q,
-                                );
-                            }
+                                },
+                                &mut possible,
+                                &mut q,
+                            );
                         });
                     } else {
-                        let mut right_next = Vec::new();
-                        right.for_each_prepend(
-                            node.right as Color,
-                            |p| {
-                                right_next.push(p);
-                            },
-                        );
+                        let right_next =
+                            right.prepend(node.right as Color);
                         left.for_each_pull::<C>(|new_left, left_next| {
                             if windows.left[tr][node.left][print]
                                 & (1_u64 << usize::from(new_left))
@@ -6117,22 +6434,20 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                             {
                                 return;
                             }
-                            for &right_next in &right_next {
-                                push(
-                                    JointSideWordPrefixNode {
-                                        st: tr,
-                                        scan: node.left,
-                                        left: usize::from(new_left),
-                                        right: print,
-                                        prefix: JointSideWordPrefix::Specific {
-                                            left: left_next,
-                                            right: right_next,
-                                        },
+                            push(
+                                JointSideWordPrefixNode {
+                                    st: tr,
+                                    scan: node.left,
+                                    left: usize::from(new_left),
+                                    right: print,
+                                    prefix: JointSideWordPrefix::Specific {
+                                        left: left_next,
+                                        right: right_next,
                                     },
-                                    &mut possible,
-                                    &mut q,
-                                );
-                            }
+                                },
+                                &mut possible,
+                                &mut q,
+                            );
                         });
                     }
                 },
@@ -11536,11 +11851,7 @@ fn test_side_word_prefix_discovers_periodic_word() {
     // Prepend far-to-near so the final represented near-to-far sequence is
     // exactly 1,2,1,2,1,2.
     for color in [2, 1, 2, 1, 2, 1] {
-        let mut next = Vec::new();
-        prefix
-            .for_each_prepend(color, |candidate| next.push(candidate));
-        assert_eq!(next.len(), 1);
-        prefix = next[0];
+        prefix = prefix.prepend(color);
     }
 
     let SideWordPrefix::Periodic {
