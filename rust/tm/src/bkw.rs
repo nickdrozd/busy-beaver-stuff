@@ -3473,17 +3473,20 @@ where
     // discarded immediately. Growing-count cycles are handled more narrowly:
     // the retry records exact predecessor *edges* and only cuts an edge when
     // that very edge would overflow a run after a long, stable recurrence.
-    // This overflow analysis never widens a monochromatic run; compound-word
+    // This overflow analysis never sees the ordinary-pass monochromatic
+    // stride widening; the retry starts from fresh exact targets. Compound-word
     // widening is handled independently below.
     let mut cycle_seen: Option<Dict<(State, u64), Vec<Tape>>> =
         CYCLE_ANALYSIS.then(Dict::new);
     let mut overflow_cycle_history = OverflowCycleHistory::default();
+    let mut run_spine_widening_history =
+        RunSpineWideningHistory::default();
     let mut word_widening_history = WordWideningHistory::default();
-    let mut word_widening_active = false;
+    let mut widening_active = false;
 
-    // Widened word states can recur even with unknown tape ends. Unlike the
+    // Widened run/word states can recur even with unknown tape ends. Unlike the
     // old hash-only blank-end shortcut, resolve collisions by exact equality.
-    let mut word_seen: Dict<(State, u64), Vec<Tape>> = Dict::new();
+    let mut widened_seen: Dict<(State, u64), Vec<Tape>> = Dict::new();
 
     // Optional exact historical repeat filter, enabled only for `twostep`.
     // Exact Tape equality resolves hash collisions without relying on hash
@@ -3509,9 +3512,11 @@ where
             });
         } else {
             configs.retain(|Config { state, tape }| {
-                if word_widening_active && tape.has_indef_word() {
+                if widening_active
+                    && (tape.has_indef_word() || tape.has_stride_run())
+                {
                     let key = (*state, tape.hash());
-                    let bucket = word_seen.entry(key).or_default();
+                    let bucket = widened_seen.entry(key).or_default();
                     if bucket.contains(tape) {
                         return false;
                     }
@@ -3575,10 +3580,20 @@ where
         };
 
         for config in &mut stepped {
-            if word_widening_history.widen(config, step) {
-                word_widening_active = true;
+            // Preserve the pre-existing word-widening observation stream before
+            // changing any run count representation on this configuration.
+            let word_widened =
+                word_widening_history.widen(config, step);
+            let run_widened = !CYCLE_ANALYSIS
+                && run_spine_widening_history.widen(config, step);
+            if run_widened || word_widened {
+                widening_active = true;
                 #[cfg(debug_assertions)]
-                println!("word-widen | {config}");
+                if run_widened {
+                    println!("run-widen | {config}");
+                } else {
+                    println!("word-widen | {config}");
+                }
             }
         }
 
@@ -6870,6 +6885,216 @@ impl WordWideningHistory {
     }
 }
 
+// Multi-step widening for a recurring monochromatic run.  This is the
+// single-color counterpart of WordWideningHistory, but it retains the observed
+// count stride instead of widening to an arbitrary lower bound.  For example,
+// exact counts 1,3,5 become {1+2k}; 2,4,6 become {2+2k}.
+//
+// As with word widening, recurrence detection is only a trigger.  Replacing an
+// exact count by any arithmetic progression containing that count is a sound
+// over-approximation, so an accidental recurrence match can only weaken later
+// pruning, never create a false refutation.
+const RUN_SPINE_WIDEN_OBSERVATIONS: usize = 3;
+const RUN_SPINE_WIDEN_KEEP: usize = 16;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct RunSpineGrowthKey {
+    state: State,
+    scan: Color,
+    side: Side,
+    skeleton: u64,
+}
+
+#[derive(Default)]
+struct RunSpineGrowthObservations {
+    samples: Vec<(Steps, Count)>,
+    widened: Option<(Count, Count)>, // (minimum, stride)
+}
+
+#[derive(Default)]
+struct RunSpineWideningHistory {
+    entries: Dict<RunSpineGrowthKey, RunSpineGrowthObservations>,
+}
+
+impl RunSpineWideningHistory {
+    fn key(config: &Config, side: Side) -> RunSpineGrowthKey {
+        fn hash_span(
+            span: &Span,
+            wildcard_near_run: bool,
+            h: &mut AHasher,
+        ) {
+            span.end.hash(h);
+            span.span.len().hash(h);
+            for (position, block) in span.span.iter().enumerate() {
+                if wildcard_near_run && position == 0 {
+                    let Block::Run { color, .. } = block else {
+                        unreachable!(
+                            "run-spine candidate must be a run"
+                        )
+                    };
+                    // A distinct tag plus the run color preserves the complete
+                    // skeleton while forgetting only this run's count/domain.
+                    0xA5_u8.hash(h);
+                    color.hash(h);
+                } else {
+                    block.hash(h);
+                }
+            }
+        }
+
+        let mut h = AHasher::default();
+        match side {
+            Side::Left => {
+                hash_span(&config.tape.lspan, true, &mut h);
+                hash_span(&config.tape.rspan, false, &mut h);
+            },
+            Side::Right => {
+                hash_span(&config.tape.lspan, false, &mut h);
+                hash_span(&config.tape.rspan, true, &mut h);
+            },
+        }
+
+        RunSpineGrowthKey {
+            state: config.state,
+            scan: config.tape.scan,
+            side,
+            skeleton: h.finish(),
+        }
+    }
+
+    fn threshold(
+        &mut self,
+        key: RunSpineGrowthKey,
+        step: Steps,
+        count: BlockCount,
+    ) -> Option<(Count, Count)> {
+        let entry = self.entries.entry(key).or_default();
+
+        if let Some((minimum, stride)) = entry.widened {
+            return count
+                .covered_by_stride(minimum, stride)
+                .then_some((minimum, stride));
+        }
+
+        let BlockCount::Exact(count) = count else {
+            return None;
+        };
+
+        if let Some(last) = entry.samples.last_mut()
+            && last.0 == step
+        {
+            if count <= last.1 {
+                return None;
+            }
+            last.1 = count;
+        } else {
+            if entry
+                .samples
+                .last()
+                .is_some_and(|&(_, old)| old == count)
+            {
+                return None;
+            }
+            entry.samples.push((step, count));
+            if entry.samples.len() > RUN_SPINE_WIDEN_KEEP {
+                entry.samples.remove(0);
+            }
+        }
+
+        if entry.samples.len() < RUN_SPINE_WIDEN_OBSERVATIONS {
+            return None;
+        }
+
+        let (now_step, now_count) =
+            entry.samples[entry.samples.len() - 1];
+        for &(prev_step, prev_count) in entry.samples
+            [..entry.samples.len() - 1]
+            .iter()
+            .rev()
+            .take(12)
+        {
+            if prev_step >= now_step || prev_count >= now_count {
+                continue;
+            }
+
+            let period = now_step - prev_step;
+            let stride = now_count - prev_count;
+            if stride == 0 {
+                continue;
+            }
+            let Some(first_step) = prev_step.checked_sub(period) else {
+                continue;
+            };
+            let Some(first_count) = prev_count.checked_sub(stride)
+            else {
+                continue;
+            };
+            if first_count == 0 {
+                continue;
+            }
+
+            if entry.samples.contains(&(first_step, first_count)) {
+                entry.widened = Some((first_count, stride));
+                return Some((first_count, stride));
+            }
+        }
+
+        None
+    }
+
+    fn widen(&mut self, config: &mut Config, step: Steps) -> bool {
+        let mut changed = false;
+
+        for side in [Side::Left, Side::Right] {
+            let count = {
+                let span = if side == Side::Left {
+                    &config.tape.lspan
+                } else {
+                    &config.tape.rspan
+                };
+                let Some(Block::Run { count, .. }) = span.span.first()
+                else {
+                    continue;
+                };
+                if !matches!(
+                    *count,
+                    BlockCount::Exact(_) | BlockCount::Stride { .. }
+                ) {
+                    continue;
+                }
+                *count
+            };
+
+            let key = Self::key(config, side);
+            let Some((minimum, stride)) =
+                self.threshold(key, step, count)
+            else {
+                continue;
+            };
+
+            let span = if side == Side::Left {
+                &mut config.tape.lspan
+            } else {
+                &mut config.tape.rspan
+            };
+            let Some(Block::Run { count, .. }) = span.span.first_mut()
+            else {
+                continue;
+            };
+
+            let widened = BlockCount::stride(minimum, stride);
+            if *count != widened
+                && (*count).covered_by_stride(minimum, stride)
+            {
+                *count = widened;
+                changed = true;
+            }
+        }
+
+        changed
+    }
+}
+
 // Expensive single-color growing-edge history used only after the ordinary
 // pass has actually reached CountLimit. This mechanism never widens those run
 // counts. Instead, it remembers exact predecessor edges that increase the near
@@ -6981,6 +7206,7 @@ enum BlockSig {
         color: Color,
         count: usize,
         indef: bool,
+        stride: Option<Count>,
     },
     Word {
         word: BlockWord,
@@ -7018,6 +7244,7 @@ fn span_runs(span: &Span) -> Vec<BlockSig> {
                 color: *color,
                 count: usize::from(count.minimum()),
                 indef: count.is_indef(),
+                stride: count.stride_step(),
             },
             Block::Word { word, count } => BlockSig::Word {
                 word: Arc::clone(word),
@@ -7106,6 +7333,10 @@ type Count = u8;
 enum BlockCount {
     Exact(Count),
     AtLeast(Count),
+    // Arithmetic-progression widening for a recurring monochromatic spine.
+    // Denotes exactly { min + k * step | k >= 0 }. `step` is always >= 2;
+    // step 1 canonicalizes to AtLeast(min).
+    Stride { min: Count, step: Count },
 }
 
 impl BlockCount {
@@ -7119,9 +7350,20 @@ impl BlockCount {
         Self::AtLeast(count)
     }
 
+    const fn stride(min: Count, step: Count) -> Self {
+        debug_assert!(min > 0);
+        debug_assert!(step > 0);
+        if step == 1 {
+            Self::AtLeast(min)
+        } else {
+            Self::Stride { min, step }
+        }
+    }
+
     const fn minimum(self) -> Count {
         match self {
             Self::Exact(count) | Self::AtLeast(count) => count,
+            Self::Stride { min, .. } => min,
         }
     }
 
@@ -7130,11 +7372,43 @@ impl BlockCount {
     }
 
     const fn is_indef(self) -> bool {
-        matches!(self, Self::AtLeast(_))
+        matches!(self, Self::AtLeast(_) | Self::Stride { .. })
     }
 
     const fn can_be_one(self) -> bool {
-        matches!(self, Self::AtLeast(1))
+        matches!(self, Self::AtLeast(1) | Self::Stride { min: 1, .. })
+    }
+
+    const fn stride_step(self) -> Option<Count> {
+        match self {
+            Self::Stride { step, .. } => Some(step),
+            _ => None,
+        }
+    }
+
+    const fn parity_variable(self) -> bool {
+        match self {
+            Self::Exact(_) => false,
+            Self::AtLeast(_) => true,
+            Self::Stride { step, .. } => step & 1 != 0,
+        }
+    }
+
+    const fn covered_by_stride(self, min: Count, step: Count) -> bool {
+        match self {
+            Self::Exact(count) => {
+                count >= min && (count - min).is_multiple_of(step)
+            },
+            Self::Stride {
+                min: own_min,
+                step: own_step,
+            } => {
+                own_min >= min
+                    && (own_min - min).is_multiple_of(step)
+                    && own_step % step == 0
+            },
+            Self::AtLeast(count) => step == 1 && count >= min,
+        }
     }
 
     fn add_exact(&mut self, add: Count) -> Result<(), BackwardResult> {
@@ -7145,6 +7419,10 @@ impl BlockCount {
             },
             Self::AtLeast(count) => {
                 Self::AtLeast(count.checked_add(add).ok_or(CountLimit)?)
+            },
+            Self::Stride { min, step } => Self::Stride {
+                min: min.checked_add(add).ok_or(CountLimit)?,
+                step,
             },
         };
         Ok(())
@@ -7157,6 +7435,8 @@ impl BlockCount {
         debug_assert!(add > 0);
         let count =
             self.minimum().checked_add(add).ok_or(CountLimit)?;
+        // Adding an arbitrary lower-bounded number of same-color cells erases
+        // any congruence information carried by a Stride run.
         *self = Self::AtLeast(count);
         Ok(())
     }
@@ -7165,6 +7445,8 @@ impl BlockCount {
     ///
     /// `AtLeast(1)` is used only on the residual branch where the concrete
     /// run had length at least two, so its residual is again `AtLeast(1)`.
+    /// For `Stride { min: 1 }`, step_configs likewise explores the exact-one
+    /// branch separately; the residual progression therefore starts at step.
     const fn decrement_after_pull(&mut self) {
         *self = match *self {
             Self::Exact(count) => {
@@ -7173,6 +7455,12 @@ impl BlockCount {
             },
             Self::AtLeast(1) => Self::AtLeast(1),
             Self::AtLeast(count) => Self::AtLeast(count - 1),
+            Self::Stride { min: 1, step } => {
+                Self::Stride { min: step, step }
+            },
+            Self::Stride { min, step } => {
+                Self::Stride { min: min - 1, step }
+            },
         };
     }
 }
@@ -7348,7 +7636,8 @@ impl Block {
                 ..
             } => Some(*count as usize),
             Self::Run {
-                count: BlockCount::AtLeast(_),
+                count:
+                    BlockCount::AtLeast(_) | BlockCount::Stride { .. },
                 ..
             } => None,
             Self::Word { count, .. } => count.exact_copies(),
@@ -7390,6 +7679,9 @@ impl Block {
                 BlockCount::AtLeast(1) => format!("{color}.."),
                 BlockCount::AtLeast(count) => {
                     format!("{color}^{count}..")
+                },
+                BlockCount::Stride { min, step } => {
+                    format!("{color}^({min}+{step}k)")
                 },
             },
             Self::Word { word, count } => {
@@ -7510,6 +7802,10 @@ impl SpanT {
                 },
                 BlockCount::AtLeast(count) => {
                     self.push_at_least(*color, *count)
+                },
+                BlockCount::Stride { .. } => {
+                    self.blocks.push(block.clone());
+                    Ok(())
                 },
             },
             Block::Word { .. } => {
@@ -7661,7 +7957,8 @@ impl SpanT {
                     ..
                 } => unreachable!(),
                 Block::Run {
-                    count: BlockCount::AtLeast(_),
+                    count:
+                        BlockCount::AtLeast(_) | BlockCount::Stride { .. },
                     ..
                 } => unreachable!(),
             }
@@ -8072,11 +8369,20 @@ impl Span {
                     if *color == 0 {
                         continue;
                     }
-                    if count.is_indef() {
-                        return None;
+                    match count {
+                        BlockCount::Exact(count) => {
+                            residue =
+                                (residue + count % modulus) % modulus;
+                        },
+                        BlockCount::AtLeast(_) => return None,
+                        BlockCount::Stride { min, step } => {
+                            if step % modulus != 0 {
+                                return None;
+                            }
+                            residue =
+                                (residue + min % modulus) % modulus;
+                        },
                     }
-                    residue =
-                        (residue + count.minimum() % modulus) % modulus;
                 },
                 Block::Word { word, count } => {
                     let marked = word
@@ -8726,7 +9032,7 @@ impl Tape {
                         toggle
                     };
                     let mut out = 1_u64 << base;
-                    if count.is_indef() && toggle != 0 {
+                    if count.parity_variable() && toggle != 0 {
                         out |= 1_u64 << (base ^ toggle);
                     }
                     out
@@ -8801,6 +9107,20 @@ impl Tape {
                 matches!(
                     block,
                     Block::Word { count, .. } if count.is_indef()
+                )
+            })
+        })
+    }
+
+    fn has_stride_run(&self) -> bool {
+        [&self.lspan, &self.rspan].into_iter().any(|span| {
+            span.span.iter().any(|block| {
+                matches!(
+                    block,
+                    Block::Run {
+                        count: BlockCount::Stride { .. },
+                        ..
+                    }
                 )
             })
         })
@@ -9558,6 +9878,9 @@ impl Tape {
             color: Color,
             min: u16,
             max: Option<u16>,
+            // Exact run-count parity when the backward description proves it.
+            // Stride runs with even step retain this bit.
+            parity: Option<u8>,
         }
 
         impl ReqRun {
@@ -9565,6 +9888,7 @@ impl Tape {
                 color: 0,
                 min: 0,
                 max: Some(0),
+                parity: Some(0),
             };
         }
 
@@ -9622,11 +9946,19 @@ impl Tape {
                     color,
                     min: u16::from(count),
                     max: Some(u16::from(count)),
+                    parity: Some(count & 1),
                 },
                 BlockCount::AtLeast(count) => ReqRun {
                     color,
                     min: u16::from(count),
                     max: None,
+                    parity: None,
+                },
+                BlockCount::Stride { min, step } => ReqRun {
+                    color,
+                    min: u16::from(min),
+                    max: None,
+                    parity: (step & 1 == 0).then_some(min & 1),
                 },
             }
         }
@@ -9655,6 +9987,7 @@ impl Tape {
                 color: Color,
                 min: u16,
                 max: Option<u16>,
+                parity: Option<u8>,
             ) {
                 debug_assert!(min != 0);
 
@@ -9669,14 +10002,24 @@ impl Tape {
                             },
                             _ => None,
                         };
+                        run.parity = match (run.parity, parity) {
+                            (Some(left), Some(right)) => {
+                                Some(left ^ right)
+                            },
+                            _ => None,
+                        };
                     }
                     return;
                 }
 
                 let index = builder.runs;
                 if index < 3 {
-                    builder.req.runs[index] =
-                        ReqRun { color, min, max };
+                    builder.req.runs[index] = ReqRun {
+                        color,
+                        min,
+                        max,
+                        parity,
+                    };
                 }
 
                 if color != 0 {
@@ -9694,7 +10037,7 @@ impl Tape {
                 count: BlockCount,
             ) {
                 let req = req_run(color, count);
-                emit(builder, req.color, req.min, req.max);
+                emit(builder, req.color, req.min, req.max, req.parity);
             }
 
             const fn settled(builder: &Builder) -> bool {
@@ -9722,7 +10065,13 @@ impl Tape {
                         .unwrap_or(usize::MAX);
                     if total != 0 {
                         let (min, max) = exact_bounds(total);
-                        emit(builder, word[0], min, max);
+                        emit(
+                            builder,
+                            word[0],
+                            min,
+                            max,
+                            Some((total & 1) as u8),
+                        );
                     }
                     if count.is_indef() {
                         builder.req.end_unknown = true;
@@ -9735,7 +10084,7 @@ impl Tape {
                 while copy < copies {
                     let start = usize::from(skip_first && copy == 0);
                     for &color in &word[start..] {
-                        emit(builder, color, 1, Some(1));
+                        emit(builder, color, 1, Some(1), Some(1));
                     }
                     copy += 1;
 
@@ -9805,6 +10154,22 @@ impl Tape {
                         FirstResidual::Replace(BlockCount::AtLeast(
                             count - 1,
                         )),
+                        None,
+                    ),
+                    BlockCount::Stride { min: 1, step } => (
+                        FirstResidual::Drop,
+                        Some(FirstResidual::Replace(
+                            BlockCount::Stride {
+                                min: *step,
+                                step: *step,
+                            },
+                        )),
+                    ),
+                    BlockCount::Stride { min, step } => (
+                        FirstResidual::Replace(BlockCount::Stride {
+                            min: min - 1,
+                            step: *step,
+                        }),
                         None,
                     ),
                 },
@@ -9892,7 +10257,9 @@ impl Tape {
                 if builder.req.end_unknown
                     && (1..=3).contains(&builder.runs)
                 {
-                    builder.req.runs[builder.runs - 1].max = None;
+                    let last = &mut builder.req.runs[builder.runs - 1];
+                    last.max = None;
+                    last.parity = None;
                 }
                 reqs[alt] = builder.req;
             }
@@ -9911,6 +10278,9 @@ impl Tape {
                     let value = u16::from(count);
                     value >= req.min
                         && req.max.is_none_or(|max| value <= max)
+                        && req
+                            .parity
+                            .is_none_or(|parity| parity == count & 1)
                 },
                 SIDE_PREFIX_EVEN_MANY | SIDE_PREFIX_ODD_MANY => {
                     let (minimum, odd) =
@@ -9919,6 +10289,12 @@ impl Tape {
                         } else {
                             (5_u16, true)
                         };
+                    if req
+                        .parity
+                        .is_some_and(|parity| (parity != 0) != odd)
+                    {
+                        return false;
+                    }
                     let mut first = if req.min > minimum {
                         req.min
                     } else {
@@ -9943,25 +10319,44 @@ impl Tape {
             }
         }
 
-        const fn intervals_overlap(
+        fn intervals_overlap_with_parity(
             a_min: u16,
             a_max: Option<u16>,
             b_min: u16,
             b_max: Option<u16>,
+            parity: Option<u8>,
         ) -> bool {
-            let a_before_b = matches!(a_max, Some(max) if max < b_min);
-            let b_before_a = matches!(b_max, Some(max) if max < a_min);
-            !a_before_b && !b_before_a
+            let low = a_min.max(b_min);
+            let high = match (a_max, b_max) {
+                (Some(a), Some(b)) => Some(a.min(b)),
+                (Some(a), None) => Some(a),
+                (None, Some(b)) => Some(b),
+                (None, None) => None,
+            };
+            if high.is_some_and(|high| low > high) {
+                return false;
+            }
+            let Some(parity) = parity else {
+                return true;
+            };
+            let first = if (low & 1) == u16::from(parity) {
+                low
+            } else {
+                low.saturating_add(1)
+            };
+            high.is_none_or(|high| first <= high)
         }
 
-        const fn run_matches(
+        fn run_matches(
             color: Color,
             min: u16,
             max: Option<u16>,
             req: ReqRun,
         ) -> bool {
             color == req.color
-                && intervals_overlap(min, max, req.min, req.max)
+                && intervals_overlap_with_parity(
+                    min, max, req.min, req.max, req.parity,
+                )
         }
 
         fn matches(prefix: SidePrefix, req: Requirement) -> bool {
@@ -11019,6 +11414,100 @@ fn test_word_growth_widens_stable_macro_cycle() {
         unreachable!()
     };
     assert_eq!(*count, WordCount::AtLeast(3));
+}
+
+#[test]
+fn test_run_spine_growth_widens_stable_stride() {
+    fn config(count: BlockCount) -> Config {
+        Config::new(
+            0,
+            Tape {
+                scan: 0,
+                lspan: Span {
+                    span: SpanT {
+                        blocks: vec![Block::Run { color: 1, count }],
+                    },
+                    end: TapeEnd::Unknown,
+                },
+                rspan: Span::init_unknown(),
+            },
+        )
+    }
+
+    let mut history = RunSpineWideningHistory::default();
+    let mut c1 = config(BlockCount::Exact(1));
+    let mut c3 = config(BlockCount::Exact(3));
+    let mut c5 = config(BlockCount::Exact(5));
+
+    assert!(!history.widen(&mut c1, 1));
+    assert!(!history.widen(&mut c3, 3));
+    assert!(history.widen(&mut c5, 5));
+
+    let Block::Run { count, .. } = c5.tape.lspan.span.first().unwrap()
+    else {
+        unreachable!()
+    };
+    assert!(matches!(*count, BlockCount::Stride { min: 1, step: 2 }));
+
+    // A later exact member is widened immediately, and an already shifted
+    // progression is canonicalized back to the established minimum.  This is
+    // what closes a macro-cycle instead of producing min=1,3,5,... families.
+    let mut c7 = config(BlockCount::Exact(7));
+    assert!(history.widen(&mut c7, 7));
+    let Block::Run { count, .. } = c7.tape.lspan.span.first().unwrap()
+    else {
+        unreachable!()
+    };
+    assert!(matches!(*count, BlockCount::Stride { min: 1, step: 2 }));
+
+    let mut shifted = config(BlockCount::Stride { min: 3, step: 2 });
+    assert!(history.widen(&mut shifted, 9));
+    let Block::Run { count, .. } =
+        shifted.tape.lspan.span.first().unwrap()
+    else {
+        unreachable!()
+    };
+    assert!(matches!(*count, BlockCount::Stride { min: 1, step: 2 }));
+}
+
+#[test]
+fn test_stride_run_pull_and_parity() {
+    let mut span = Span {
+        span: SpanT {
+            blocks: vec![Block::Run {
+                color: 1,
+                count: BlockCount::Stride { min: 1, step: 2 },
+            }],
+        },
+        end: TapeEnd::Blanks,
+    };
+
+    // The concrete length-one member is handled by step_configs' split.  The
+    // residual branch therefore contains lengths 2,4,6,... after one pull.
+    assert!(span.span.first().unwrap().can_be_one());
+    span.pull();
+    let Block::Run { count, .. } = span.span.first().unwrap() else {
+        unreachable!()
+    };
+    assert!(matches!(*count, BlockCount::Stride { min: 2, step: 2 }));
+
+    let tape = Tape {
+        scan: 0,
+        lspan: Span {
+            span: SpanT {
+                blocks: vec![Block::Run {
+                    color: 1,
+                    count: BlockCount::Stride { min: 1, step: 2 },
+                }],
+            },
+            end: TapeEnd::Blanks,
+        },
+        rspan: Span::init_blank(),
+    };
+
+    // Even stride means every member has the same support/color parity.
+    assert_eq!(tape.nonblank_parity_mask(), 0b10);
+    assert_eq!(tape.color_parity_mask::<2>(), 1_u64 << 1);
 }
 
 #[test]
