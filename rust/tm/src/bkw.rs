@@ -1091,21 +1091,28 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
 /// Near-to-far run prefix of the tape strictly beyond one immediate neighbor.
 ///
 /// Two complete runs keep exact lengths 1/2/3 and, beyond that, retain
-/// run-length parity as `even >= 4` or `odd >= 5`.  One extra spill run
-/// remembers the next run color and only whether its length is 1 or 2+.
-/// Keeping parity in the two precise runs preserves long erase/fill sweep
-/// invariants without making the spill lattice larger.
+/// run-length parity as `even >= 4` or `odd >= 5`.  The extra spill run uses
+/// the same count lattice instead of collapsing to 1/2+, so the third retained
+/// run can use the full `ReqRun` min/max/parity test too.
 ///
-/// The spill's `farther_dirty` bit is exact for each alternative: false means
-/// everything after that spill run is blank; true means there is definitely a
-/// nonblank cell farther out.  When that distinction is not known, the
-/// forward worklist retains both alternatives.  `DirtyUnknown` is used only
-/// after the spill itself has been consumed/lost.
+/// Beyond the spill, retain the color of one additional run when it is known.
+/// This fourth-run color has no count component; when it moves inward, its
+/// possible count is split across the existing five count classes.  Under
+/// joint-bucket pressure this color is the first precision discarded, falling
+/// back exactly to the old blank-vs-dirty far-tail summary.
 // Full-run count codes. 1/2/3 are exact; the two larger codes are infinite
 // parity classes rather than ordinary lower bounds.
 const SIDE_PREFIX_EVEN_MANY: u8 = 4; // even lengths >= 4
 const SIDE_PREFIX_ODD_MANY: u8 = 5; // odd lengths >= 5
-const SIDE_PREFIX_SPILL_MANY: u8 = 2;
+// Pressure-only widening for the spill run. Unlike exact count 2, this means
+// any length >= 2. Ordinary independent prefixes never construct it; the
+// joint domain uses it before falling all the way to shape-unknown.
+const SIDE_PREFIX_SPILL_MANY: u8 = 6;
+
+fn side_prefix_color_bit(color: Color) -> u64 {
+    let color = usize::from(color);
+    if color < 64 { 1_u64 << color } else { u64::MAX }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct SidePrefixRun {
@@ -1118,14 +1125,50 @@ impl SidePrefixRun {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum SidePrefixFar {
+    Blank,
+    // Exact color of the next run, but not its length. `farther_dirty` says
+    // whether some nonblank cell is known strictly beyond that run.
+    Run { color: Color, farther_dirty: bool },
+    // Some nonblank cell exists farther out, but the next run color is lost.
+    DirtyUnknown,
+}
+
+impl SidePrefixFar {
+    const fn definitely_dirty(self) -> bool {
+        match self {
+            Self::Blank => false,
+            Self::Run {
+                color,
+                farther_dirty,
+            } => color != 0 || farther_dirty,
+            Self::DirtyUnknown => true,
+        }
+    }
+
+    const fn from_spill(spill: SidePrefixSpill) -> Self {
+        match spill {
+            SidePrefixSpill::Blank => Self::Blank,
+            SidePrefixSpill::Run { color, far, .. } => Self::Run {
+                color,
+                farther_dirty: far.definitely_dirty(),
+            },
+            SidePrefixSpill::DirtyUnknown => Self::DirtyUnknown,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 enum SidePrefixSpill {
     Blank,
     Run {
         color: Color,
-        // 1 is exact; 2 means two-or-more.
+        // Normally the same 1/2/3/even-many/odd-many lattice as
+        // `SidePrefixRun`. `SIDE_PREFIX_SPILL_MANY` is a pressure-only 2+
+        // widening used by the capped joint domain.
         count: u8,
-        // Some nonblank cell exists strictly beyond this spill run.
-        farther_dirty: bool,
+        // One more run of ordered structure beyond the spill.
+        far: SidePrefixFar,
     },
     // The forgotten remainder is definitely dirty, but its next run is lost.
     DirtyUnknown,
@@ -1135,11 +1178,9 @@ impl SidePrefixSpill {
     const fn definitely_dirty(self) -> bool {
         match self {
             Self::Blank => false,
-            Self::Run {
-                color,
-                farther_dirty,
-                ..
-            } => color != 0 || farther_dirty,
+            Self::Run { color, far, .. } => {
+                color != 0 || far.definitely_dirty()
+            },
             Self::DirtyUnknown => true,
         }
     }
@@ -1180,6 +1221,70 @@ impl SidePrefix {
         self.spill.definitely_dirty()
     }
 
+    const fn fourth_run_color(self) -> Option<Color> {
+        match self.spill {
+            SidePrefixSpill::Run {
+                far: SidePrefixFar::Run { color, .. },
+                ..
+            } => Some(color),
+            _ => None,
+        }
+    }
+
+    fn far_colors_after_prepend(
+        self,
+        color: Color,
+        next: Self,
+        mut far_colors: u64,
+    ) -> u64 {
+        // Prepending a new run to two retained runs shifts the old fourth run
+        // beyond the retained horizon. Preserve its color in the merged far
+        // summary rather than losing it when the new spill/fourth pair forms.
+        if self.len == 2 && self.runs[0].color != color {
+            if let Some(fourth) = self.fourth_run_color() {
+                far_colors |= side_prefix_color_bit(fourth);
+            }
+        }
+
+        // DirtyUnknown branches can split into the case where the prepended
+        // nonblank accounts for all forgotten dirt. That successor has no
+        // forgotten nonblank remainder, so only the infinite blank tail remains.
+        if matches!(self.spill, SidePrefixSpill::DirtyUnknown)
+            && matches!(next.spill, SidePrefixSpill::Blank)
+        {
+            return 1;
+        }
+
+        far_colors
+    }
+
+    fn far_colors_after_pull(self, next: Self, far_colors: u64) -> u64 {
+        // Pulling from DirtyUnknown may consume its last nonblank cell. The
+        // explicit blank successor is the only case where the forgotten
+        // remainder is known to have disappeared completely.
+        if matches!(self.spill, SidePrefixSpill::DirtyUnknown)
+            && matches!(next.spill, SidePrefixSpill::Blank)
+        {
+            1
+        } else {
+            far_colors
+        }
+    }
+
+    fn unknown_pull_color_possible(
+        self,
+        far_colors: u64,
+        color: Color,
+    ) -> bool {
+        if self.len != 0
+            || !matches!(self.spill, SidePrefixSpill::DirtyUnknown)
+        {
+            return true;
+        }
+
+        far_colors & side_prefix_color_bit(color) != 0
+    }
+
     /// Denotational subsumption used by the regression tests for the broad
     /// antichain state. No structural-prefix heuristic is used.
     fn subsumes(self, other: Self) -> bool {
@@ -1197,7 +1302,7 @@ impl SidePrefix {
             self.spill,
             SidePrefixSpill::Run {
                 color: 0,
-                farther_dirty: false,
+                far: SidePrefixFar::Blank,
                 ..
             }
         ) {
@@ -1222,27 +1327,72 @@ impl SidePrefix {
         dropped: SidePrefixRun,
         old: SidePrefixSpill,
     ) -> SidePrefixSpill {
-        let count = if dropped.count == 1 {
-            1
-        } else {
-            SIDE_PREFIX_SPILL_MANY
-        };
-
         SidePrefixSpill::Run {
             color: dropped.color,
-            count,
-            farther_dirty: old.definitely_dirty(),
+            count: dropped.count,
+            far: SidePrefixFar::from_spill(old),
         }
     }
 
-    const fn suffix_after_spill(
-        farther_dirty: bool,
-    ) -> SidePrefixSpill {
-        if farther_dirty {
-            SidePrefixSpill::DirtyUnknown
-        } else {
-            SidePrefixSpill::Blank
+    /// Once the spill is consumed, an exact fourth-run color becomes the new
+    /// spill color but its length was deliberately not tracked. Split that
+    /// unknown positive length across the existing finite count partition.
+    fn for_each_suffix_after_spill(
+        far: SidePrefixFar,
+        mut emit: impl FnMut(SidePrefixSpill),
+    ) {
+        match far {
+            SidePrefixFar::Blank => emit(SidePrefixSpill::Blank),
+            SidePrefixFar::DirtyUnknown => {
+                emit(SidePrefixSpill::DirtyUnknown);
+            },
+            SidePrefixFar::Run {
+                color,
+                farther_dirty,
+            } => {
+                let next_far = if farther_dirty {
+                    SidePrefixFar::DirtyUnknown
+                } else {
+                    SidePrefixFar::Blank
+                };
+                for count in [
+                    1,
+                    2,
+                    3,
+                    SIDE_PREFIX_EVEN_MANY,
+                    SIDE_PREFIX_ODD_MANY,
+                ] {
+                    emit(SidePrefixSpill::Run {
+                        color,
+                        count,
+                        far: next_far,
+                    });
+                }
+            },
         }
+    }
+
+    /// First pressure widening for the capped joint run product. Forget only
+    /// the fourth-run color, retaining the old exact blank-vs-dirty fact.
+    fn widen_far_color(mut self) -> Self {
+        if let SidePrefixSpill::Run { far, .. } = &mut self.spill {
+            if matches!(*far, SidePrefixFar::Run { .. }) {
+                *far = SidePrefixFar::DirtyUnknown;
+            }
+        }
+        self
+    }
+
+    /// Pressure widening used only by the capped joint run product. Preserve
+    /// the spill color/far-tail fact but join every count >= 2 back to the
+    /// original coarse 2+ state. The independent run domain remains precise.
+    fn widen_spill_count(mut self) -> Self {
+        if let SidePrefixSpill::Run { count, .. } = &mut self.spill {
+            if *count != 1 {
+                *count = SIDE_PREFIX_SPILL_MANY;
+            }
+        }
+        self
     }
 
     /// Prepend one exact cell at the near end of the represented tail.
@@ -1274,47 +1424,61 @@ impl SidePrefix {
                 SidePrefixSpill::Run {
                     color: spill_color,
                     count,
-                    farther_dirty,
+                    far,
                 } => {
                     if color == spill_color {
                         // The exact prepended cell merges into the known spill
-                        // run. 1 becomes exact 2. The coarse spill state 2+
-                        // becomes the full-run family 3+, so enumerate exact 3
-                        // plus both unbounded parity classes.
-                        let suffix =
-                            Self::suffix_after_spill(farther_dirty);
-                        if count == 1 {
-                            emit(Self {
-                                runs: [
-                                    SidePrefixRun { color, count: 2 },
-                                    SidePrefixRun::EMPTY,
-                                ],
-                                len: 1,
-                                spill: suffix,
-                            });
-                        } else {
-                            debug_assert_eq!(
-                                count,
-                                SIDE_PREFIX_SPILL_MANY
-                            );
-                            for next_count in [
-                                3,
-                                SIDE_PREFIX_EVEN_MANY,
-                                SIDE_PREFIX_ODD_MANY,
-                            ] {
-                                emit(Self {
-                                    runs: [
-                                        SidePrefixRun {
-                                            color,
-                                            count: next_count,
+                        // run. Precise spill counts promote deterministically.
+                        // A pressure-widened 2+ spill has the old three-way
+                        // image: after adding one cell its length is any >= 3.
+                        Self::for_each_suffix_after_spill(
+                            far,
+                            |suffix| {
+                                if count == SIDE_PREFIX_SPILL_MANY {
+                                    for next_count in [
+                                        3,
+                                        SIDE_PREFIX_EVEN_MANY,
+                                        SIDE_PREFIX_ODD_MANY,
+                                    ] {
+                                        emit(Self {
+                                            runs: [
+                                                SidePrefixRun {
+                                                    color,
+                                                    count: next_count,
+                                                },
+                                                SidePrefixRun::EMPTY,
+                                            ],
+                                            len: 1,
+                                            spill: suffix,
+                                        });
+                                    }
+                                } else {
+                                    let next_count = match count {
+                                        1 => 2,
+                                        2 => 3,
+                                        3 => SIDE_PREFIX_EVEN_MANY,
+                                        SIDE_PREFIX_EVEN_MANY => {
+                                            SIDE_PREFIX_ODD_MANY
                                         },
-                                        SidePrefixRun::EMPTY,
-                                    ],
-                                    len: 1,
-                                    spill: suffix,
-                                });
-                            }
-                        }
+                                        SIDE_PREFIX_ODD_MANY => {
+                                            SIDE_PREFIX_EVEN_MANY
+                                        },
+                                        _ => unreachable!(),
+                                    };
+                                    emit(Self {
+                                        runs: [
+                                            SidePrefixRun {
+                                                color,
+                                                count: next_count,
+                                            },
+                                            SidePrefixRun::EMPTY,
+                                        ],
+                                        len: 1,
+                                        spill: suffix,
+                                    });
+                                }
+                            },
+                        );
                         return;
                     }
 
@@ -1414,39 +1578,57 @@ impl SidePrefix {
                 SidePrefixSpill::Blank => {
                     emit(0, self);
                 },
-                SidePrefixSpill::Run {
-                    color,
-                    count,
-                    farther_dirty,
-                } => {
-                    if count == 1 {
-                        emit(
-                            color,
-                            Self {
-                                runs: [SidePrefixRun::EMPTY; 2],
-                                len: 0,
-                                spill: Self::suffix_after_spill(
-                                    farther_dirty,
-                                ),
+                SidePrefixSpill::Run { color, count, far } => {
+                    let residual = |next_count| {
+                        let mut next = Self {
+                            runs: [SidePrefixRun::EMPTY; 2],
+                            len: 0,
+                            spill: SidePrefixSpill::Run {
+                                color,
+                                count: next_count,
+                                far,
                             },
-                        );
-                    } else {
-                        debug_assert_eq!(count, SIDE_PREFIX_SPILL_MANY);
-                        // Removing one cell from 2+ leaves either exactly one
-                        // or still 2+ cells of the same spill run.
-                        for next_count in [1, SIDE_PREFIX_SPILL_MANY] {
-                            let mut next = Self {
-                                runs: [SidePrefixRun::EMPTY; 2],
-                                len: 0,
-                                spill: SidePrefixSpill::Run {
-                                    color,
-                                    count: next_count,
-                                    farther_dirty,
-                                },
-                            };
-                            next.canonicalize();
-                            emit(color, next);
-                        }
+                        };
+                        next.canonicalize();
+                        next
+                    };
+
+                    match count {
+                        1 => Self::for_each_suffix_after_spill(
+                            far,
+                            |spill| {
+                                let mut next = Self {
+                                    runs: [SidePrefixRun::EMPTY; 2],
+                                    len: 0,
+                                    spill,
+                                };
+                                next.canonicalize();
+                                emit(color, next);
+                            },
+                        ),
+                        2 => emit(color, residual(1)),
+                        3 => emit(color, residual(2)),
+                        SIDE_PREFIX_EVEN_MANY => {
+                            // even >= 4 minus one is either exact 3 (source 4)
+                            // or odd >= 5.
+                            emit(color, residual(3));
+                            emit(color, residual(SIDE_PREFIX_ODD_MANY));
+                        },
+                        SIDE_PREFIX_ODD_MANY => {
+                            emit(
+                                color,
+                                residual(SIDE_PREFIX_EVEN_MANY),
+                            );
+                        },
+                        SIDE_PREFIX_SPILL_MANY => {
+                            // 2+ minus one is either exactly one or still 2+.
+                            emit(color, residual(1));
+                            emit(
+                                color,
+                                residual(SIDE_PREFIX_SPILL_MANY),
+                            );
+                        },
+                        _ => unreachable!(),
                     }
                 },
                 SidePrefixSpill::DirtyUnknown => {
@@ -2277,6 +2459,608 @@ fn side_word_requirement(span: &Span) -> SideWordPrefix {
     SideWordPrefix::from_literal(cells, len, tail)
 }
 
+// Shared by independent and same-witness joint run-prefix checks.
+#[derive(Clone, Copy)]
+struct ReqRun {
+    color: Color,
+    min: u16,
+    max: Option<u16>,
+    // Exact run-count parity when the backward description proves it.
+    // Stride runs with even step retain this bit.
+    parity: Option<u8>,
+}
+
+impl ReqRun {
+    const EMPTY: Self = Self {
+        color: 0,
+        min: 0,
+        max: Some(0),
+        parity: Some(0),
+    };
+}
+
+#[derive(Clone, Copy)]
+struct Requirement {
+    // The two full runs plus the spill run retain full count information.
+    runs: [ReqRun; 3],
+
+    // The forward domain keeps only the color of one additional run, so the
+    // backward requirement needs no fourth count/parity descriptor either.
+    fourth_color: Option<Color>,
+
+    // Number of explicit residual runs, capped at four.
+    run_count: u8,
+
+    // Bit i says some explicit nonblank residual run occurs at position i or
+    // farther, for i in 0..=4. Position 4 summarizes everything strictly
+    // beyond the fourth retained run.
+    suffix_nonblank: u8,
+
+    // `suffix_colors[i]` is the union of explicit residual-run colors at
+    // position i or farther. The joint forward domain compares this against
+    // its merged forgotten-tail color mask; independent matching ignores it.
+    suffix_colors: [u64; 5],
+    end_unknown: bool,
+}
+
+impl Requirement {
+    const EMPTY: Self = Self {
+        runs: [ReqRun::EMPTY; 3],
+        fourth_color: None,
+        run_count: 0,
+        suffix_nonblank: 0,
+        suffix_colors: [0; 5],
+        end_unknown: false,
+    };
+
+    const fn unconstrained(self) -> bool {
+        self.run_count == 0 && self.end_unknown
+    }
+}
+
+#[derive(Clone, Copy)]
+struct RequirementSet {
+    reqs: [Requirement; 2],
+    len: u8,
+    unconstrained: bool,
+}
+
+#[derive(Default)]
+struct SideMatchRequirements {
+    runs: Option<[RequirementSet; 2]>,
+    words: Option<[SideWordPrefix; 2]>,
+}
+
+impl SideMatchRequirements {
+    fn runs(&mut self, tape: &Tape) -> [RequirementSet; 2] {
+        *self.runs.get_or_insert_with(|| {
+            [
+                side_run_requirements(&tape.lspan),
+                side_run_requirements(&tape.rspan),
+            ]
+        })
+    }
+
+    fn words(&mut self, tape: &Tape) -> [SideWordPrefix; 2] {
+        *self.words.get_or_insert_with(|| {
+            [
+                side_word_requirement(&tape.lspan),
+                side_word_requirement(&tape.rspan),
+            ]
+        })
+    }
+}
+
+#[derive(Clone, Copy)]
+enum FirstResidual {
+    Drop,
+    Replace(BlockCount),
+    ConsumeWord,
+}
+
+fn req_run(color: Color, count: BlockCount) -> ReqRun {
+    match count {
+        BlockCount::Exact(count) => ReqRun {
+            color,
+            min: u16::from(count),
+            max: Some(u16::from(count)),
+            parity: Some(count & 1),
+        },
+        BlockCount::AtLeast(count) => ReqRun {
+            color,
+            min: u16::from(count),
+            max: None,
+            parity: None,
+        },
+        BlockCount::Stride { min, step } => ReqRun {
+            color,
+            min: u16::from(min),
+            max: None,
+            parity: (step & 1 == 0).then_some(min & 1),
+        },
+    }
+}
+
+#[expect(clippy::cast_possible_truncation)]
+fn side_run_requirements(span: &Span) -> RequirementSet {
+    #[derive(Clone, Copy)]
+    struct Builder {
+        req: Requirement,
+        runs: usize,
+        last_color: Option<Color>,
+        blocked: bool,
+    }
+
+    fn exact_bounds(value: usize) -> (u16, Option<u16>) {
+        u16::try_from(value)
+            .map_or((u16::MAX, None), |value| (value, Some(value)))
+    }
+
+    fn emit(
+        builder: &mut Builder,
+        color: Color,
+        min: u16,
+        max: Option<u16>,
+        parity: Option<u8>,
+    ) {
+        debug_assert!(min != 0);
+
+        if builder.last_color == Some(color) {
+            let index = builder.runs - 1;
+            if index < 3 {
+                let run = &mut builder.req.runs[index];
+                run.min = run.min.saturating_add(min);
+                run.max = match (run.max, max) {
+                    (Some(left), Some(right)) => {
+                        left.checked_add(right)
+                    },
+                    _ => None,
+                };
+                run.parity = match (run.parity, parity) {
+                    (Some(left), Some(right)) => Some(left ^ right),
+                    _ => None,
+                };
+            }
+            return;
+        }
+
+        let index = builder.runs;
+        if index < 3 {
+            builder.req.runs[index] = ReqRun {
+                color,
+                min,
+                max,
+                parity,
+            };
+        } else if index == 3 {
+            builder.req.fourth_color = Some(color);
+        }
+
+        if color != 0 {
+            builder.req.suffix_nonblank |=
+                (1_u8 << (index.min(4) + 1)) - 1;
+        }
+
+        let bit = side_prefix_color_bit(color);
+        for mask in
+            builder.req.suffix_colors.iter_mut().take(index.min(4) + 1)
+        {
+            *mask |= bit;
+        }
+
+        builder.runs += 1;
+        builder.last_color = Some(color);
+    }
+
+    fn emit_run(
+        builder: &mut Builder,
+        color: Color,
+        count: BlockCount,
+    ) {
+        let req = req_run(color, count);
+        emit(builder, req.color, req.min, req.max, req.parity);
+    }
+
+    const fn settled(builder: &Builder) -> bool {
+        builder.runs > 4 && builder.req.suffix_nonblank & (1 << 4) != 0
+    }
+
+    fn emit_word(
+        builder: &mut Builder,
+        word: &[Color],
+        count: WordCount,
+        skip_first: bool,
+    ) {
+        debug_assert_ne!(word, []);
+        let copies = count.minimum();
+        debug_assert!(copies != 0);
+
+        if word.iter().all(|&color| color == word[0]) {
+            let total = word
+                .len()
+                .checked_mul(copies)
+                .and_then(|cells| {
+                    cells.checked_sub(usize::from(skip_first))
+                })
+                .unwrap_or(usize::MAX);
+            if total != 0 {
+                let (min, max) = exact_bounds(total);
+                emit(
+                    builder,
+                    word[0],
+                    min,
+                    max,
+                    Some((total & 1) as u8),
+                );
+            }
+            if count.is_indef() {
+                builder.req.end_unknown = true;
+                builder.blocked = true;
+            }
+            return;
+        }
+
+        let mut copy = 0_usize;
+        while copy < copies {
+            let start = usize::from(skip_first && copy == 0);
+            for &color in &word[start..] {
+                emit(builder, color, 1, Some(1), Some(1));
+            }
+            copy += 1;
+
+            // For a non-homogeneous periodic word, only the first four
+            // logical run colors and whether anything nonblank lies beyond
+            // them can affect this matcher. Stop once both are settled.
+            if settled(builder) {
+                break;
+            }
+        }
+
+        if count.is_indef() {
+            // Extra copies are optional and add more logical runs, so
+            // farther explicit blocks no longer occupy a fixed prefix
+            // position. Keep the guaranteed prefix and conservatively
+            // forget everything beyond it.
+            builder.req.end_unknown = true;
+            builder.blocked = true;
+        }
+    }
+
+    fn emit_full_block(builder: &mut Builder, block: &Block) {
+        if builder.blocked {
+            return;
+        }
+
+        match block {
+            Block::Run { color, count } => {
+                emit_run(builder, *color, *count);
+            },
+            Block::Word { word, count } => {
+                emit_word(builder, word, *count, false);
+            },
+        }
+    }
+
+    let end_unknown = span.end == TapeEnd::Unknown;
+    let Some(first) = span.span.first() else {
+        let req = Requirement {
+            end_unknown,
+            ..Requirement::EMPTY
+        };
+        return RequirementSet {
+            reqs: [req, Requirement::EMPTY],
+            len: 1,
+            unconstrained: req.unconstrained(),
+        };
+    };
+
+    let (first_mode, second_mode) = match first {
+        Block::Run { count, .. } => match count {
+            BlockCount::Exact(1) => (FirstResidual::Drop, None),
+            BlockCount::Exact(count) => (
+                FirstResidual::Replace(BlockCount::Exact(count - 1)),
+                None,
+            ),
+            BlockCount::AtLeast(1) => (
+                FirstResidual::Drop,
+                Some(FirstResidual::Replace(BlockCount::AtLeast(1))),
+            ),
+            BlockCount::AtLeast(count) => (
+                FirstResidual::Replace(BlockCount::AtLeast(count - 1)),
+                None,
+            ),
+            BlockCount::Stride { min: 1, step } => (
+                FirstResidual::Drop,
+                Some(FirstResidual::Replace(BlockCount::Stride {
+                    min: *step,
+                    step: *step,
+                })),
+            ),
+            BlockCount::Stride { min, step } => (
+                FirstResidual::Replace(BlockCount::Stride {
+                    min: min - 1,
+                    step: *step,
+                }),
+                None,
+            ),
+        },
+        Block::Word { .. } => (FirstResidual::ConsumeWord, None),
+    };
+
+    let len = if second_mode.is_some() { 2 } else { 1 };
+    let modes = [first_mode, second_mode.unwrap_or(first_mode)];
+    let mut builders = [
+        Builder {
+            req: Requirement {
+                end_unknown,
+                ..Requirement::EMPTY
+            },
+            runs: 0,
+            last_color: None,
+            blocked: false,
+        },
+        Builder {
+            req: Requirement {
+                end_unknown,
+                ..Requirement::EMPTY
+            },
+            runs: 0,
+            last_color: None,
+            blocked: false,
+        },
+    ];
+
+    let block_count = span.span.len();
+    for (source_index, block) in span.span.iter().enumerate() {
+        // A whole explicit blank block at a known-blank far end is
+        // redundant, matching absorb_trailing_blanks/the old builder.
+        if !end_unknown
+            && source_index + 1 == block_count
+            && block.blank()
+        {
+            continue;
+        }
+
+        for alt in 0..len {
+            if source_index == 0 {
+                match modes[alt] {
+                    FirstResidual::Drop => {},
+                    FirstResidual::Replace(count) => {
+                        let (color, _) = block
+                            .run()
+                            .expect("Replace applies only to runs");
+                        emit_run(&mut builders[alt], color, count);
+                    },
+                    FirstResidual::ConsumeWord => {
+                        let Block::Word { word, count } = block else {
+                            unreachable!()
+                        };
+                        emit_word(
+                            &mut builders[alt],
+                            word,
+                            *count,
+                            true,
+                        );
+                    },
+                }
+            } else {
+                emit_full_block(&mut builders[alt], block);
+            }
+        }
+
+        if (0..len).all(|alt| settled(&builders[alt])) {
+            break;
+        }
+    }
+
+    let mut reqs = [Requirement::EMPTY; 2];
+    for alt in 0..len {
+        let builder = &mut builders[alt];
+        builder.req.run_count = builder.runs.min(4) as u8;
+
+        if builder.req.end_unknown && (1..=3).contains(&builder.runs) {
+            let last = &mut builder.req.runs[builder.runs - 1];
+            last.max = None;
+            last.parity = None;
+        }
+        reqs[alt] = builder.req;
+    }
+
+    RequirementSet {
+        reqs,
+        len: len as u8,
+        unconstrained: (0..len).any(|alt| reqs[alt].unconstrained()),
+    }
+}
+
+fn precise_count_matches(count: u8, req: ReqRun) -> bool {
+    match count {
+        1..=3 => {
+            let value = u16::from(count);
+            value >= req.min
+                && req.max.is_none_or(|max| value <= max)
+                && req.parity.is_none_or(|parity| parity == count & 1)
+        },
+        SIDE_PREFIX_EVEN_MANY | SIDE_PREFIX_ODD_MANY => {
+            let (minimum, odd) = if count == SIDE_PREFIX_EVEN_MANY {
+                (4_u16, false)
+            } else {
+                (5_u16, true)
+            };
+            if req.parity.is_some_and(|parity| (parity != 0) != odd) {
+                return false;
+            }
+            let mut first =
+                if req.min > minimum { req.min } else { minimum };
+            if (first & 1 != 0) != odd {
+                first = first.saturating_add(1);
+            }
+            req.max.is_none_or(|max| first <= max)
+        },
+        _ => unreachable!(),
+    }
+}
+
+fn widened_spill_count_matches(req: ReqRun) -> bool {
+    // Intersect the widened spill language [2, +inf) with the backward
+    // requirement's interval/parity.
+    let mut first = req.min.max(2);
+    if let Some(parity) = req.parity {
+        if (first & 1) != u16::from(parity) {
+            first = first.saturating_add(1);
+        }
+    }
+    req.max.is_none_or(|max| first <= max)
+}
+
+fn side_run_colors_compatible(
+    prefix: SidePrefix,
+    req: Requirement,
+) -> bool {
+    let prefix_len = usize::from(prefix.len);
+    let req_len = req.run_count as usize;
+    let common = prefix_len.min(req_len);
+
+    // Check every retained color before doing any interval/parity arithmetic.
+    // Later-run color mismatches are common and can reject a candidate without
+    // paying for precise count intersection on the earlier runs.
+    for index in 0..common {
+        if prefix.runs[index].color != req.runs[index].color {
+            return false;
+        }
+    }
+
+    let mut known_len = prefix_len;
+    let SidePrefixSpill::Run { color, far, .. } = prefix.spill else {
+        return true;
+    };
+
+    if req_len > known_len {
+        if color != req.runs[known_len].color {
+            return false;
+        }
+        known_len += 1;
+    } else {
+        return true;
+    }
+
+    let SidePrefixFar::Run { color, .. } = far else {
+        return true;
+    };
+    if req_len <= known_len {
+        return true;
+    }
+
+    let required_color = if known_len < 3 {
+        Some(req.runs[known_len].color)
+    } else if known_len == 3 {
+        req.fourth_color
+    } else {
+        None
+    };
+    required_color == Some(color)
+}
+
+fn side_run_matches_with_far_colors(
+    prefix: SidePrefix,
+    req: Requirement,
+    far_colors: Option<u64>,
+) -> bool {
+    if !side_run_colors_compatible(prefix, req) {
+        return false;
+    }
+
+    let prefix_len = usize::from(prefix.len);
+    let req_len = req.run_count as usize;
+    let common = prefix_len.min(req_len);
+
+    for index in 0..common {
+        if !precise_count_matches(
+            prefix.runs[index].count,
+            req.runs[index],
+        ) {
+            return false;
+        }
+    }
+
+    if prefix_len > req_len {
+        // The backward description can supply additional run
+        // structure only when its explicit prefix ends in `?`.
+        return req.end_unknown;
+    }
+
+    let mut known_len = prefix_len;
+    let tail_dirty;
+
+    match prefix.spill {
+        SidePrefixSpill::Blank => {
+            tail_dirty = false;
+        },
+        SidePrefixSpill::DirtyUnknown => {
+            tail_dirty = true;
+        },
+        SidePrefixSpill::Run { count, far, .. } => {
+            // The color prepass above has already checked this run. Only the
+            // expensive count-language intersection remains here.
+            if req_len <= known_len {
+                return req.end_unknown;
+            }
+            let required = req.runs[known_len];
+            let count_matches = if count == SIDE_PREFIX_SPILL_MANY {
+                widened_spill_count_matches(required)
+            } else {
+                precise_count_matches(count, required)
+            };
+            if !count_matches {
+                return false;
+            }
+            known_len += 1;
+
+            match far {
+                SidePrefixFar::Blank => {
+                    tail_dirty = false;
+                },
+                SidePrefixFar::DirtyUnknown => {
+                    tail_dirty = true;
+                },
+                SidePrefixFar::Run { farther_dirty, .. } => {
+                    if req_len <= known_len {
+                        return req.end_unknown;
+                    }
+
+                    // Fourth-run color compatibility was handled by the cheap
+                    // prepass; the forward abstraction deliberately has no
+                    // fourth-run count to check.
+                    known_len += 1;
+                    tail_dirty = farther_dirty;
+                },
+            }
+        },
+    }
+
+    if known_len > req_len {
+        return req.end_unknown;
+    }
+
+    if tail_dirty {
+        if let Some(possible_colors) = far_colors {
+            let required_colors = req.suffix_colors[known_len.min(4)];
+            if required_colors & !possible_colors != 0 {
+                return false;
+            }
+        }
+
+        req.end_unknown
+            || req.suffix_nonblank & (1_u8 << known_len) != 0
+    } else {
+        req.suffix_nonblank & (1_u8 << known_len) == 0
+    }
+}
+
+fn side_run_matches(prefix: SidePrefix, req: Requirement) -> bool {
+    side_run_matches_with_far_colors(prefix, req, None)
+}
+
 /// Same exact-window conditioning as `SidePossible`, but keeps alternatives
 /// instead of unioning their ordered near-tail run structure.
 const SIDE_PREFIX_HAS_BLANK: u8 = 1;
@@ -2580,42 +3364,306 @@ struct JointShortNode {
 // This preserves correlations such as a remote left anchor being required
 // while the right side has a particular shape.
 const JOINT_SIDE_PREFIX_MAX_ALTS_PER_WINDOW: usize = 64;
+// DirtyUnknown can emit five count classes, each with blank/dirty residuals.
+const SIDE_PREFIX_MAX_PREPEND_ALTS: usize = 10;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[expect(variant_size_differences)]
 enum JointSidePrefix {
-    Specific { left: SidePrefix, right: SidePrefix },
-    // Conservative top used only after the per-window antichain cap overflows.
-    Unknown,
+    Specific {
+        left: SidePrefix,
+        right: SidePrefix,
+        // Bit `lp | (rp << 1)` records one possible pair of whole-side
+        // nonblank parities for this same run-shape alternative.
+        parity_mask: u8,
+        // Per-side union of colors occurring in the forgotten remainder
+        // beyond the retained ordered run horizon. These masks are metadata:
+        // they do not participate in shape identity and merge by OR.
+        far_colors: [u64; 2],
+    },
+    // Conservative shape top used after a per-window antichain overflow or
+    // propagated from one. Unlike the old top, it still retains the possible
+    // left/right whole-side parity pairs. Far-color information is discarded
+    // because an unknown shape can move the retained/far boundary arbitrarily.
+    Unknown {
+        parity_mask: u8,
+    },
 }
 
 impl JointSidePrefix {
-    const fn blank() -> Self {
+    const fn blank(track_parity: bool) -> Self {
         Self::Specific {
             left: SidePrefix::blank(),
             right: SidePrefix::blank(),
+            parity_mask: if track_parity { 1 } else { 0b1111 },
+            // The infinite forgotten remainder is blank on both sides.
+            far_colors: [1; 2],
         }
     }
 
-    fn subsumes(self, other: Self) -> bool {
+    const fn parity_mask(self) -> u8 {
+        match self {
+            Self::Specific { parity_mask, .. }
+            | Self::Unknown { parity_mask } => parity_mask,
+        }
+    }
+
+    fn merge_same_shape(self, other: Self) -> Self {
+        debug_assert!(self.same_shape(other));
+        let parity_mask = self.parity_mask() | other.parity_mask();
         match (self, other) {
-            (Self::Unknown, _) => true,
-            (_, Self::Unknown) => false,
+            (
+                Self::Specific {
+                    left,
+                    right,
+                    far_colors: a,
+                    ..
+                },
+                Self::Specific { far_colors: b, .. },
+            ) => Self::Specific {
+                left,
+                right,
+                parity_mask,
+                far_colors: [a[0] | b[0], a[1] | b[1]],
+            },
+            (Self::Unknown { .. }, Self::Unknown { .. }) => {
+                Self::Unknown { parity_mask }
+            },
+            _ => unreachable!(),
+        }
+    }
+
+    fn widen_far_colors(self) -> Self {
+        match self {
+            Self::Specific {
+                left,
+                right,
+                parity_mask,
+                mut far_colors,
+            } => {
+                // The first pressure fallback forgets the exact fourth-run
+                // color. Move that color into the merged forgotten-tail mask
+                // before replacing its ordered descriptor with DirtyUnknown.
+                if let Some(color) = left.fourth_run_color() {
+                    far_colors[LEFT_SIDE] |=
+                        side_prefix_color_bit(color);
+                }
+                if let Some(color) = right.fourth_run_color() {
+                    far_colors[RIGHT_SIDE] |=
+                        side_prefix_color_bit(color);
+                }
+                Self::Specific {
+                    left: left.widen_far_color(),
+                    right: right.widen_far_color(),
+                    parity_mask,
+                    far_colors,
+                }
+            },
+            Self::Unknown { .. } => self,
+        }
+    }
+
+    fn widen_spill_counts(self) -> Self {
+        match self {
+            Self::Specific {
+                left,
+                right,
+                parity_mask,
+                far_colors,
+            } => Self::Specific {
+                left: left.widen_spill_count(),
+                right: right.widen_spill_count(),
+                parity_mask,
+                far_colors,
+            },
+            Self::Unknown { .. } => self,
+        }
+    }
+
+    fn same_shape(self, other: Self) -> bool {
+        match (self, other) {
+            (Self::Unknown { .. }, Self::Unknown { .. }) => true,
             (
                 Self::Specific {
                     left: a_l,
                     right: a_r,
+                    ..
                 },
                 Self::Specific {
                     left: b_l,
                     right: b_r,
+                    ..
                 },
-            ) => a_l.subsumes(b_l) && a_r.subsumes(b_r),
+            ) => a_l == b_l && a_r == b_r,
+            _ => false,
         }
+    }
+
+    fn subsumes(self, other: Self) -> bool {
+        if self.parity_mask() & other.parity_mask()
+            != other.parity_mask()
+        {
+            return false;
+        }
+
+        match (self, other) {
+            (Self::Unknown { .. }, _) => true,
+            (_, Self::Unknown { .. }) => false,
+            (
+                Self::Specific {
+                    left: a_l,
+                    right: a_r,
+                    far_colors: a_far,
+                    ..
+                },
+                Self::Specific {
+                    left: b_l,
+                    right: b_r,
+                    far_colors: b_far,
+                    ..
+                },
+            ) => {
+                a_far[LEFT_SIDE] | b_far[LEFT_SIDE] == a_far[LEFT_SIDE]
+                    && a_far[RIGHT_SIDE] | b_far[RIGHT_SIDE]
+                        == a_far[RIGHT_SIDE]
+                    && a_l.subsumes(b_l)
+                    && a_r.subsumes(b_r)
+            },
+        }
+    }
+}
+
+/// Insert one alternative into a joint run-prefix antichain. Same-shape
+/// parity/far-color merging, existing-subsumes-new, and
+/// new-subsumes-existing are handled in one mutable walk. If metadata merging
+/// enlarges the incoming alternative, restart so it can remove entries visited
+/// before the merge.
+fn insert_joint_side_prefix_alt(
+    alts: &mut Vec<JointSidePrefix>,
+    mut prefix: JointSidePrefix,
+) -> Option<JointSidePrefix> {
+    let mut index = 0_usize;
+    while index < alts.len() {
+        let old = alts[index];
+        if old.subsumes(prefix) {
+            return None;
+        }
+
+        if old.same_shape(prefix) {
+            prefix = old.merge_same_shape(prefix);
+            alts.swap_remove(index);
+            index = 0;
+            continue;
+        }
+
+        if prefix.subsumes(old) {
+            alts.swap_remove(index);
+        } else {
+            index += 1;
+        }
+    }
+
+    alts.push(prefix);
+    Some(prefix)
+}
+
+/// Apply a pressure widening and rebuild the antichain in its existing Vec.
+/// The front of the same allocation is used as the compacted output, avoiding
+/// a fresh allocation/copy every time a hot joint window crosses a pressure
+/// threshold.
+fn widen_joint_side_prefix_alts_in_place(
+    alts: &mut Vec<JointSidePrefix>,
+    widen: fn(JointSidePrefix) -> JointSidePrefix,
+) {
+    for prefix in alts.iter_mut() {
+        *prefix = widen(*prefix);
+    }
+
+    let source_len = alts.len();
+    let mut out_len = 0_usize;
+    let mut read = 0_usize;
+    while read < source_len {
+        let mut prefix = alts[read];
+        let mut index = 0_usize;
+        let mut keep = true;
+
+        while index < out_len {
+            let old = alts[index];
+            if old.subsumes(prefix) {
+                keep = false;
+                break;
+            }
+
+            if old.same_shape(prefix) {
+                prefix = old.merge_same_shape(prefix);
+                out_len -= 1;
+                alts[index] = alts[out_len];
+                index = 0;
+                continue;
+            }
+
+            if prefix.subsumes(old) {
+                out_len -= 1;
+                alts[index] = alts[out_len];
+            } else {
+                index += 1;
+            }
+        }
+
+        if keep {
+            alts[out_len] = prefix;
+            out_len += 1;
+        }
+        read += 1;
+    }
+    alts.truncate(out_len);
+}
+
+/// Advance a set of whole-side nonblank parity pairs through one exact local
+/// transition.  Each concrete pair is transformed only by XOR with one fixed
+/// two-bit delta, so permute the four mask bits directly instead of walking
+/// the set bits on every forward edge.
+fn advance_joint_side_parity(
+    mask: u8,
+    shift: Shift,
+    print: usize,
+    left: usize,
+    right: usize,
+) -> u8 {
+    let delta = if shift {
+        u8::from(print != 0) | (u8::from(right != 0) << 1)
+    } else {
+        u8::from(left != 0) | (u8::from(print != 0) << 1)
+    };
+
+    match delta {
+        0 => mask,
+        1 => ((mask & 0b0101) << 1) | ((mask & 0b1010) >> 1),
+        2 => ((mask & 0b0011) << 2) | ((mask & 0b1100) >> 2),
+        3 => {
+            ((mask & 0b0001) << 3)
+                | ((mask & 0b0010) << 1)
+                | ((mask & 0b0100) >> 1)
+                | ((mask & 0b1000) >> 3)
+        },
+        _ => unreachable!(),
     }
 }
 
 struct JointSidePrefixPossible<const S: usize, const C: usize> {
     windows: Vec<Vec<JointSidePrefix>>,
+    // Once a bucket itself crosses the antichain cap, keep it permanently as
+    // one shape-unknown alternative.  Its parity mask can still grow later.
+    overflowed: Vec<bool>,
+    // First pressure fallback: forget only the fourth-run color, recovering
+    // the previous exact blank-vs-dirty far-tail abstraction.
+    far_color_widened: Vec<bool>,
+    // Second fallback: widen the third-run count back to the old 1/2+ lattice.
+    spill_widened: Vec<bool>,
+    // Blank-target frontiers start with two finite known-blank ends.  Their
+    // run requirements already expose the parity facts that matter in this
+    // domain, so avoid paying for same-witness parity propagation there.
+    track_parity: bool,
 }
 
 impl<const S: usize, const C: usize> JointSidePrefixPossible<S, C> {
@@ -2628,9 +3676,14 @@ impl<const S: usize, const C: usize> JointSidePrefixPossible<S, C> {
         (((st * C) + scan) * C + left) * C + right
     }
 
-    fn new() -> Self {
+    fn new(track_parity: bool) -> Self {
+        let len = S * C * C * C;
         Self {
-            windows: (0..S * C * C * C).map(|_| Vec::new()).collect(),
+            windows: (0..len).map(|_| Vec::new()).collect(),
+            overflowed: vec![false; len],
+            far_color_widened: vec![false; len],
+            spill_widened: vec![false; len],
+            track_parity,
         }
     }
 
@@ -3233,6 +4286,14 @@ where
     // `right/left/any`.  If the relation actually shrinks, rebuild all
     // aggregates and cheap summaries exactly once at the final fixed point.
     let mut prefix_refined_windows = false;
+    // Same-witness whole-side parity is enabled only when the initial target
+    // frontier contains an unknown tape end.  Fully finite blank targets use
+    // the original shape-only joint domain, where this refinement has not added
+    // decisions but does add forward fixed-point work.
+    let track_joint_run_parity = configs.iter().any(|config| {
+        config.tape.lspan.end == TapeEnd::Unknown
+            || config.tape.rspan.end == TapeEnd::Unknown
+    });
     let (
         side_prefix_possible,
         joint_short_possible,
@@ -3317,8 +4378,10 @@ where
         // window relation too.  This is deliberately after the cheaper two
         // projections so most impossible windows are gone before paying for
         // the larger joint worklist.
-        let joint_side =
-            prog.joint_side_prefix_possible_from_blank(&win_possible);
+        let joint_side = prog.joint_side_prefix_possible_from_blank(
+            &win_possible,
+            track_joint_run_parity,
+        );
         if win_possible
             .refine_joint_side_prefix_reachability_relation(&joint_side)
         {
@@ -3372,13 +4435,9 @@ where
         break (prefixes, joint, joint_side, joint_word);
     };
 
-    // Preserve the old lazy backward check: only retain the expensive joint
-    // product when an initial target can query an exact-blank side.  Its
-    // reachability information has already been fed into WinPossible above.
-    let joint_side_prefix_possible = configs
-        .iter()
-        .any(|Config { tape, .. }| tape.has_exact_blank_side())
-        .then_some(joint_side_prefix_fixed);
+    // Both sides can query the joint run relation, including targets and
+    // later predecessors with no exactly blank side.
+    let joint_side_prefix_possible = Some(joint_side_prefix_fixed);
 
     if prefix_refined_windows {
         // Finalize every exact/aggregate table once.  `side_possible` was
@@ -4051,19 +5110,32 @@ fn step_instrs<
                 color_tail_count,
                 pair_tail_presence,
             )
-            || !tape
-                .obeys_side_prefix_possible(state, side_prefix_possible)
-            || !tape
-                .obeys_joint_short_possible(state, joint_short_possible)
-            || !tape.obeys_joint_side_prefix_possible(
-                state,
-                joint_side_prefix_possible,
-            )
-            || !tape.obeys_joint_side_word_prefix_possible(
-                state,
-                joint_side_word_prefix_possible,
-            )
         {
+            continue;
+        }
+
+        // The tiny joint prefix needs no compiled backward run/word
+        // requirements, so let it reject first.  The three richer prefix
+        // matchers below then share one lazily-built requirement bundle.
+        if !tape.obeys_joint_short_possible(state, joint_short_possible)
+        {
+            continue;
+        }
+
+        let mut side_requirements = SideMatchRequirements::default();
+        if !tape.obeys_side_prefix_possible_cached(
+            state,
+            side_prefix_possible,
+            &mut side_requirements,
+        ) || !tape.obeys_joint_side_prefix_possible_cached(
+            state,
+            joint_side_prefix_possible,
+            &mut side_requirements,
+        ) || !tape.obeys_joint_side_word_prefix_possible_cached(
+            state,
+            joint_side_word_prefix_possible,
+            &mut side_requirements,
+        ) {
             continue;
         }
 
@@ -5463,6 +6535,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     return;
                 }
 
+                // Keep the independent projection at the previous precision
+                // level. Fourth-run color is reserved for the same-witness
+                // joint product, where it can actually add correlation.
+                let prefix = prefix.widen_far_color();
+
                 let index = SidePrefixPossible::<s, c>::index(
                     st, scan, left, right, side,
                 );
@@ -6095,6 +7172,7 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     fn joint_side_prefix_possible_from_blank(
         &self,
         windows: &WinPossible<S, C>,
+        track_parity: bool,
     ) -> JointSidePrefixPossible<S, C> {
         let mut trans = [[None; C]; S];
         for ((state, read), &(print, shift, next_state)) in self.iter()
@@ -6103,11 +7181,11 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 Some((print as usize, shift, next_state as usize));
         }
 
-        let mut possible = JointSidePrefixPossible::new();
+        let mut possible = JointSidePrefixPossible::new(track_parity);
         let mut q = VecDeque::new();
 
         let push =
-            |node: JointSidePrefixNode,
+            |mut node: JointSidePrefixNode,
              possible: &mut JointSidePrefixPossible<S, C>,
              q: &mut VecDeque<JointSidePrefixNode>| {
                 if windows.right[node.st][node.scan][node.left]
@@ -6120,32 +7198,111 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 let index = JointSidePrefixPossible::<S, C>::index(
                     node.st, node.scan, node.left, node.right,
                 );
-                let alts = &mut possible.windows[index];
 
-                if alts
-                    .iter()
-                    .copied()
-                    .any(|old| old.subsumes(node.prefix))
-                {
-                    return;
+                if possible.far_color_widened[index] {
+                    node.prefix = node.prefix.widen_far_colors();
                 }
-                alts.retain(|&old| !node.prefix.subsumes(old));
+                if possible.spill_widened[index] {
+                    node.prefix = node.prefix.widen_spill_counts();
+                }
 
-                if node.prefix != JointSidePrefix::Unknown
-                    && alts.len()
-                        >= JOINT_SIDE_PREFIX_MAX_ALTS_PER_WINDOW
-                {
-                    alts.clear();
-                    alts.push(JointSidePrefix::Unknown);
+                // A bucket that crossed the shape-antichain cap stays widened
+                // forever, but its surviving whole-side parity relation can
+                // still grow as more forward paths reach the same window.
+                if possible.overflowed[index] {
+                    let alts = &mut possible.windows[index];
+                    debug_assert_eq!(alts.len(), 1);
+                    let old_mask = alts[0].parity_mask();
+                    let new_mask = old_mask | node.prefix.parity_mask();
+                    if new_mask == old_mask {
+                        return;
+                    }
+
+                    let widened = JointSidePrefix::Unknown {
+                        parity_mask: new_mask,
+                    };
+                    alts[0] = widened;
                     q.push_back(JointSidePrefixNode {
-                        prefix: JointSidePrefix::Unknown,
+                        prefix: widened,
                         ..node
                     });
                     return;
                 }
 
-                alts.push(node.prefix);
-                q.push_back(node);
+                let alts = &mut possible.windows[index];
+                let Some(inserted) =
+                    insert_joint_side_prefix_alt(alts, node.prefix)
+                else {
+                    return;
+                };
+                node.prefix = inserted;
+
+                if alts.len() <= JOINT_SIDE_PREFIX_MAX_ALTS_PER_WINDOW {
+                    q.push_back(node);
+                    return;
+                }
+
+                if !possible.far_color_widened[index] {
+                    // Ordered fourth-run color is deliberately the cheapest
+                    // precision layer. Drop its order first while retaining the
+                    // color in the merged far-tail mask.
+                    widen_joint_side_prefix_alts_in_place(
+                        alts,
+                        JointSidePrefix::widen_far_colors,
+                    );
+                    possible.far_color_widened[index] = true;
+
+                    if alts.len()
+                        <= JOINT_SIDE_PREFIX_MAX_ALTS_PER_WINDOW
+                    {
+                        for &prefix in alts.iter() {
+                            q.push_back(JointSidePrefixNode {
+                                prefix,
+                                ..node
+                            });
+                        }
+                        return;
+                    }
+                }
+
+                if !possible.spill_widened[index] {
+                    // If fourth-color widening was insufficient, recover the
+                    // old 1/2+ spill-count quotient before giving up all shape.
+                    widen_joint_side_prefix_alts_in_place(
+                        alts,
+                        JointSidePrefix::widen_spill_counts,
+                    );
+                    possible.spill_widened[index] = true;
+
+                    if alts.len()
+                        <= JOINT_SIDE_PREFIX_MAX_ALTS_PER_WINDOW
+                    {
+                        for &prefix in alts.iter() {
+                            q.push_back(JointSidePrefixNode {
+                                prefix,
+                                ..node
+                            });
+                        }
+                        return;
+                    }
+                }
+
+                let parity_mask = if possible.track_parity {
+                    alts.iter().copied().fold(0_u8, |mask, alt| {
+                        mask | alt.parity_mask()
+                    })
+                } else {
+                    0b1111
+                };
+
+                let widened = JointSidePrefix::Unknown { parity_mask };
+                alts.clear();
+                alts.push(widened);
+                possible.overflowed[index] = true;
+                q.push_back(JointSidePrefixNode {
+                    prefix: widened,
+                    ..node
+                });
             };
 
         push(
@@ -6154,7 +7311,7 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 scan: 0,
                 left: 0,
                 right: 0,
-                prefix: JointSidePrefix::blank(),
+                prefix: JointSidePrefix::blank(track_parity),
             },
             &mut possible,
             &mut q,
@@ -6173,8 +7330,20 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 continue;
             };
 
+            let next_parity = if possible.track_parity {
+                advance_joint_side_parity(
+                    node.prefix.parity_mask(),
+                    shift,
+                    print,
+                    node.left,
+                    node.right,
+                )
+            } else {
+                0b1111
+            };
+
             match node.prefix {
-                JointSidePrefix::Unknown => {
+                JointSidePrefix::Unknown { .. } => {
                     if shift {
                         let mut rights =
                             windows.right[tr][node.right][print];
@@ -6188,7 +7357,9 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                                     scan: node.right,
                                     left: print,
                                     right: new_right,
-                                    prefix: JointSidePrefix::Unknown,
+                                    prefix: JointSidePrefix::Unknown {
+                                        parity_mask: next_parity,
+                                    },
                                 },
                                 &mut possible,
                                 &mut q,
@@ -6207,7 +7378,9 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                                     scan: node.left,
                                     left: new_left,
                                     right: print,
-                                    prefix: JointSidePrefix::Unknown,
+                                    prefix: JointSidePrefix::Unknown {
+                                        parity_mask: next_parity,
+                                    },
                                 },
                                 &mut possible,
                                 &mut q,
@@ -6215,23 +7388,59 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                         }
                     }
                 },
-                JointSidePrefix::Specific { left, right } => {
+                JointSidePrefix::Specific {
+                    left,
+                    right,
+                    far_colors,
+                    ..
+                } => {
                     if shift {
-                        let mut left_next = Vec::new();
+                        // Prepending has a tiny fixed fanout (at most ten for a
+                        // DirtyUnknown tail). Keep both shape and its updated
+                        // far-color metadata on the stack instead of allocating.
+                        let mut left_next = [SidePrefix::blank();
+                            SIDE_PREFIX_MAX_PREPEND_ALTS];
+                        let mut left_far_next =
+                            [0_u64; SIDE_PREFIX_MAX_PREPEND_ALTS];
+                        let mut left_len = 0_usize;
                         left.for_each_prepend(
                             node.left as Color,
-                            |p| {
-                                left_next.push(p);
+                            |prefix| {
+                                debug_assert!(
+                                    left_len
+                                        < SIDE_PREFIX_MAX_PREPEND_ALTS
+                                );
+                                left_next[left_len] = prefix;
+                                left_far_next[left_len] = left
+                                    .far_colors_after_prepend(
+                                        node.left as Color,
+                                        prefix,
+                                        far_colors[LEFT_SIDE],
+                                    );
+                                left_len += 1;
                             },
                         );
                         right.for_each_pull::<C>(|new_right, right_next| {
+                            if !right.unknown_pull_color_possible(
+                                far_colors[RIGHT_SIDE],
+                                new_right,
+                            ) {
+                                return;
+                            }
                             if windows.right[tr][node.right][print]
                                 & (1_u64 << usize::from(new_right))
                                 == 0
                             {
                                 return;
                             }
-                            for &left_next in &left_next {
+                            let right_far = right.far_colors_after_pull(
+                                right_next,
+                                far_colors[RIGHT_SIDE],
+                            );
+                            for (&left_next, &left_far) in left_next[..left_len]
+                                .iter()
+                                .zip(&left_far_next[..left_len])
+                            {
                                 push(
                                     JointSidePrefixNode {
                                         st: tr,
@@ -6241,6 +7450,8 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                                         prefix: JointSidePrefix::Specific {
                                             left: left_next,
                                             right: right_next,
+                                            parity_mask: next_parity,
+                                            far_colors: [left_far, right_far],
                                         },
                                     },
                                     &mut possible,
@@ -6249,21 +7460,49 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                             }
                         });
                     } else {
-                        let mut right_next = Vec::new();
+                        let mut right_next = [SidePrefix::blank();
+                            SIDE_PREFIX_MAX_PREPEND_ALTS];
+                        let mut right_far_next =
+                            [0_u64; SIDE_PREFIX_MAX_PREPEND_ALTS];
+                        let mut right_len = 0_usize;
                         right.for_each_prepend(
                             node.right as Color,
-                            |p| {
-                                right_next.push(p);
+                            |prefix| {
+                                debug_assert!(
+                                    right_len
+                                        < SIDE_PREFIX_MAX_PREPEND_ALTS
+                                );
+                                right_next[right_len] = prefix;
+                                right_far_next[right_len] = right
+                                    .far_colors_after_prepend(
+                                        node.right as Color,
+                                        prefix,
+                                        far_colors[RIGHT_SIDE],
+                                    );
+                                right_len += 1;
                             },
                         );
                         left.for_each_pull::<C>(|new_left, left_next| {
+                            if !left.unknown_pull_color_possible(
+                                far_colors[LEFT_SIDE],
+                                new_left,
+                            ) {
+                                return;
+                            }
                             if windows.left[tr][node.left][print]
                                 & (1_u64 << usize::from(new_left))
                                 == 0
                             {
                                 return;
                             }
-                            for &right_next in &right_next {
+                            let left_far = left.far_colors_after_pull(
+                                left_next,
+                                far_colors[LEFT_SIDE],
+                            );
+                            for (&right_next, &right_far) in right_next[..right_len]
+                                .iter()
+                                .zip(&right_far_next[..right_len])
+                            {
                                 push(
                                     JointSidePrefixNode {
                                         st: tr,
@@ -6273,6 +7512,8 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                                         prefix: JointSidePrefix::Specific {
                                             left: left_next,
                                             right: right_next,
+                                            parity_mask: next_parity,
+                                            far_colors: [left_far, right_far],
                                         },
                                     },
                                     &mut possible,
@@ -6570,7 +7811,8 @@ fn test_joint_side_prefix_rejects_blank_ab1_targets() {
     let sides = prog.side_possible_from_blank(&windows);
     windows.refine_reachability(&sides);
 
-    let possible = prog.joint_side_prefix_possible_from_blank(&windows);
+    let possible =
+        prog.joint_side_prefix_possible_from_blank(&windows, true);
     let blank_around_one: Tape = "0+ [1] 0+".into();
 
     assert!(
@@ -9873,552 +11115,23 @@ impl Tape {
         state: State,
         possible: &SidePrefixPossible<S, C>,
     ) -> bool {
-        #[derive(Clone, Copy)]
-        struct ReqRun {
-            color: Color,
-            min: u16,
-            max: Option<u16>,
-            // Exact run-count parity when the backward description proves it.
-            // Stride runs with even step retain this bit.
-            parity: Option<u8>,
-        }
+        let mut requirements = SideMatchRequirements::default();
+        self.obeys_side_prefix_possible_cached(
+            state,
+            possible,
+            &mut requirements,
+        )
+    }
 
-        impl ReqRun {
-            const EMPTY: Self = Self {
-                color: 0,
-                min: 0,
-                max: Some(0),
-                parity: Some(0),
-            };
-        }
-
-        #[derive(Clone, Copy)]
-        struct Requirement {
-            // The two full runs plus the one spill run can all be compared
-            // directly with the backward residual description.
-            runs: [ReqRun; 3],
-
-            // Number of explicit residual runs, capped at three. This is enough
-            // to answer whether the known two-run-plus-spill prefix extends
-            // past them.
-            run_count: u8,
-
-            // `suffix_nonblank[i]` says some explicit nonblank residual run
-            // occurs at position i or farther, for i in 0..=3. Position 3
-            // summarizes every run beyond the spill descriptor.
-            // Bit i says some explicit nonblank residual run occurs at
-            // position i or farther. A mask avoids repeatedly zeroing and
-            // updating four separate bools on this hot query path.
-            suffix_nonblank: u8,
-            end_unknown: bool,
-        }
-
-        impl Requirement {
-            const EMPTY: Self = Self {
-                runs: [ReqRun::EMPTY; 3],
-                run_count: 0,
-                suffix_nonblank: 0,
-                end_unknown: false,
-            };
-
-            const fn unconstrained(self) -> bool {
-                self.run_count == 0 && self.end_unknown
-            }
-        }
-
-        #[derive(Clone, Copy)]
-        struct RequirementSet {
-            reqs: [Requirement; 2],
-            len: u8,
-            unconstrained: bool,
-        }
-
-        #[derive(Clone, Copy)]
-        enum FirstResidual {
-            Drop,
-            Replace(BlockCount),
-            ConsumeWord,
-        }
-
-        fn req_run(color: Color, count: BlockCount) -> ReqRun {
-            match count {
-                BlockCount::Exact(count) => ReqRun {
-                    color,
-                    min: u16::from(count),
-                    max: Some(u16::from(count)),
-                    parity: Some(count & 1),
-                },
-                BlockCount::AtLeast(count) => ReqRun {
-                    color,
-                    min: u16::from(count),
-                    max: None,
-                    parity: None,
-                },
-                BlockCount::Stride { min, step } => ReqRun {
-                    color,
-                    min: u16::from(min),
-                    max: None,
-                    parity: (step & 1 == 0).then_some(min & 1),
-                },
-            }
-        }
-
-        #[expect(
-            clippy::cast_possible_truncation,
-            clippy::excessive_nesting
-        )]
-        fn requirements(span: &Span) -> RequirementSet {
-            #[derive(Clone, Copy)]
-            struct Builder {
-                req: Requirement,
-                runs: usize,
-                last_color: Option<Color>,
-                blocked: bool,
-            }
-
-            fn exact_bounds(value: usize) -> (u16, Option<u16>) {
-                u16::try_from(value).map_or((u16::MAX, None), |value| {
-                    (value, Some(value))
-                })
-            }
-
-            fn emit(
-                builder: &mut Builder,
-                color: Color,
-                min: u16,
-                max: Option<u16>,
-                parity: Option<u8>,
-            ) {
-                debug_assert!(min != 0);
-
-                if builder.last_color == Some(color) {
-                    let index = builder.runs - 1;
-                    if index < 3 {
-                        let run = &mut builder.req.runs[index];
-                        run.min = run.min.saturating_add(min);
-                        run.max = match (run.max, max) {
-                            (Some(left), Some(right)) => {
-                                left.checked_add(right)
-                            },
-                            _ => None,
-                        };
-                        run.parity = match (run.parity, parity) {
-                            (Some(left), Some(right)) => {
-                                Some(left ^ right)
-                            },
-                            _ => None,
-                        };
-                    }
-                    return;
-                }
-
-                let index = builder.runs;
-                if index < 3 {
-                    builder.req.runs[index] = ReqRun {
-                        color,
-                        min,
-                        max,
-                        parity,
-                    };
-                }
-
-                if color != 0 {
-                    builder.req.suffix_nonblank |=
-                        (1_u8 << (index.min(3) + 1)) - 1;
-                }
-
-                builder.runs += 1;
-                builder.last_color = Some(color);
-            }
-
-            fn emit_run(
-                builder: &mut Builder,
-                color: Color,
-                count: BlockCount,
-            ) {
-                let req = req_run(color, count);
-                emit(builder, req.color, req.min, req.max, req.parity);
-            }
-
-            const fn settled(builder: &Builder) -> bool {
-                builder.runs > 3
-                    && builder.req.suffix_nonblank & (1 << 3) != 0
-            }
-
-            fn emit_word(
-                builder: &mut Builder,
-                word: &[Color],
-                count: WordCount,
-                skip_first: bool,
-            ) {
-                debug_assert_ne!(word, []);
-                let copies = count.minimum();
-                debug_assert!(copies != 0);
-
-                if word.iter().all(|&color| color == word[0]) {
-                    let total = word
-                        .len()
-                        .checked_mul(copies)
-                        .and_then(|cells| {
-                            cells.checked_sub(usize::from(skip_first))
-                        })
-                        .unwrap_or(usize::MAX);
-                    if total != 0 {
-                        let (min, max) = exact_bounds(total);
-                        emit(
-                            builder,
-                            word[0],
-                            min,
-                            max,
-                            Some((total & 1) as u8),
-                        );
-                    }
-                    if count.is_indef() {
-                        builder.req.end_unknown = true;
-                        builder.blocked = true;
-                    }
-                    return;
-                }
-
-                let mut copy = 0_usize;
-                while copy < copies {
-                    let start = usize::from(skip_first && copy == 0);
-                    for &color in &word[start..] {
-                        emit(builder, color, 1, Some(1), Some(1));
-                    }
-                    copy += 1;
-
-                    // For a non-homogeneous periodic word, four logical runs
-                    // are reached after only a few copies. Once one of the
-                    // runs at/after position three is nonblank, farther exact
-                    // content cannot change any field consulted by matching.
-                    if settled(builder) {
-                        break;
-                    }
-                }
-
-                if count.is_indef() {
-                    // Extra copies are optional and add more logical runs, so
-                    // farther explicit blocks no longer occupy a fixed prefix
-                    // position. Keep the guaranteed prefix and conservatively
-                    // forget everything beyond it.
-                    builder.req.end_unknown = true;
-                    builder.blocked = true;
-                }
-            }
-
-            fn emit_full_block(builder: &mut Builder, block: &Block) {
-                if builder.blocked {
-                    return;
-                }
-
-                match block {
-                    Block::Run { color, count } => {
-                        emit_run(builder, *color, *count);
-                    },
-                    Block::Word { word, count } => {
-                        emit_word(builder, word, *count, false);
-                    },
-                }
-            }
-
-            let end_unknown = span.end == TapeEnd::Unknown;
-            let Some(first) = span.span.first() else {
-                let req = Requirement {
-                    end_unknown,
-                    ..Requirement::EMPTY
-                };
-                return RequirementSet {
-                    reqs: [req, Requirement::EMPTY],
-                    len: 1,
-                    unconstrained: req.unconstrained(),
-                };
-            };
-
-            let (first_mode, second_mode) = match first {
-                Block::Run { count, .. } => match count {
-                    BlockCount::Exact(1) => (FirstResidual::Drop, None),
-                    BlockCount::Exact(count) => (
-                        FirstResidual::Replace(BlockCount::Exact(
-                            count - 1,
-                        )),
-                        None,
-                    ),
-                    BlockCount::AtLeast(1) => (
-                        FirstResidual::Drop,
-                        Some(FirstResidual::Replace(
-                            BlockCount::AtLeast(1),
-                        )),
-                    ),
-                    BlockCount::AtLeast(count) => (
-                        FirstResidual::Replace(BlockCount::AtLeast(
-                            count - 1,
-                        )),
-                        None,
-                    ),
-                    BlockCount::Stride { min: 1, step } => (
-                        FirstResidual::Drop,
-                        Some(FirstResidual::Replace(
-                            BlockCount::Stride {
-                                min: *step,
-                                step: *step,
-                            },
-                        )),
-                    ),
-                    BlockCount::Stride { min, step } => (
-                        FirstResidual::Replace(BlockCount::Stride {
-                            min: min - 1,
-                            step: *step,
-                        }),
-                        None,
-                    ),
-                },
-                Block::Word { .. } => {
-                    (FirstResidual::ConsumeWord, None)
-                },
-            };
-
-            let len = if second_mode.is_some() { 2 } else { 1 };
-            let modes = [first_mode, second_mode.unwrap_or(first_mode)];
-            let mut builders = [
-                Builder {
-                    req: Requirement {
-                        end_unknown,
-                        ..Requirement::EMPTY
-                    },
-                    runs: 0,
-                    last_color: None,
-                    blocked: false,
-                },
-                Builder {
-                    req: Requirement {
-                        end_unknown,
-                        ..Requirement::EMPTY
-                    },
-                    runs: 0,
-                    last_color: None,
-                    blocked: false,
-                },
-            ];
-
-            let block_count = span.span.len();
-            for (source_index, block) in span.span.iter().enumerate() {
-                // A whole explicit blank block at a known-blank far end is
-                // redundant, matching absorb_trailing_blanks/the old builder.
-                if !end_unknown
-                    && source_index + 1 == block_count
-                    && block.blank()
-                {
-                    continue;
-                }
-
-                for alt in 0..len {
-                    if source_index == 0 {
-                        match modes[alt] {
-                            FirstResidual::Drop => {},
-                            FirstResidual::Replace(count) => {
-                                let (color, _) = block.run().expect(
-                                    "Replace applies only to runs",
-                                );
-                                emit_run(
-                                    &mut builders[alt],
-                                    color,
-                                    count,
-                                );
-                            },
-                            FirstResidual::ConsumeWord => {
-                                let Block::Word { word, count } = block
-                                else {
-                                    unreachable!()
-                                };
-                                emit_word(
-                                    &mut builders[alt],
-                                    word,
-                                    *count,
-                                    true,
-                                );
-                            },
-                        }
-                    } else {
-                        emit_full_block(&mut builders[alt], block);
-                    }
-                }
-
-                if (0..len).all(|alt| settled(&builders[alt])) {
-                    break;
-                }
-            }
-
-            let mut reqs = [Requirement::EMPTY; 2];
-            for alt in 0..len {
-                let builder = &mut builders[alt];
-                builder.req.run_count = builder.runs.min(3) as u8;
-
-                if builder.req.end_unknown
-                    && (1..=3).contains(&builder.runs)
-                {
-                    let last = &mut builder.req.runs[builder.runs - 1];
-                    last.max = None;
-                    last.parity = None;
-                }
-                reqs[alt] = builder.req;
-            }
-
-            RequirementSet {
-                reqs,
-                len: len as u8,
-                unconstrained: (0..len)
-                    .any(|alt| reqs[alt].unconstrained()),
-            }
-        }
-
-        fn precise_count_matches(count: u8, req: ReqRun) -> bool {
-            match count {
-                1..=3 => {
-                    let value = u16::from(count);
-                    value >= req.min
-                        && req.max.is_none_or(|max| value <= max)
-                        && req
-                            .parity
-                            .is_none_or(|parity| parity == count & 1)
-                },
-                SIDE_PREFIX_EVEN_MANY | SIDE_PREFIX_ODD_MANY => {
-                    let (minimum, odd) =
-                        if count == SIDE_PREFIX_EVEN_MANY {
-                            (4_u16, false)
-                        } else {
-                            (5_u16, true)
-                        };
-                    if req
-                        .parity
-                        .is_some_and(|parity| (parity != 0) != odd)
-                    {
-                        return false;
-                    }
-                    let mut first = if req.min > minimum {
-                        req.min
-                    } else {
-                        minimum
-                    };
-                    if (first & 1 != 0) != odd {
-                        first = first.saturating_add(1);
-                    }
-                    req.max.is_none_or(|max| first <= max)
-                },
-                _ => unreachable!(),
-            }
-        }
-
-        fn spill_count_bounds(count: u8) -> (u16, Option<u16>) {
-            match count {
-                1 => (1, Some(1)),
-                SIDE_PREFIX_SPILL_MANY => {
-                    (u16::from(SIDE_PREFIX_SPILL_MANY), None)
-                },
-                _ => unreachable!(),
-            }
-        }
-
-        fn intervals_overlap_with_parity(
-            a_min: u16,
-            a_max: Option<u16>,
-            b_min: u16,
-            b_max: Option<u16>,
-            parity: Option<u8>,
-        ) -> bool {
-            let low = a_min.max(b_min);
-            let high = match (a_max, b_max) {
-                (Some(a), Some(b)) => Some(a.min(b)),
-                (Some(a), None) => Some(a),
-                (None, Some(b)) => Some(b),
-                (None, None) => None,
-            };
-            if high.is_some_and(|high| low > high) {
-                return false;
-            }
-            let Some(parity) = parity else {
-                return true;
-            };
-            let first = if (low & 1) == u16::from(parity) {
-                low
-            } else {
-                low.saturating_add(1)
-            };
-            high.is_none_or(|high| first <= high)
-        }
-
-        fn run_matches(
-            color: Color,
-            min: u16,
-            max: Option<u16>,
-            req: ReqRun,
-        ) -> bool {
-            color == req.color
-                && intervals_overlap_with_parity(
-                    min, max, req.min, req.max, req.parity,
-                )
-        }
-
-        fn matches(prefix: SidePrefix, req: Requirement) -> bool {
-            let prefix_len = usize::from(prefix.len);
-            let req_len = req.run_count as usize;
-            let common = prefix_len.min(req_len);
-
-            for index in 0..common {
-                let run = prefix.runs[index];
-                let required = req.runs[index];
-                if run.color != required.color
-                    || !precise_count_matches(run.count, required)
-                {
-                    return false;
-                }
-            }
-
-            if prefix_len > req_len {
-                // The backward description can supply additional run
-                // structure only when its explicit prefix ends in `?`.
-                return req.end_unknown;
-            }
-
-            let (known_len, tail_dirty) = match prefix.spill {
-                SidePrefixSpill::Blank => (prefix_len, false),
-                SidePrefixSpill::DirtyUnknown => (prefix_len, true),
-                SidePrefixSpill::Run {
-                    color,
-                    count,
-                    farther_dirty,
-                } => {
-                    // The spill is the next exact run after the two precise
-                    // descriptors (or sooner after pulls have shortened the
-                    // precise prefix). Compare its color and 1/2+ count too.
-                    if req_len <= prefix_len {
-                        return req.end_unknown;
-                    }
-                    let (min, max) = spill_count_bounds(count);
-                    if !run_matches(
-                        color,
-                        min,
-                        max,
-                        req.runs[prefix_len],
-                    ) {
-                        return false;
-                    }
-                    (prefix_len + 1, farther_dirty)
-                },
-            };
-
-            if known_len > req_len {
-                return req.end_unknown;
-            }
-
-            if tail_dirty {
-                req.end_unknown
-                    || req.suffix_nonblank & (1_u8 << known_len) != 0
-            } else {
-                req.suffix_nonblank & (1_u8 << known_len) == 0
-            }
-        }
-
+    fn obeys_side_prefix_possible_cached<
+        const S: usize,
+        const C: usize,
+    >(
+        &self,
+        state: State,
+        possible: &SidePrefixPossible<S, C>,
+        requirements: &mut SideMatchRequirements,
+    ) -> bool {
         fn matches_side<const S: usize, const C: usize>(
             possible: &SidePrefixPossible<S, C>,
             st: usize,
@@ -10442,104 +11155,10 @@ impl Tape {
             }
 
             prefixes.iter().copied().any(|prefix| {
-                (0..usize::from(reqs.len))
-                    .any(|index| matches(prefix, reqs.reqs[index]))
+                (0..usize::from(reqs.len)).any(|index| {
+                    side_run_matches(prefix, reqs.reqs[index])
+                })
             })
-        }
-
-        fn word_requirement(span: &Span) -> SideWordPrefix {
-            let mut cells = [0; SIDE_WORD_LITERAL_CELLS];
-            let mut len = 0_usize;
-            let mut skip = 1_usize;
-
-            let append = |cells: &mut [Color;
-                                   SIDE_WORD_LITERAL_CELLS],
-                          len: &mut usize,
-                          color: Color|
-             -> bool {
-                if *len == SIDE_WORD_LITERAL_CELLS {
-                    return false;
-                }
-                cells[*len] = color;
-                *len += 1;
-                true
-            };
-
-            for block in span.span.iter() {
-                match block {
-                    Block::Run { color, count } => {
-                        let minimum = usize::from(count.minimum());
-                        let start = skip.min(minimum);
-                        skip -= start;
-
-                        for _ in start..minimum {
-                            if !append(&mut cells, &mut len, *color) {
-                                return SideWordPrefix::from_literal(
-                                    cells,
-                                    len,
-                                    SideWordTail::Unknown,
-                                );
-                            }
-                        }
-
-                        if count.is_indef() {
-                            // Optional extra cells of this run sit before all
-                            // farther explicit blocks, so their exact near
-                            // positions are lost from this projection.
-                            return SideWordPrefix::from_literal(
-                                cells,
-                                len,
-                                SideWordTail::Unknown,
-                            );
-                        }
-                    },
-                    Block::Word { word, count } => {
-                        let width = word.len();
-                        let minimum =
-                            count.minimum().saturating_mul(width);
-                        let start = skip.min(minimum);
-                        skip -= start;
-
-                        for offset in start..minimum {
-                            if !append(
-                                &mut cells,
-                                &mut len,
-                                word[offset % width],
-                            ) {
-                                return SideWordPrefix::from_literal(
-                                    cells,
-                                    len,
-                                    SideWordTail::Unknown,
-                                );
-                            }
-                        }
-
-                        if count.is_indef() {
-                            return SideWordPrefix::from_literal(
-                                cells,
-                                len,
-                                SideWordTail::Unknown,
-                            );
-                        }
-                    },
-                }
-            }
-
-            // With no explicit first cell, the skipped immediate neighbor came
-            // from the tape end itself. An unknown end remains unconstrained;
-            // a blank end remains exact blank after skipping one zero.
-            if skip != 0 {
-                return match span.end {
-                    TapeEnd::Blanks => SideWordPrefix::blank(),
-                    TapeEnd::Unknown => SideWordPrefix::unknown(),
-                };
-            }
-
-            let tail = match span.end {
-                TapeEnd::Blanks => SideWordTail::Blank,
-                TapeEnd::Unknown => SideWordTail::Unknown,
-            };
-            SideWordPrefix::from_literal(cells, len, tail)
         }
 
         fn matches_word_side<const S: usize, const C: usize>(
@@ -10609,12 +11228,11 @@ impl Tape {
             return true;
         }
 
-        // Fixed-size requirement compilation: no Vec construction, cloning,
-        // or per-configuration heap allocation remains on this hot path.
-        let left_req = requirements(&self.lspan);
-        let right_req = requirements(&self.rspan);
-        let left_word_req = word_requirement(&self.lspan);
-        let right_word_req = word_requirement(&self.rspan);
+        // Compile both run and word requirements at most once for this tape.
+        // The same bundle is reused by the joint run/word checks in the hot
+        // backward stepping path.
+        let [left_req, right_req] = requirements.runs(self);
+        let [left_word_req, right_word_req] = requirements.words(self);
 
         let matches_window = |left: usize, right: usize| {
             matches_side(
@@ -10665,18 +11283,35 @@ impl Tape {
         state: State,
         possible: &JointSideWordPrefixPossible<S, C>,
     ) -> bool {
+        let mut requirements = SideMatchRequirements::default();
+        self.obeys_joint_side_word_prefix_possible_cached(
+            state,
+            possible,
+            &mut requirements,
+        )
+    }
+
+    fn obeys_joint_side_word_prefix_possible_cached<
+        const S: usize,
+        const C: usize,
+    >(
+        &self,
+        state: State,
+        possible: &JointSideWordPrefixPossible<S, C>,
+        requirements: &mut SideMatchRequirements,
+    ) -> bool {
         let st = state as usize;
         let sc = self.scan as usize;
         let known_left = self.left_neighbor_color().map(usize::from);
         let known_right = self.right_neighbor_color().map(usize::from);
-        let left_req = side_word_requirement(&self.lspan);
-        let right_req = side_word_requirement(&self.rspan);
 
-        let matches_window = |left: usize, right: usize| {
+        let mut matches_window = |left: usize, right: usize| {
             possible.window(st, sc, left, right).iter().copied().any(
                 |prefix| match prefix {
                     JointSideWordPrefix::Unknown => true,
                     JointSideWordPrefix::Specific { left, right } => {
+                        let [left_req, right_req] =
+                            requirements.words(self);
                         left.prefix_compatible(left_req)
                             && right.prefix_compatible(right_req)
                     },
@@ -10698,18 +11333,7 @@ impl Tape {
         }
     }
 
-    /// Check exact-blank whole-side facts against the joint run-prefix
-    /// product.  Other side shapes are deliberately left to the existing
-    /// richer independent prefix matcher; this joint check is focused on the
-    /// correlation that those projections lose.
-    fn has_exact_blank_side(&self) -> bool {
-        let exact_blank = |span: &Span| {
-            span.end == TapeEnd::Blanks
-                && span.span.iter().all(Block::blank)
-        };
-        exact_blank(&self.lspan) || exact_blank(&self.rspan)
-    }
-
+    /// Match both run requirements against the same forward alternative.
     fn obeys_joint_side_prefix_possible<
         const S: usize,
         const C: usize,
@@ -10718,36 +11342,104 @@ impl Tape {
         state: State,
         possible: Option<&JointSidePrefixPossible<S, C>>,
     ) -> bool {
+        let mut requirements = SideMatchRequirements::default();
+        self.obeys_joint_side_prefix_possible_cached(
+            state,
+            possible,
+            &mut requirements,
+        )
+    }
+
+    fn obeys_joint_side_prefix_possible_cached<
+        const S: usize,
+        const C: usize,
+    >(
+        &self,
+        state: State,
+        possible: Option<&JointSidePrefixPossible<S, C>>,
+        requirements: &mut SideMatchRequirements,
+    ) -> bool {
         let Some(possible) = possible else {
             return true;
         };
 
-        let exact_blank = |span: &Span| {
-            span.end == TapeEnd::Blanks
-                && span.span.iter().all(Block::blank)
-        };
-        let require_left_blank = exact_blank(&self.lspan);
-        let require_right_blank = exact_blank(&self.rspan);
-
-        if !require_left_blank && !require_right_blank {
-            return true;
-        }
+        let matches =
+            |prefix, req: &RequirementSet, far_colors: u64| {
+                req.unconstrained
+                    || (0..usize::from(req.len)).any(|index| {
+                        side_run_matches_with_far_colors(
+                            prefix,
+                            req.reqs[index],
+                            Some(far_colors),
+                        )
+                    })
+            };
 
         let st = state as usize;
         let sc = self.scan as usize;
         let known_left = self.left_neighbor_color().map(usize::from);
         let known_right = self.right_neighbor_color().map(usize::from);
 
-        let matches_window = |left: usize, right: usize| {
+        // Compute the backward whole-side parity only if a shape-compatible
+        // forward alternative actually has a restrictive parity relation.
+        // Many buckets have already widened to all four pairs, and shape-only
+        // rejection should not pay for another full scan of the tape spans.
+        let mut required_parity = None;
+        let mut run_requirements: Option<[RequirementSet; 2]> = None;
+        let mut matches_window = |left: usize, right: usize| {
             possible.window(st, sc, left, right).iter().copied().any(
-                |prefix| match prefix {
-                    JointSidePrefix::Unknown => true,
-                    JointSidePrefix::Specific { left, right } => {
-                        (!require_left_blank
-                            || left == SidePrefix::blank())
-                            && (!require_right_blank
-                                || right == SidePrefix::blank())
-                    },
+                |prefix| {
+                    let shape_matches = match prefix {
+                        JointSidePrefix::Unknown { .. } => true,
+                        JointSidePrefix::Specific {
+                            left,
+                            right,
+                            far_colors,
+                            ..
+                        } => {
+                            let reqs = run_requirements
+                                .get_or_insert_with(|| {
+                                    requirements.runs(self)
+                                });
+                            matches(
+                                left,
+                                &reqs[LEFT_SIDE],
+                                far_colors[LEFT_SIDE],
+                            ) && matches(
+                                right,
+                                &reqs[RIGHT_SIDE],
+                                far_colors[RIGHT_SIDE],
+                            )
+                        },
+                    };
+                    if !shape_matches {
+                        return false;
+                    }
+
+                    let parity_mask = prefix.parity_mask();
+                    if !possible.track_parity || parity_mask == 0b1111 {
+                        return true;
+                    }
+
+                    let required =
+                        *required_parity.get_or_insert_with(|| {
+                            let (left_mask, right_mask) =
+                                self.side_nonblank_parity_masks();
+                            let mut pairs = 0_u8;
+                            for lp in 0..2 {
+                                if left_mask & (1_u8 << lp) == 0 {
+                                    continue;
+                                }
+                                for rp in 0..2 {
+                                    if right_mask & (1_u8 << rp) == 0 {
+                                        continue;
+                                    }
+                                    pairs |= 1_u8 << (lp | (rp << 1));
+                                }
+                            }
+                            pairs
+                        });
+                    parity_mask & required != 0
                 },
             )
         };
@@ -12194,7 +12886,7 @@ fn test_side_prefix_spill_survives_pulls() {
         SidePrefixSpill::Run {
             color: 3,
             count: 1,
-            farther_dirty: false,
+            far: SidePrefixFar::Blank,
         }
     );
 
@@ -12215,7 +12907,7 @@ fn test_side_prefix_spill_survives_pulls() {
         SidePrefixSpill::Run {
             color: 3,
             count: 1,
-            farther_dirty: false,
+            far: SidePrefixFar::Blank,
         }
     );
 
@@ -12245,7 +12937,7 @@ fn test_side_prefix_spill_matches_third_run() {
         spill: SidePrefixSpill::Run {
             color: 1,
             count: 1,
-            farther_dirty: false,
+            far: SidePrefixFar::Blank,
         },
     });
 
@@ -12267,6 +12959,89 @@ fn test_side_prefix_spill_matches_third_run() {
 }
 
 #[test]
+fn test_side_prefix_retains_fourth_run_color() {
+    let base = SidePrefix {
+        runs: [
+            SidePrefixRun { color: 2, count: 1 },
+            SidePrefixRun { color: 3, count: 1 },
+        ],
+        len: 2,
+        spill: SidePrefixSpill::Run {
+            color: 4,
+            count: 2,
+            far: SidePrefixFar::Blank,
+        },
+    };
+
+    let mut prepended = Vec::new();
+    base.for_each_prepend(1, |prefix| prepended.push(prefix));
+    assert_eq!(prepended.len(), 1);
+    assert_eq!(
+        prepended[0].spill,
+        SidePrefixSpill::Run {
+            color: 3,
+            count: 1,
+            far: SidePrefixFar::Run {
+                color: 4,
+                farther_dirty: false,
+            },
+        },
+    );
+
+    let req = Requirement {
+        runs: [
+            req_run(3, BlockCount::Exact(1)),
+            req_run(2, BlockCount::Exact(1)),
+            req_run(1, BlockCount::Exact(1)),
+        ],
+        fourth_color: Some(4),
+        run_count: 4,
+        suffix_nonblank: 0b1111,
+        suffix_colors: [
+            (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4),
+            (1 << 1) | (1 << 2) | (1 << 4),
+            (1 << 1) | (1 << 4),
+            1 << 4,
+            0,
+        ],
+        end_unknown: false,
+    };
+    let prefix = SidePrefix {
+        runs: [
+            SidePrefixRun { color: 3, count: 1 },
+            SidePrefixRun { color: 2, count: 1 },
+        ],
+        len: 2,
+        spill: SidePrefixSpill::Run {
+            color: 1,
+            count: 1,
+            far: SidePrefixFar::Run {
+                color: 4,
+                farther_dirty: false,
+            },
+        },
+    };
+    assert!(side_run_matches(prefix, req));
+    assert!(!side_run_matches(
+        prefix,
+        Requirement {
+            fourth_color: Some(5),
+            ..req
+        },
+    ));
+
+    // The first joint pressure fallback recovers the old far dirty summary.
+    assert_eq!(
+        prefix.widen_far_color().spill,
+        SidePrefixSpill::Run {
+            color: 1,
+            count: 1,
+            far: SidePrefixFar::DirtyUnknown,
+        },
+    );
+}
+
+#[test]
 fn test_side_prefix_matches_dynamic_word() {
     let mut possible = SidePrefixPossible::<1, 4>::new();
     let left_index =
@@ -12280,7 +13055,7 @@ fn test_side_prefix_matches_dynamic_word() {
         spill: SidePrefixSpill::Run {
             color: 2,
             count: 1,
-            farther_dirty: true,
+            far: SidePrefixFar::DirtyUnknown,
         },
     });
 
@@ -15113,4 +15888,268 @@ fn test_is_reversible() {
     assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB ...").is_reversible());
     assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB 1RG").is_reversible());
     assert!(!Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB 1LG").is_reversible());
+}
+
+#[test]
+fn test_joint_far_color_mask_refines_dirty_tail() {
+    let prefix = SidePrefix {
+        runs: [
+            SidePrefixRun { color: 1, count: 1 },
+            SidePrefixRun { color: 2, count: 1 },
+        ],
+        len: 2,
+        spill: SidePrefixSpill::Run {
+            color: 3,
+            count: 1,
+            far: SidePrefixFar::DirtyUnknown,
+        },
+    };
+    let req = Requirement {
+        runs: [
+            req_run(1, BlockCount::Exact(1)),
+            req_run(2, BlockCount::Exact(1)),
+            req_run(3, BlockCount::Exact(1)),
+        ],
+        fourth_color: Some(4),
+        run_count: 4,
+        suffix_nonblank: 0b1111,
+        suffix_colors: [
+            (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4),
+            (1 << 2) | (1 << 3) | (1 << 4),
+            (1 << 3) | (1 << 4),
+            1 << 4,
+            0,
+        ],
+        end_unknown: false,
+    };
+
+    assert!(side_run_matches_with_far_colors(
+        prefix,
+        req,
+        Some(1 | (1 << 4)),
+    ));
+    assert!(!side_run_matches_with_far_colors(
+        prefix,
+        req,
+        Some(1 | (1 << 5)),
+    ));
+
+    // Same-shape alternatives merge far-color metadata instead of creating
+    // another antichain entry.
+    let mut alts = Vec::new();
+    for bit in [1 | (1 << 4), 1 | (1 << 5)] {
+        insert_joint_side_prefix_alt(
+            &mut alts,
+            JointSidePrefix::Specific {
+                left: prefix,
+                right: SidePrefix::blank(),
+                parity_mask: 0b1111,
+                far_colors: [bit, 1],
+            },
+        );
+    }
+    assert_eq!(alts.len(), 1);
+    let JointSidePrefix::Specific { far_colors, .. } = alts[0] else {
+        unreachable!()
+    };
+    assert_eq!(far_colors[LEFT_SIDE], 1 | (1 << 4) | (1 << 5));
+
+    // Dropping fourth-run order under pressure moves that exact color into the
+    // far mask rather than discarding it.
+    let with_fourth = JointSidePrefix::Specific {
+        left: SidePrefix {
+            runs: [
+                SidePrefixRun { color: 1, count: 1 },
+                SidePrefixRun { color: 2, count: 1 },
+            ],
+            len: 2,
+            spill: SidePrefixSpill::Run {
+                color: 3,
+                count: 1,
+                far: SidePrefixFar::Run {
+                    color: 4,
+                    farther_dirty: true,
+                },
+            },
+        },
+        right: SidePrefix::blank(),
+        parity_mask: 0b1111,
+        far_colors: [1 | (1 << 5), 1],
+    }
+    .widen_far_colors();
+    let JointSidePrefix::Specific {
+        left, far_colors, ..
+    } = with_fourth
+    else {
+        unreachable!()
+    };
+    assert_eq!(far_colors[LEFT_SIDE], 1 | (1 << 4) | (1 << 5));
+    assert!(matches!(
+        left.spill,
+        SidePrefixSpill::Run {
+            far: SidePrefixFar::DirtyUnknown,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn test_joint_side_parity_transition() {
+    // From a blank tape, printing a nonblank and moving right puts one
+    // nonblank cell on the left side; moving left is symmetric.
+    assert_eq!(
+        advance_joint_side_parity(1 << 0, true, 1, 0, 0),
+        1 << 1
+    );
+    assert_eq!(
+        advance_joint_side_parity(1 << 0, false, 1, 0, 0),
+        1 << 2
+    );
+
+    // A parity set stays correlated: removing a nonblank right neighbor on a
+    // right move maps even/even -> even/odd and odd/odd -> odd/even.
+    assert_eq!(
+        advance_joint_side_parity((1 << 0) | (1 << 3), true, 0, 0, 1),
+        (1 << 2) | (1 << 1),
+    );
+}
+
+#[test]
+fn test_joint_run_match_requires_one_witness_for_both_sides() {
+    let prefix = |count| SidePrefix {
+        runs: [SidePrefixRun { color: 1, count }, SidePrefixRun::EMPTY],
+        len: 1,
+        spill: SidePrefixSpill::Blank,
+    };
+    let mut possible = JointSidePrefixPossible::<1, 2>::new(true);
+    let index = JointSidePrefixPossible::<1, 2>::index(0, 0, 1, 1);
+    for count in [1, 2] {
+        possible.windows[index].push(JointSidePrefix::Specific {
+            left: prefix(count),
+            right: prefix(count),
+            parity_mask: if count == 1 { 1 << 0 } else { 1 << 3 },
+            far_colors: [1; 2],
+        });
+    }
+    let span = |count| Span {
+        span: SpanT {
+            blocks: vec![Block::exact(1, count)],
+        },
+        end: TapeEnd::Blanks,
+    };
+    let mut tape = Tape {
+        scan: 0,
+        lspan: span(2),
+        rspan: span(3),
+    };
+    // Independently, both side requirements have witnesses in this bucket.
+    for req in [
+        side_run_requirements(&tape.lspan),
+        side_run_requirements(&tape.rspan),
+    ] {
+        assert!([1, 2].into_iter().any(|count| {
+            (0..usize::from(req.len))
+                .any(|i| side_run_matches(prefix(count), req.reqs[i]))
+        }));
+    }
+    assert!(!tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
+    tape.rspan = span(2);
+    assert!(tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
+    tape.lspan = span(3);
+    tape.rspan = span(3);
+    assert!(tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
+    possible.windows[index].push(JointSidePrefix::Unknown {
+        parity_mask: 0b1111,
+    });
+    assert!(tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
+}
+
+#[test]
+fn test_joint_run_match_correlates_shape_with_whole_side_parity() {
+    let prefix = |count| SidePrefix {
+        runs: [SidePrefixRun { color: 1, count }, SidePrefixRun::EMPTY],
+        len: 1,
+        spill: SidePrefixSpill::Blank,
+    };
+    let span = |count| Span {
+        span: SpanT {
+            blocks: vec![Block::exact(1, count)],
+        },
+        end: TapeEnd::Blanks,
+    };
+
+    let mut possible = JointSidePrefixPossible::<1, 2>::new(true);
+    let index = JointSidePrefixPossible::<1, 2>::index(0, 0, 1, 1);
+
+    // This alternative has the required run shape for span(2)/span(2), but
+    // only odd/odd whole-side parity.
+    possible.windows[index].push(JointSidePrefix::Specific {
+        left: prefix(1),
+        right: prefix(1),
+        parity_mask: 1 << 3,
+        far_colors: [1; 2],
+    });
+    // This one has the required even/even parity, but the wrong residual run
+    // shape on both sides.  Separate shape/parity projections would accept.
+    possible.windows[index].push(JointSidePrefix::Specific {
+        left: prefix(2),
+        right: prefix(2),
+        parity_mask: 1 << 0,
+        far_colors: [1; 2],
+    });
+
+    let tape = Tape {
+        scan: 0,
+        lspan: span(2),
+        rspan: span(2),
+    };
+    assert!(!tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
+
+    // Shape-unknown overflow remains useful when it preserves only the wrong
+    // parity relation.
+    possible.windows[index].clear();
+    possible.windows[index].push(JointSidePrefix::Unknown {
+        parity_mask: 1 << 3,
+    });
+    assert!(!tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
+
+    possible.windows[index][0] = JointSidePrefix::Unknown {
+        parity_mask: (1 << 3) | (1 << 0),
+    };
+    assert!(tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
+}
+
+#[test]
+fn test_joint_run_match_checks_opposite_side_of_blank() {
+    let mut possible = JointSidePrefixPossible::<1, 2>::new(true);
+    let index = JointSidePrefixPossible::<1, 2>::index(0, 0, 0, 1);
+    possible.windows[index].push(JointSidePrefix::Specific {
+        left: SidePrefix::blank(),
+        right: SidePrefix {
+            runs: [
+                SidePrefixRun { color: 1, count: 2 },
+                SidePrefixRun::EMPTY,
+            ],
+            len: 1,
+            spill: SidePrefixSpill::Blank,
+        },
+        parity_mask: 1 << 2,
+        far_colors: [1; 2],
+    });
+    let mut tape = Tape {
+        scan: 0,
+        lspan: Span::init_blank(),
+        rspan: Span {
+            span: SpanT {
+                blocks: vec![Block::exact(1, 2)],
+            },
+            end: TapeEnd::Blanks,
+        },
+    };
+    assert!(!tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
+    tape.rspan.span.blocks = vec![Block::Run {
+        color: 1,
+        count: BlockCount::Stride { min: 1, step: 2 },
+    }];
+    assert!(tape.obeys_joint_side_prefix_possible(0, Some(&possible)));
 }
