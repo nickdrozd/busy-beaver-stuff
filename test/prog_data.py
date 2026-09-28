@@ -67,6 +67,8 @@ HALT: BasicTermData = {
 
     # 5/2 BB
     "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (4098, 47176870),
+    "1RB 1RC  1LD 0LE  1RE ...  0RA 0LB  1LD 1RD": (1471,  2358064),
+    "1RB 1LC  0LA 0LD  1LA ...  1LB 1RE  0RD 0RB": (1915,  2133492),
     "1RB 1LA  1RC 1LD  1RE 1RD  ... 0LB  0LA 1RC": ( 164,    15589),
     "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  ... 1LB": (  23,      152),
 
@@ -105,8 +107,7 @@ HALT: BasicTermData = {
     "1RB 1RA  1LC 0LD  0RA 1LB  ... 0LE  1RC 1RB": (15, 435),
     "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  ... 1RD": (22, 292),
     "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB ...": (22, 217),
-    # Lynn reports 522 steps
-    "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": (42, 521),
+    "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": (42, 521),  # Lynn reports 522
 
     # Uwe (1981)
 
@@ -2575,6 +2576,7 @@ PROVER_FAILURES = {
 
 CFGLIM = {
     "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC",  # SIAB
+    "1RB 1RC  1LD 0LE  1RE ...  0RA 0LB  1LD 1RD",
     "1RB ... ... ...  0RC 2LB 3LB 1RB  1LA ... 2RB 3RC",
 }
 
