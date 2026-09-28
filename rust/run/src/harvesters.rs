@@ -81,31 +81,60 @@ impl<const s: usize, const c: usize> Harvester<s, c>
     }
 }
 
+pub type Decider<const s: usize, const c: usize> =
+    fn(&Prog<s, c>) -> bool;
+
 pub struct MultiCollector<
     const s: usize,
     const c: usize,
     const n: usize,
 > {
     progs: [Vec<String>; n],
-    visited: [u64; n],
+    visited: u64,
 
-    shared: Pipeline<s, c>,
-    pipelines: [Pipeline<s, c>; n],
+    initial: Pipeline<s, c>,
+    bkw: [Decider<s, c>; n],
+    rec_prover_short: Pipeline<s, c>,
+    cps: [Decider<s, c>; n],
+    rec_prover_long: Pipeline<s, c>,
+    far: [Decider<s, c>; n],
 }
 
 impl<const s: usize, const c: usize, const n: usize>
     MultiCollector<s, c, n>
 {
     pub fn new(
-        shared: Pipeline<s, c>,
-        pipelines: [Pipeline<s, c>; n],
+        initial: Pipeline<s, c>,
+        bkw: [Decider<s, c>; n],
+        rec_prover_short: Pipeline<s, c>,
+        cps: [Decider<s, c>; n],
+        rec_prover_long: Pipeline<s, c>,
+        far: [Decider<s, c>; n],
     ) -> Self {
         Self {
             progs: core::array::from_fn(|_| Vec::new()),
-            visited: [0; n],
-            shared,
-            pipelines,
+            visited: 0,
+            initial,
+            bkw,
+            rec_prover_short,
+            cps,
+            rec_prover_long,
+            far,
         }
+    }
+
+    fn run_deciders(
+        alive: &mut [bool; n],
+        deciders: &[Decider<s, c>; n],
+        prog: &Prog<s, c>,
+    ) {
+        alive.iter_mut().zip(deciders.iter()).for_each(
+            |(alive, decider)| {
+                if *alive && decider(prog) {
+                    *alive = false;
+                }
+            },
+        );
     }
 }
 
@@ -117,21 +146,43 @@ impl<const s: usize, const c: usize, const n: usize> Harvester<s, c>
         prog: &Prog<s, c>,
         config: &mut PassConfig<'_>,
     ) {
-        let shared = (self.shared)(prog, config);
+        self.visited += 1;
 
-        self.visited
-            .iter_mut()
-            .zip(self.pipelines.iter())
-            .zip(self.progs.iter_mut())
-            .for_each(|((visited, pipeline), progs)| {
-                *visited += 1;
+        if (self.initial)(prog, config) {
+            return;
+        }
 
-                if shared || pipeline(prog, config) {
-                    return;
+        let mut alive = [true; n];
+
+        Self::run_deciders(&mut alive, &self.bkw, prog);
+
+        if !alive.iter().any(|&alive| alive) {
+            return;
+        }
+
+        if (self.rec_prover_short)(prog, config) {
+            return;
+        }
+
+        Self::run_deciders(&mut alive, &self.cps, prog);
+
+        if !alive.iter().any(|&alive| alive) {
+            return;
+        }
+
+        if (self.rec_prover_long)(prog, config) {
+            return;
+        }
+
+        Self::run_deciders(&mut alive, &self.far, prog);
+
+        alive.into_iter().zip(self.progs.iter_mut()).for_each(
+            |(alive, progs)| {
+                if alive {
+                    progs.push(prog.to_string());
                 }
-
-                progs.push(prog.to_string());
-            });
+            },
+        );
     }
 
     type Output = ([Vec<String>; n], u64);
@@ -139,29 +190,17 @@ impl<const s: usize, const c: usize, const n: usize> Harvester<s, c>
     fn combine(results: &TreeResult<Self>) -> Self::Output {
         let mut progs: [Vec<String>; n] =
             core::array::from_fn(|_| Vec::new());
-        let mut visited = [0; n];
+        let visited = results.values().map(|harv| harv.visited).sum();
 
         results.values().for_each(|harv| {
             progs.iter_mut().zip(harv.progs.iter()).for_each(
                 |(acc, progs)| acc.extend(progs.iter().cloned()),
             );
-
-            visited
-                .iter_mut()
-                .zip(harv.visited.iter())
-                .for_each(|(acc, v)| *acc += v);
         });
 
         progs.iter_mut().for_each(|progs| progs.sort());
 
-        let total_visited = visited.first().copied().unwrap_or(0);
-
-        assert!(
-            visited.iter().all(|v| *v == total_visited),
-            "multi-collector visited counts differed: {visited:?}",
-        );
-
-        (progs, total_visited)
+        (progs, visited)
     }
 }
 

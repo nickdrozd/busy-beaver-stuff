@@ -46,8 +46,55 @@ macro_rules! assert_holdouts {
         rayon::scope(|s| { $( $( assert_holdouts!(@goal s, $states, $colors, $goal, $pipeline, $steps, $first, $visited); )* )* });
     }};
 
-    ( $( $instrs:literal => [ $steps:expr, $visited:expr, [ $( $goal:literal => $case:tt ),* $(,)? ], $(,)? ] ),* $(,)? ) => {{
-        rayon::scope(|s| { $( assert_holdouts!(@instrs_multi s, $instrs, $steps, $visited, [ $( $goal => $case ),* ]); )* });
+    ( $( $instrs:literal => [
+        $steps:expr,
+        $visited:expr,
+        [ $( $goal:tt => $case:tt ),* $(,)? ],
+        $(,)?
+    ] ),* $(,)? ) => {{
+        rayon::scope(|s| {
+            $(
+                assert_holdouts!(
+                    @instrs_run
+                    s,
+                    $instrs,
+                    $steps,
+                    $visited,
+                    &|| MultiCollector::new(
+                        |prog, config| {
+                            prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
+                        },
+                        [ $( |prog| match $goal {
+                            0 => prog.bkw_cant_halt(BKW_8).is_refuted(),
+                            1 => prog.bkw_cant_spinout(BKW_8).is_refuted(),
+                            2 => prog.bkw_cant_blank(BKW_8).is_refuted(),
+                            _ => unreachable!(),
+                        } ),* ],
+                        |prog, config| {
+                            prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+                                || prog.prover_settled(INF_MIN)
+                        },
+                        [ $( |prog| match $goal {
+                            0 => prog.cps_cant_halt(CPS_8),
+                            1 => prog.cps_cant_spinout(CPS_8),
+                            2 => prog.cps_cant_blank(CPS_8),
+                            _ => unreachable!(),
+                        } ),* ],
+                        |prog, config| {
+                            prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+                                || prog.prover_settled(INF_MOR)
+                        },
+                        [ $( |prog| match $goal {
+                            0 => prog.far_cant_halt(FAR_8),
+                            1 => prog.far_cant_spinout(FAR_8),
+                            2 => prog.far_cant_blank(FAR_8),
+                            _ => unreachable!(),
+                        } ),* ],
+                    ),
+                    [ $( $goal => $case ),* ]
+                );
+            )*
+        });
     }};
 
     (@goal $scope:ident, $states:literal, $colors:literal, $goal:literal, $pipeline:ident, $steps:expr, $holdouts:ident, $visited:expr) => {{
@@ -57,12 +104,10 @@ macro_rules! assert_holdouts {
             let (result, visited) = Collector::<$states, $colors>::run_params(
                 get_goal($goal),
                 $steps,
-                &|| Collector::new(
-                    |prog: &Prog<$states, $colors>, config: &mut PassConfig<'_>| {
-                        prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
-                            || $pipeline(prog, config)
-                    }
-                ),
+                &|| Collector::new(|prog, config| {
+                    prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
+                        || $pipeline(prog, config)
+                }),
             );
 
             assert_holdouts_match(
@@ -85,12 +130,10 @@ macro_rules! assert_holdouts {
             let result = HoldoutVisited::<$states, $colors>::run_params(
                 get_goal($goal),
                 $steps,
-                &|| HoldoutVisited::new(
-                    |prog: &Prog<$states, $colors>, config: &mut PassConfig<'_>| {
-                        prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
-                            || $pipeline(prog, config)
-                    }
-                ),
+                &|| HoldoutVisited::new(|prog, config| {
+                    prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
+                        || $pipeline(prog, config)
+                }),
             );
 
             assert_eq!(
@@ -102,45 +145,34 @@ macro_rules! assert_holdouts {
         });
     }};
 
-    (@instrs_multi $scope:ident, $instrs:literal, $steps:expr, $visited:expr, [ $( $goal:literal => $case:tt ),* $(,)? ]) => {{
+    (@instrs_run
+        $scope:ident,
+        $instrs:literal,
+        $steps:expr,
+        $visited:expr,
+        $harvester:expr,
+        [ $( $goal:tt => $case:tt ),* $(,)? ]
+    ) => {{
         $scope.spawn(move |_| {
-            let (result, visited) = MultiCollector::<$instrs, $instrs, { assert_holdouts!(@count $( $case ),*) }>::run_instrs::<$instrs>(
-                $steps,
-                &|| MultiCollector::new(
-                    |prog: &Prog<$instrs, $instrs>, config: &mut PassConfig<'_>| {
-                        prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
-                    },
-                    [ $( assert_holdouts!(@pipeline $case) ),* ],
-                ),
-            );
-
-            assert_eq!(
-                visited, $visited,
-                "({}, {visited:?})",
+            let (result, visited) = MultiCollector::<
                 $instrs,
-            );
+                $instrs,
+                { [$(stringify!($case)),*].len() },
+            >::run_instrs::<$instrs>($steps, $harvester);
 
-            let mut results = IntoIterator::into_iter(result);
+            assert_eq!(visited, $visited, "({}, {visited:?})", $instrs);
+
+            let mut results = result.into_iter();
             let mut failed = false;
 
             $(
                 let result = results.next().expect("missing multi-collector result");
-
-                if std::panic::catch_unwind(
+                failed |= std::panic::catch_unwind(
                     core::panic::AssertUnwindSafe(|| {
-                        assert_holdouts!(
-                            @instrs_multi_result
-                            $instrs,
-                            $goal,
-                            result,
-                            $case
-                        );
+                        assert_holdouts!(@expected $instrs, $goal, result, $case);
                     }),
                 )
-                .is_err()
-                {
-                    failed = true;
-                }
+                .is_err();
             )*
 
             assert!(
@@ -148,22 +180,11 @@ macro_rules! assert_holdouts {
                 "extra multi-collector results for {}",
                 $instrs,
             );
-
-            assert!(
-                !failed,
-                "multi-collector holdout mismatch for {}",
-                $instrs,
-            );
+            assert!(!failed, "multi-collector holdout mismatch for {}", $instrs);
         });
     }};
 
-    (@pipeline ($pipeline:expr, $first:tt)) => { $pipeline };
-
-    (@instrs_multi_result $instrs:literal, $goal:literal, $result:ident, ($pipeline:expr, $first:tt)) => {{
-        assert_holdouts!(@instrs_multi_expected $instrs, $goal, $result, $first);
-    }};
-
-    (@instrs_multi_expected $instrs:literal, $goal:literal, $result:ident, $leaves:literal) => {{
+    (@expected $instrs:literal, $goal:tt, $result:ident, $leaves:literal) => {{
         assert_eq!(
             $result.len(),
             $leaves,
@@ -178,9 +199,8 @@ macro_rules! assert_holdouts {
         );
     }};
 
-    (@instrs_multi_expected $instrs:literal, $goal:literal, $result:ident, $holdouts:ident) => {{
+    (@expected $instrs:literal, $goal:tt, $result:ident, $holdouts:ident) => {{
         let (champs, holdouts) = $holdouts;
-
         assert_holdouts_match(
             format!("{}:{}", $instrs, $goal),
             champs,
@@ -188,12 +208,6 @@ macro_rules! assert_holdouts {
             $result,
         );
     }};
-
-    (@count $( $item:tt ),* $(,)?) => {
-        0 $( + assert_holdouts!(@replace $item 1) )*
-    };
-
-    (@replace $_item:tt $sub:expr) => { $sub };
 }
 
 macro_rules! assert_bkw {
@@ -207,20 +221,38 @@ macro_rules! assert_bkw {
             3 => $twostep:tt,
         ],
     ] ),* $(,)? ) => {{
-        assert_holdouts![
+        rayon::scope(|s| {
             $(
-                $instrs => [
+                assert_holdouts!(
+                    @instrs_run
+                    s,
+                    $instrs,
                     $steps,
                     $visited,
+                    &|| MultiCollector::new(
+                        |prog, config| {
+                            prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
+                        },
+                        [
+                            |prog| prog.bkw_cant_halt(BKW).is_refuted(),
+                            |prog| prog.bkw_cant_spinout(BKW).is_refuted(),
+                            |prog| prog.bkw_cant_blank(BKW).is_refuted(),
+                            |prog| prog.bkw_cant_twostep(BKW).is_refuted(),
+                        ],
+                        |_, _| false,
+                        [|_| false, |_| false, |_| false, |_| false],
+                        |_, _| false,
+                        [|_| false, |_| false, |_| false, |_| false],
+                    ),
                     [
-                        0 => ( |prog, _| { prog.bkw_cant_halt(BKW).is_refuted() }, $halt ),
-                        1 => ( |prog, _| { prog.bkw_cant_spinout(BKW).is_refuted() }, $spinout ),
-                        2 => ( |prog, _| { prog.bkw_cant_blank(BKW).is_refuted() }, $blank ),
-                        3 => ( |prog, _| { prog.bkw_cant_twostep(BKW).is_refuted() }, $twostep ),
-                    ],
-                ],
+                        0 => $halt,
+                        1 => $spinout,
+                        2 => $blank,
+                        3 => $twostep,
+                    ]
+                );
             )*
-        ];
+        });
     }};
 }
 
@@ -461,35 +493,9 @@ fn test_deciders_slow() {
 
 /**************************************/
 
-fn _8_0(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_halt(30).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_halt(20)
-        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-        || prog.far_cant_halt(4)
-}
-
-fn _8_1(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(50).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_spinout(21)
-        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-        || prog.far_cant_spinout(6)
-}
-
-fn _8_2(prog: &Prog<8, 8>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(50).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_blank(20)
-        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-        || prog.far_cant_blank(6)
-}
+const BKW_8: usize = 50;
+const CPS_8: usize = 21;
+const FAR_8: usize = 6;
 
 fn test_8_instr() {
     println!("8 instrs");
@@ -499,9 +505,9 @@ fn test_8_instr() {
             500,
             12_835_863_274,
             [
-                0 => (_8_0, _8_0_),
-                1 => (_8_1, _8_1_),
-                2 => (_8_2, _8_2_),
+                0 => _8_0_,
+                1 => _8_1_,
+                2 => _8_2_,
             ],
         ],
     ];
