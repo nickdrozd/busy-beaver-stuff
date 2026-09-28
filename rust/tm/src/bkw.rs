@@ -819,6 +819,35 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         }
     }
 
+    /// Intersect the exact local-window relation with the stronger same-cell
+    /// crossing closure.  The crossing relation contains every frontier
+    /// checkpoint and is closed under complete one-sided excursions, so every
+    /// concrete visit to a tape cell is represented: its first visit is a
+    /// frontier visit, and between consecutive visits the head remains wholly
+    /// on one side of that cell.
+    fn refine_crossing_reachability_relation(
+        &mut self,
+        crossing: &[[[u64; C]; C]; S],
+    ) -> bool {
+        let mut changed = false;
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let old = self.right[st][scan][left];
+                    let keep = old & crossing[st][scan][left];
+                    changed |= keep != old;
+                    self.right[st][scan][left] = keep;
+                }
+            }
+        }
+
+        if changed {
+            self.rebuild_window_relation();
+        }
+        changed
+    }
+
     /// Shrink only the exact local-window relation to windows reachable in the
     /// supplied `SidePossible` fixed point.  This is the fast intermediate
     /// counterpart of `refine_reachability`: it does not rebuild parity,
@@ -1240,10 +1269,11 @@ impl SidePrefix {
         // Prepending a new run to two retained runs shifts the old fourth run
         // beyond the retained horizon. Preserve its color in the merged far
         // summary rather than losing it when the new spill/fourth pair forms.
-        if self.len == 2 && self.runs[0].color != color {
-            if let Some(fourth) = self.fourth_run_color() {
-                far_colors |= side_prefix_color_bit(fourth);
-            }
+        if self.len == 2
+            && self.runs[0].color != color
+            && let Some(fourth) = self.fourth_run_color()
+        {
+            far_colors |= side_prefix_color_bit(fourth);
         }
 
         // DirtyUnknown branches can split into the case where the prepended
@@ -1258,7 +1288,11 @@ impl SidePrefix {
         far_colors
     }
 
-    fn far_colors_after_pull(self, next: Self, far_colors: u64) -> u64 {
+    const fn far_colors_after_pull(
+        self,
+        next: Self,
+        far_colors: u64,
+    ) -> u64 {
         // Pulling from DirtyUnknown may consume its last nonblank cell. The
         // explicit blank successor is the only case where the forgotten
         // remainder is known to have disappeared completely.
@@ -1374,11 +1408,11 @@ impl SidePrefix {
 
     /// First pressure widening for the capped joint run product. Forget only
     /// the fourth-run color, retaining the old exact blank-vs-dirty fact.
-    fn widen_far_color(mut self) -> Self {
-        if let SidePrefixSpill::Run { far, .. } = &mut self.spill {
-            if matches!(*far, SidePrefixFar::Run { .. }) {
-                *far = SidePrefixFar::DirtyUnknown;
-            }
+    const fn widen_far_color(mut self) -> Self {
+        if let SidePrefixSpill::Run { far, .. } = &mut self.spill
+            && matches!(*far, SidePrefixFar::Run { .. })
+        {
+            *far = SidePrefixFar::DirtyUnknown;
         }
         self
     }
@@ -1386,11 +1420,11 @@ impl SidePrefix {
     /// Pressure widening used only by the capped joint run product. Preserve
     /// the spill color/far-tail fact but join every count >= 2 back to the
     /// original coarse 2+ state. The independent run domain remains precise.
-    fn widen_spill_count(mut self) -> Self {
-        if let SidePrefixSpill::Run { count, .. } = &mut self.spill {
-            if *count != 1 {
-                *count = SIDE_PREFIX_SPILL_MANY;
-            }
+    const fn widen_spill_count(mut self) -> Self {
+        if let SidePrefixSpill::Run { count, .. } = &mut self.spill
+            && *count != 1
+        {
+            *count = SIDE_PREFIX_SPILL_MANY;
         }
         self
     }
@@ -1398,6 +1432,7 @@ impl SidePrefix {
     /// Prepend one exact cell at the near end of the represented tail.
     /// Successors are emitted directly to avoid allocating a temporary `Vec`
     /// for every abstract edge in the fixed point.
+    #[expect(clippy::excessive_nesting)]
     fn for_each_prepend(
         self,
         color: Color,
@@ -2905,14 +2940,15 @@ fn widened_spill_count_matches(req: ReqRun) -> bool {
     // Intersect the widened spill language [2, +inf) with the backward
     // requirement's interval/parity.
     let mut first = req.min.max(2);
-    if let Some(parity) = req.parity {
-        if (first & 1) != u16::from(parity) {
-            first = first.saturating_add(1);
-        }
+    if let Some(parity) = req.parity
+        && (first & 1) != u16::from(parity)
+    {
+        first = first.saturating_add(1);
     }
     req.max.is_none_or(|max| first <= max)
 }
 
+#[expect(clippy::comparison_chain)]
 fn side_run_colors_compatible(
     prefix: SidePrefix,
     req: Requirement,
@@ -3359,6 +3395,144 @@ struct JointShortNode {
     prefix: JointShortPrefix,
 }
 
+/// Exact radius-2 same-cell crossing relation.  For one ordinary local
+/// window `(left, scan, right)`, bit `l2 * C + r2` records a same-witness
+/// checkpoint `l2 left [scan] right r2` reachable from the blank tape.
+///
+/// The domain is enabled only for C <= 8, where all C^2 second-neighbor
+/// pairs fit in one u64.  Larger alphabets conservatively disable the extra
+/// refinement and retain the existing radius-1 crossing relation.
+struct Radius2Possible<const S: usize, const C: usize> {
+    enabled: bool,
+    pairs: Vec<u64>,
+}
+
+impl<const S: usize, const C: usize> Radius2Possible<S, C> {
+    const fn index(
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> usize {
+        (((st * C + scan) * C + left) * C) + right
+    }
+
+    const fn disabled() -> Self {
+        Self {
+            enabled: false,
+            pairs: Vec::new(),
+        }
+    }
+
+    fn from_pairs(pairs: Vec<u64>) -> Self {
+        debug_assert!(C <= 8);
+        debug_assert_eq!(pairs.len(), S * C * C * C);
+        Self {
+            enabled: true,
+            pairs,
+        }
+    }
+
+    fn pair_mask(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+    ) -> u64 {
+        if !self.enabled {
+            return u64::MAX;
+        }
+        self.pairs[Self::index(st, scan, left, right)]
+    }
+
+    #[expect(clippy::disallowed_names)]
+    const fn required_pair_mask(
+        left2: Option<usize>,
+        right2: Option<usize>,
+    ) -> u64 {
+        if C > 8 {
+            return u64::MAX;
+        }
+
+        match (left2, right2) {
+            (Some(left2), Some(right2)) => {
+                1_u64 << (left2 * C + right2)
+            },
+            (Some(left2), None) => {
+                let row = (1_u64 << C) - 1;
+                row << (left2 * C)
+            },
+            (None, Some(right2)) => {
+                let mut mask = 0_u64;
+                let mut left2 = 0_usize;
+                while left2 < C {
+                    mask |= 1_u64 << (left2 * C + right2);
+                    left2 += 1;
+                }
+                mask
+            },
+            (None, None) => u64::MAX,
+        }
+    }
+
+    fn compatible(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        left2: Option<usize>,
+        right2: Option<usize>,
+    ) -> bool {
+        if !self.enabled {
+            return true;
+        }
+
+        self.pair_mask(st, scan, left, right)
+            & Self::required_pair_mask(left2, right2)
+            != 0
+    }
+
+    fn joint_short_compatible(
+        &self,
+        st: usize,
+        scan: usize,
+        left: usize,
+        right: usize,
+        prefix: JointShortPrefix,
+    ) -> bool {
+        self.compatible(
+            st,
+            scan,
+            left,
+            right,
+            prefix.left.cell(0).map(usize::from),
+            prefix.right.cell(0).map(usize::from),
+        )
+    }
+
+    fn radius1_projection(&self) -> [[[u64; C]; C]; S] {
+        let mut possible = [[[0_u64; C]; C]; S];
+        if !self.enabled {
+            return possible;
+        }
+
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    for right in 0..C {
+                        if self.pair_mask(st, scan, left, right) != 0 {
+                            possible[st][scan][left] |= 1_u64 << right;
+                        }
+                    }
+                }
+            }
+        }
+        possible
+    }
+}
+
 // Joint version of the run-prefix domain.  Unlike `SidePrefixPossible`, the
 // left and right prefixes below always come from the same forward execution.
 // This preserves correlations such as a remote left anchor being required
@@ -3463,7 +3637,7 @@ impl JointSidePrefix {
         }
     }
 
-    fn widen_spill_counts(self) -> Self {
+    const fn widen_spill_counts(self) -> Self {
         match self {
             Self::Specific {
                 left,
@@ -4227,12 +4401,19 @@ where
     // over-approximation, we can safely prune it.
     let mut win_possible =
         prog.win_possible_from_blank(&forbid_left, &forbid_right);
-    let mut side_possible =
-        prog.side_possible_from_blank(&win_possible);
 
-    // `SidePossible` computes a stronger exact-window reachability fixed point
-    // than the original radius-1 window BFS. Promote that already-sound
-    // reachability relation first.
+    // Reduce the exact local-window relation jointly with whole-side
+    // reachability.  Each time `SidePossible` removes a window, the exact-front
+    // excursion grammar may lose recursive continuations and remove more; each
+    // crossing shrink can in turn sharpen `SidePossible`.  Keep the cheap
+    // window-only tables during these rounds, then rebuild all parity/residue
+    // aggregates once at the shared fixed point.
+    let (
+        mut side_possible,
+        crossing_left_any,
+        crossing_right_any,
+        mut radius2_possible,
+    ) = refine_windows_by_crossings_and_sides(prog, &mut win_possible);
     win_possible.refine_reachability(&side_possible);
 
     // Preserve the original lazy ordering: build/check every cheaper forward
@@ -4244,7 +4425,12 @@ where
     side_possible.refine_zero_tail_pairs(&color_tail_count);
 
     let mut blank_side_possible =
-        blank_side_possible_from_blank(prog, &win_possible);
+        blank_side_possible_from_blank_with_any(
+            prog,
+            &win_possible,
+            &crossing_left_any,
+            &crossing_right_any,
+        );
     let mut pair_tail_presence =
         pair_tail_presence_from_blank(prog, &win_possible);
 
@@ -4265,6 +4451,7 @@ where
             )
             && window_color_parity_possible(*state, tape, &win_possible)
             && window_possible(*state, tape, &win_possible)
+            && window_radius2_possible(*state, tape, &radius2_possible)
             && tape.obeys_state_side(*state, &side_possible)
             && tape
                 .obeys_blank_side_possible(*state, &blank_side_possible)
@@ -4294,12 +4481,26 @@ where
         config.tape.lspan.end == TapeEnd::Unknown
             || config.tape.rspan.end == TapeEnd::Unknown
     });
+    let mut crossing_dirty = false;
     let (
         side_prefix_possible,
         joint_short_possible,
         joint_side_prefix_fixed,
         joint_side_word_prefix_possible,
     ) = loop {
+        if crossing_dirty {
+            let (sides, _, _, next_radius2) =
+                refine_windows_by_crossings_and_sides(
+                    prog,
+                    &mut win_possible,
+                );
+            side_possible = sides;
+            radius2_possible = next_radius2;
+            color_tail_count =
+                color_tail_count_from_blank(prog, &win_possible);
+            side_possible.refine_zero_tail_pairs(&color_tail_count);
+        }
+
         let (mut prefixes, prefix_trans, prefix_exposed) = prog
             .side_run_prefix_possible_from_blank(
                 &win_possible,
@@ -4313,13 +4514,7 @@ where
             .refine_run_prefix_reachability_relation(&prefixes)
         {
             prefix_refined_windows = true;
-            side_possible =
-                prog.side_possible_from_blank(&win_possible);
-            win_possible
-                .refine_side_reachability_relation(&side_possible);
-            color_tail_count =
-                color_tail_count_from_blank(prog, &win_possible);
-            side_possible.refine_zero_tail_pairs(&color_tail_count);
+            crossing_dirty = true;
             continue;
         }
 
@@ -4334,13 +4529,7 @@ where
             .refine_word_prefix_reachability_relation(&prefixes)
         {
             prefix_refined_windows = true;
-            side_possible =
-                prog.side_possible_from_blank(&win_possible);
-            win_possible
-                .refine_side_reachability_relation(&side_possible);
-            color_tail_count =
-                color_tail_count_from_blank(prog, &win_possible);
-            side_possible.refine_zero_tail_pairs(&color_tail_count);
+            crossing_dirty = true;
             continue;
         }
 
@@ -4353,17 +4542,14 @@ where
             return Refuted(0);
         }
 
-        let joint = prog.joint_short_possible_from_blank(&win_possible);
+        let joint = prog.joint_short_possible_from_blank(
+            &win_possible,
+            &radius2_possible,
+        );
         if win_possible.refine_joint_short_reachability_relation(&joint)
         {
             prefix_refined_windows = true;
-            side_possible =
-                prog.side_possible_from_blank(&win_possible);
-            win_possible
-                .refine_side_reachability_relation(&side_possible);
-            color_tail_count =
-                color_tail_count_from_blank(prog, &win_possible);
-            side_possible.refine_zero_tail_pairs(&color_tail_count);
+            crossing_dirty = true;
             continue;
         }
 
@@ -4386,13 +4572,7 @@ where
             .refine_joint_side_prefix_reachability_relation(&joint_side)
         {
             prefix_refined_windows = true;
-            side_possible =
-                prog.side_possible_from_blank(&win_possible);
-            win_possible
-                .refine_side_reachability_relation(&side_possible);
-            color_tail_count =
-                color_tail_count_from_blank(prog, &win_possible);
-            side_possible.refine_zero_tail_pairs(&color_tail_count);
+            crossing_dirty = true;
             continue;
         }
 
@@ -4412,13 +4592,7 @@ where
             .refine_joint_side_word_reachability_relation(&joint_word)
         {
             prefix_refined_windows = true;
-            side_possible =
-                prog.side_possible_from_blank(&win_possible);
-            win_possible
-                .refine_side_reachability_relation(&side_possible);
-            color_tail_count =
-                color_tail_count_from_blank(prog, &win_possible);
-            side_possible.refine_zero_tail_pairs(&color_tail_count);
+            crossing_dirty = true;
             continue;
         }
 
@@ -4473,6 +4647,11 @@ where
                     &win_possible,
                 )
                 && window_possible(*state, tape, &win_possible)
+                && window_radius2_possible(
+                    *state,
+                    tape,
+                    &radius2_possible,
+                )
                 && tape.obeys_state_side(*state, &side_possible)
                 && tape.obeys_blank_side_possible(
                     *state,
@@ -4616,6 +4795,7 @@ where
             &mut overflow_cycle_history,
             &mut blanks,
             &win_possible,
+            &radius2_possible,
             &side_possible,
             &side_triple_possible,
             &joint_side_triple_possible,
@@ -4796,6 +4976,46 @@ fn window_possible<const s: usize, const c: usize>(
         (None, Some(rc)) => win_possible.left[st][sc][rc] != 0,
         (None, None) => win_possible.any[st][sc],
     }
+}
+
+fn window_radius2_possible<const S: usize, const C: usize>(
+    state: State,
+    tape: &Tape,
+    possible: &Radius2Possible<S, C>,
+) -> bool {
+    if !possible.enabled {
+        return true;
+    }
+
+    let left2 = tape.left_second_neighbor_color().map(usize::from);
+    let right2 = tape.right_second_neighbor_color().map(usize::from);
+
+    // With neither second neighbor fixed, radius-2 adds nothing beyond the
+    // ordinary local-window test that is already run immediately before this.
+    if left2.is_none() && right2.is_none() {
+        return true;
+    }
+
+    let st = usize::from(state);
+    let scan = usize::from(tape.scan);
+    let left = tape.left_neighbor_color().map(usize::from);
+    let right = tape.right_neighbor_color().map(usize::from);
+
+    let left_start = left.unwrap_or(0);
+    let left_end = left.map_or(C, |left| left + 1);
+    let right_start = right.unwrap_or(0);
+    let right_end = right.map_or(C, |right| right + 1);
+
+    for left in left_start..left_end {
+        for right in right_start..right_end {
+            if possible.compatible(st, scan, left, right, left2, right2)
+            {
+                return true;
+            }
+        }
+    }
+
+    false
 }
 
 fn window_neighbor_mask<const S: usize, const C: usize>(
@@ -4997,6 +5217,7 @@ fn step_instrs<
     overflow_cycle_history: &mut OverflowCycleHistory,
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
+    radius2_possible: &Radius2Possible<s, c>,
     side_possible: &SidePossible<s, c>,
     side_triple_possible: &SideTriplePossible<s, c>,
     joint_side_triple_possible: &JointSideTriplePossible<s, c>,
@@ -5097,6 +5318,7 @@ fn step_instrs<
         }
 
         if !window_possible(state, &tape, win_possible)
+            || !window_radius2_possible(state, &tape, radius2_possible)
             || !tape.obeys_state_side(state, side_possible)
             || !tape.obeys_state_triples(state, side_triple_possible)
             || !tape.obeys_joint_state_triples(
@@ -5156,6 +5378,7 @@ fn step_configs<
     overflow_cycle_history: &mut OverflowCycleHistory,
     blanks: &mut BlankStates,
     win_possible: &WinPossible<s, c>,
+    radius2_possible: &Radius2Possible<s, c>,
     side_possible: &SidePossible<s, c>,
     side_triple_possible: &SideTriplePossible<s, c>,
     joint_side_triple_possible: &JointSideTriplePossible<s, c>,
@@ -5193,6 +5416,7 @@ fn step_configs<
                 overflow_cycle_history,
                 blanks,
                 win_possible,
+                radius2_possible,
                 side_possible,
                 side_triple_possible,
                 joint_side_triple_possible,
@@ -5225,6 +5449,7 @@ fn step_configs<
                 overflow_cycle_history,
                 blanks,
                 win_possible,
+                radius2_possible,
                 side_possible,
                 side_triple_possible,
                 joint_side_triple_possible,
@@ -5253,6 +5478,7 @@ fn step_configs<
             overflow_cycle_history,
             blanks,
             win_possible,
+            radius2_possible,
             side_possible,
             side_triple_possible,
             joint_side_triple_possible,
@@ -7065,6 +7291,7 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     fn joint_short_possible_from_blank(
         &self,
         windows: &WinPossible<S, C>,
+        radius2: &Radius2Possible<S, C>,
     ) -> JointShortPossible<S, C> {
         let mut trans = [[None; C]; S];
         for ((state, read), &(print, shift, next_state)) in self.iter()
@@ -7085,6 +7312,13 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 if windows.right[node.st][node.scan][node.left]
                     & (1_u64 << node.right)
                     == 0
+                    || !radius2.joint_short_compatible(
+                        node.st,
+                        node.scan,
+                        node.left,
+                        node.right,
+                        node.prefix,
+                    )
                 {
                     return;
                 }
@@ -10394,6 +10628,50 @@ impl Tape {
         })
     }
 
+    /// Return the second cell away from the head when this span description
+    /// determines it uniquely.  Variable length-one prefixes deliberately
+    /// return None: their second cell may either remain in the first block or
+    /// come from the following block/tape end.
+    fn second_neighbor_color(span: &Span) -> Option<Color> {
+        let Some(first) = span.span.first() else {
+            return matches!(span.end, TapeEnd::Blanks).then_some(0);
+        };
+
+        let after_exact_one = || {
+            span.span.iter().nth(1).map(Block::first_color).or_else(
+                || matches!(span.end, TapeEnd::Blanks).then_some(0),
+            )
+        };
+
+        match first {
+            Block::Run { color, count } => {
+                if count.minimum() >= 2 {
+                    return Some(*color);
+                }
+                count.is_single().then(after_exact_one).flatten()
+            },
+            Block::Word { word, count } => {
+                if word.len() >= 2 {
+                    return Some(word[1]);
+                }
+                if count.minimum() >= 2 {
+                    return Some(word[0]);
+                }
+                (count.exact_copies() == Some(1))
+                    .then(after_exact_one)
+                    .flatten()
+            },
+        }
+    }
+
+    fn left_second_neighbor_color(&self) -> Option<Color> {
+        Self::second_neighbor_color(&self.lspan)
+    }
+
+    fn right_second_neighbor_color(&self) -> Option<Color> {
+        Self::second_neighbor_color(&self.rspan)
+    }
+
     fn is_valid_step(&self, shift: Shift, print: Color) -> bool {
         (if shift { &self.lspan } else { &self.rspan })
             .matches_color(print)
@@ -11350,6 +11628,7 @@ impl Tape {
         )
     }
 
+    #[expect(clippy::excessive_nesting)]
     fn obeys_joint_side_prefix_possible_cached<
         const S: usize,
         const C: usize,
@@ -13684,6 +13963,53 @@ fn test_parent_color_aware_excursions() {
 }
 
 #[test]
+fn test_excursion_keeps_exact_front_after_child_return() {
+    // A0 pushes into B0. B0 immediately returns to A's cell in state C while
+    // leaving color 1 on B's cell. C0 can complete the outer excursion only
+    // when its exact right/front neighbor is 0.  A state-only continuation
+    // would therefore splice B's return into C's front-0 witness and invent a
+    // return to F; the exact-front relation must reject that composition.
+    let prog = Prog::<6, 2>::from(
+        "0RB ...  1LC ...  0RD ...  0LE ...  0LF ...  ... ...",
+    );
+    let mut windows = WinPossible {
+        right: [[[0; 2]; 2]; 6],
+        left: [[[0; 2]; 2]; 6],
+        any: [[false; 2]; 6],
+        parity: vec![0; 6 * 2 * 2 * 2],
+        parity_right: [[[0; 2]; 2]; 6],
+        parity_left: [[[0; 2]; 2]; 6],
+        parity_any: [[0; 2]; 6],
+        side_parity: vec![0; 6 * 2 * 2 * 2],
+        side_parity_right: [[[0; 2]; 2]; 6],
+        side_parity_left: [[[0; 2]; 2]; 6],
+        side_parity_any: [[0; 2]; 6],
+        side_mod3: vec![0; 6 * 2 * 2 * 2],
+        side_mod3_right: [[[0; 2]; 2]; 6],
+        side_mod3_left: [[[0; 2]; 2]; 6],
+        side_mod3_any: [[0; 2]; 6],
+        color_parity: vec![0; 6 * 2 * 2 * 2],
+        color_parity_right: [[[0; 2]; 2]; 6],
+        color_parity_left: [[[0; 2]; 2]; 6],
+        color_parity_any: [[0; 2]; 6],
+    };
+
+    // All listed nodes have back/left color 0 and exact front/right color 0.
+    windows.right[0][0][0] = 1 << 0;
+    windows.right[1][0][0] = 1 << 0;
+    windows.right[2][0][0] = 1 << 0;
+    windows.right[3][0][0] = 1 << 0;
+    windows.right[4][0][0] = 1 << 0;
+
+    let ex = side_excursions(&prog, &windows, true, false);
+
+    // C0 itself has a front-0 route to F.
+    assert_ne!(ex.ret_states(0, 2, 0) & (1 << 5), 0);
+    // But A0's child return leaves front color 1, so it cannot use that route.
+    assert_eq!(ex.ret_states(0, 0, 0) & (1 << 5), 0);
+}
+
+#[test]
 fn test_fresh_frontier_direction() {
     // A0 moves right onto a fresh blank.  B0 is therefore a right frontier,
     // but not a left frontier: the A cell has already been visited.
@@ -13852,14 +14178,27 @@ fn reachability<const S: usize>(adj: &Adj<S>) -> [[bool; S]; S] {
 /// color printed by the push, and continue from there.  Saturating those
 /// return-state masks computes the same grammar with far less work.
 struct SideExcursions<const S: usize, const C: usize> {
-    // Flattened [back][state][color]. Bit `tr` means a balanced return into
-    // state `tr` is possible.
+    // Aggregate flattened [back][state][color]. Bit `tr` means some exact
+    // front color admits a balanced return into state `tr`.
     ret: Vec<u64>,
 
-    // For ordinary excursions, flattened
+    // Aggregate ordinary-excursion final boundary colors, flattened
     // [back][state][color][return_state] -> final pop-color mask.
-    // Clean excursions do not need this extra summary.
+    // Clean excursions do not need this aggregate outside their fixed point.
     pop: Option<Vec<u64>>,
+
+    // Strong ordinary relation retaining the exact child/front color during
+    // recursive composition. Flattened
+    // [back][state][scan][front][return_state].
+    //
+    // For alphabets with C <= 8, each u64 is a bitset of
+    // `(final pop color, final front color)` pairs, encoded as
+    // `pop * C + final_front`.  This lets the crossing reduced product keep
+    // the second cell on the excursion side exact.  For larger alphabets the
+    // same storage falls back to the original final-pop-color mask.
+    //
+    // This is kept only for ordinary excursions.
+    exact_pop: Option<Vec<u64>>,
 }
 
 impl<const S: usize, const C: usize> SideExcursions<S, C> {
@@ -13873,6 +14212,15 @@ impl<const S: usize, const C: usize> SideExcursions<S, C> {
 
     const fn ret_index(back: usize, st: usize, co: usize) -> usize {
         (back * S + st) * C + co
+    }
+
+    const fn exact_node_index(
+        back: usize,
+        st: usize,
+        co: usize,
+        front: usize,
+    ) -> usize {
+        (((back * S + st) * C + co) * C) + front
     }
 
     fn ret_states(&self, back: usize, st: usize, co: usize) -> u64 {
@@ -13915,6 +14263,59 @@ impl<const S: usize, const C: usize> SideExcursions<S, C> {
         let node = Self::ret_index(back, st, co);
         self.pop.as_ref().map_or(0, |pop| pop[node * S + tr])
     }
+
+    fn exact_pop_colors(
+        &self,
+        back: usize,
+        st: usize,
+        co: usize,
+        front: usize,
+        tr: usize,
+    ) -> u64 {
+        let node = Self::exact_node_index(back, st, co, front);
+        let outcomes =
+            self.exact_pop.as_ref().map_or(0, |pop| pop[node * S + tr]);
+
+        Self::outcome_pop_colors(outcomes)
+    }
+
+    #[expect(clippy::disallowed_names)]
+    const fn outcome_pop_colors(outcomes: u64) -> u64 {
+        if C > 8 {
+            return outcomes;
+        }
+
+        // Pair bits are laid out in C-bit rows, one row per pop color.
+        // Testing one row at a time is bounded by C <= 8 and is substantially
+        // cheaper than walking every set `(pop, final_front)` bit when an
+        // excursion outcome is dense.
+        let row = (1_u64 << C) - 1;
+        let mut colors = 0_u64;
+        let mut pop = 0_usize;
+        while pop < C {
+            if outcomes & (row << (pop * C)) != 0 {
+                colors |= 1_u64 << pop;
+            }
+            pop += 1;
+        }
+        colors
+    }
+
+    fn exact_pop_front_pairs(
+        &self,
+        back: usize,
+        st: usize,
+        co: usize,
+        front: usize,
+        tr: usize,
+    ) -> u64 {
+        if C > 8 {
+            return 0;
+        }
+
+        let node = Self::exact_node_index(back, st, co, front);
+        self.exact_pop.as_ref().map_or(0, |pop| pop[node * S + tr])
+    }
 }
 
 /// Exact possible color mask of the child-side neighbor when the source's
@@ -13933,6 +14334,21 @@ fn window_child_mask<const S: usize, const C: usize>(
     }
 }
 
+/// Saturate one-sided balanced returns while keeping the exact child/front
+/// color correlated through every recursive composition.
+///
+/// An exact node is `(back, state, scan, front)`, where `back` is the parent
+/// cell and `front` is the immediate neighbor deeper into the excursion side.
+/// For ordinary (`clean == false`) excursions with C <= 8, an outcome
+/// `(return_state, pop_color, final_front_color)` means the computation
+/// eventually moves back onto the parent in
+/// `return_state`, leaving `pop_color` on this node's scanned cell and
+/// `final_front_color` on its immediate child/front cell.  When a nested child
+/// returns, its `pop_color` becomes the exact `front` color of the same-level
+/// continuation.  The nested child's farther result is deliberately joined
+/// there; retaining the current node's final front is nevertheless enough for
+/// the radius-2 same-cell crossing product.  Clean excursions and larger
+/// alphabets keep the cheaper pop-color-only encoding.
 fn side_excursions<const S: usize, const C: usize>(
     prog: &Prog<S, C>,
     windows: &WinPossible<S, C>,
@@ -13943,26 +14359,50 @@ fn side_excursions<const S: usize, const C: usize>(
         source: usize,
         back: usize,
         print: usize,
-        child_st: usize,
-        child_colors: u64,
     }
 
-    fn add_returns(
-        ret: &mut [u64],
-        q: &mut VecDeque<(usize, u64)>,
+    fn add_outcome<const S: usize>(
+        outcomes: &mut [u64],
+        q: &mut VecDeque<(usize, usize, u64)>,
         node: usize,
-        bits: u64,
+        tr: usize,
+        colors: u64,
     ) {
-        let added = bits & !ret[node];
+        let index = node * S + tr;
+        let added = colors & !outcomes[index];
         if added != 0 {
-            ret[node] |= added;
-            q.push_back((node, added));
+            outcomes[index] |= added;
+            q.push_back((node, tr, added));
         }
     }
 
-    let pop = !push;
-    let ret_len = C * S * C;
-    let mut ret = vec![0_u64; ret_len];
+    fn encode_outcome<const C: usize>(
+        pop: usize,
+        front: usize,
+        keep_front: bool,
+    ) -> u64 {
+        if keep_front {
+            1_u64 << (pop * C + front)
+        } else {
+            1_u64 << pop
+        }
+    }
+
+    fn outcome_pop_colors<const S: usize, const C: usize>(
+        outcomes: u64,
+        keep_front: bool,
+    ) -> u64 {
+        if keep_front {
+            SideExcursions::<S, C>::outcome_pop_colors(outcomes)
+        } else {
+            outcomes
+        }
+    }
+
+    let keep_front = !clean && C <= 8;
+    let pop_shift = !push;
+    let exact_nodes = C * S * C * C;
+    let mut outcomes = vec![0_u64; exact_nodes * S];
     let mut trans = [[None; C]; S];
 
     for ((st, co), &(print, shift, tr)) in prog.iter() {
@@ -13970,173 +14410,185 @@ fn side_excursions<const S: usize, const C: usize>(
             Some((print as usize, shift, tr as usize));
     }
 
-    // For fixed `push`, both window tables have exactly the indexing we need:
-    // [state][scan][known back color] -> possible child colors.
-    let child_masks = if push { &windows.right } else { &windows.left };
+    // For fixed `push`, this maps [state][scan][exact back] to the exact
+    // possible front colors of the local window.
+    let fronts = if push { &windows.right } else { &windows.left };
 
     let mut pushes = Vec::new();
-    let mut child_users = vec![Vec::<usize>::new(); ret_len];
-    let mut seeds = Vec::new();
-    let mut pop_seeds = Vec::new();
+    let mut child_users =
+        (0..exact_nodes).map(|_| Vec::new()).collect::<Vec<_>>();
+    let mut continuation_users =
+        (0..exact_nodes).map(|_| Vec::new()).collect::<Vec<_>>();
+    let mut registered_continuations = Vec::<Vec<usize>>::new();
+    let mut q = VecDeque::new();
 
     for back in 0..C {
         for st in 0..S {
             for co in 0..C {
-                let child_colors = child_masks[st][co][back];
-                if child_colors == 0 {
-                    continue;
-                }
+                let mut front_colors = fronts[st][co][back];
+                while front_colors != 0 {
+                    let front = front_colors.trailing_zeros() as usize;
+                    front_colors &= front_colors - 1;
 
-                let Some((print, shift, tr)) = trans[st][co] else {
-                    continue;
-                };
+                    let source =
+                        SideExcursions::<S, C>::exact_node_index(
+                            back, st, co, front,
+                        );
+                    let Some((print, shift, tr)) = trans[st][co] else {
+                        continue;
+                    };
 
-                let source =
-                    SideExcursions::<S, C>::ret_index(back, st, co);
-
-                if shift == pop {
-                    if !clean || print == 0 {
-                        seeds.push((source, 1_u64 << tr));
-                        if !clean {
-                            pop_seeds.push((source, tr, print));
+                    if shift == pop_shift {
+                        if !clean || print == 0 {
+                            add_outcome::<S>(
+                                &mut outcomes,
+                                &mut q,
+                                source,
+                                tr,
+                                encode_outcome::<C>(
+                                    print, front, keep_front,
+                                ),
+                            );
                         }
+                        continue;
                     }
-                    continue;
-                }
 
-                let eq = pushes.len();
-                pushes.push(PushEq {
-                    source,
-                    back,
-                    print,
-                    child_st: tr,
-                    child_colors,
-                });
+                    // Push deeper.  The old exact `front` becomes the child's
+                    // scanned color; enumerate only exact farther-front colors
+                    // admitted by the current window relation.
+                    let child_fronts = fronts[tr][front][print];
+                    if child_fronts == 0 {
+                        continue;
+                    }
 
-                // This push equation depends on the return relation of every
-                // child color allowed by the exact forward window.
-                let mut colors = child_colors;
-                while colors != 0 {
-                    let child_co = colors.trailing_zeros() as usize;
-                    colors &= colors - 1;
-                    let child = SideExcursions::<S, C>::ret_index(
-                        print, tr, child_co,
-                    );
-                    child_users[child].push(eq);
+                    let eq_i = pushes.len();
+                    pushes.push(PushEq {
+                        source,
+                        back,
+                        print,
+                    });
+                    registered_continuations.push(Vec::new());
+
+                    let mut child_fronts = child_fronts;
+                    while child_fronts != 0 {
+                        let child_front =
+                            child_fronts.trailing_zeros() as usize;
+                        child_fronts &= child_fronts - 1;
+                        let child =
+                            SideExcursions::<S, C>::exact_node_index(
+                                print,
+                                tr,
+                                front,
+                                child_front,
+                            );
+                        child_users[child].push(eq_i);
+                    }
                 }
             }
         }
     }
 
-    // Once child return state `r` becomes possible for a push equation, that
-    // equation depends on the continuation `(back, r, print)`.  These reverse
-    // dependencies are discovered lazily, so each return bit is propagated
-    // only to equations that can actually use it.
-    let mut continuation_users = vec![Vec::<usize>::new(); ret_len];
-    let mut child_returns = vec![0_u64; pushes.len()];
-    let mut q = VecDeque::new();
-
-    for (node, bits) in seeds {
-        add_returns(&mut ret, &mut q, node, bits);
-    }
-
-    while let Some((node, added_states)) = q.pop_front() {
-        // `node` is used as a nested child by these equations.  Newly returned
-        // states expose newly relevant same-level continuation nodes.
+    while let Some((node, return_st, added_colors)) = q.pop_front() {
+        // Newly completed nested-child outcomes reveal exact same-level
+        // continuation nodes: the child's final pop color is precisely the
+        // continuation's new `front` color.
         for &eq_i in &child_users[node] {
-            let fresh = added_states & !child_returns[eq_i];
-            if fresh == 0 {
-                continue;
-            }
-            child_returns[eq_i] |= fresh;
+            let source = pushes[eq_i].source;
+            let back = pushes[eq_i].back;
+            let print = pushes[eq_i].print;
 
-            let eq = &pushes[eq_i];
-            let mut states = fresh;
-            while states != 0 {
-                let return_st = states.trailing_zeros() as usize;
-                states &= states - 1;
+            let mut colors =
+                outcome_pop_colors::<S, C>(added_colors, keep_front);
+            while colors != 0 {
+                let child_pop = colors.trailing_zeros() as usize;
+                colors &= colors - 1;
+                let continuation =
+                    SideExcursions::<S, C>::exact_node_index(
+                        back, return_st, print, child_pop,
+                    );
 
-                let continuation = SideExcursions::<S, C>::ret_index(
-                    eq.back, return_st, eq.print,
-                );
+                // The same continuation can be discovered through several
+                // exact child-front witnesses. Register it only once per
+                // equation to keep the reverse worklist small.
+                if registered_continuations[eq_i]
+                    .contains(&continuation)
+                {
+                    continue;
+                }
+                registered_continuations[eq_i].push(continuation);
                 continuation_users[continuation].push(eq_i);
 
-                // The continuation may already have returns from earlier
-                // events; consume its full current value when registering.
-                let current = ret[continuation];
-                add_returns(&mut ret, &mut q, eq.source, current);
-            }
-        }
-
-        // `node` is a same-level continuation for these equations.  Every new
-        // outer return state immediately becomes a return of their sources.
-        for &eq_i in &continuation_users[node] {
-            let source = pushes[eq_i].source;
-            add_returns(&mut ret, &mut q, source, added_states);
-        }
-    }
-
-    let pop = if clean {
-        None
-    } else {
-        // With the return-state relation saturated, build the same-level
-        // continuation graph induced by push/child-return pairs.  Final pop
-        // colors then propagate backwards through that graph.  This keeps the
-        // ordinary excursion relation small while retaining exactly the one
-        // extra fact needed by fresh-frontier analysis.
-        let mut continuation_users = vec![Vec::<usize>::new(); ret_len];
-
-        for eq in &pushes {
-            let mut return_states = 0;
-            let mut colors = eq.child_colors;
-            while colors != 0 {
-                let child_co = colors.trailing_zeros() as usize;
-                colors &= colors - 1;
-                let child = SideExcursions::<S, C>::ret_index(
-                    eq.print,
-                    eq.child_st,
-                    child_co,
-                );
-                return_states |= ret[child];
-            }
-
-            while return_states != 0 {
-                let return_st = return_states.trailing_zeros() as usize;
-                return_states &= return_states - 1;
-                let continuation = SideExcursions::<S, C>::ret_index(
-                    eq.back, return_st, eq.print,
-                );
-                continuation_users[continuation].push(eq.source);
-            }
-        }
-
-        let mut pop = vec![0_u64; ret_len * S];
-        let mut q = VecDeque::new();
-
-        for (source, tr, color) in pop_seeds {
-            let index = source * S + tr;
-            let bit = 1_u64 << color;
-            if pop[index] & bit == 0 {
-                pop[index] |= bit;
-                q.push_back((source, tr, bit));
-            }
-        }
-
-        while let Some((node, tr, colors)) = q.pop_front() {
-            for &source in &continuation_users[node] {
-                let index = source * S + tr;
-                let added = colors & !pop[index];
-                if added != 0 {
-                    pop[index] |= added;
-                    q.push_back((source, tr, added));
+                for tr in 0..S {
+                    let current = outcomes[continuation * S + tr];
+                    if current != 0 {
+                        add_outcome::<S>(
+                            &mut outcomes,
+                            &mut q,
+                            source,
+                            tr,
+                            current,
+                        );
+                    }
                 }
             }
         }
 
-        Some(pop)
-    };
+        // If this exact node is already registered as a same-level
+        // continuation, every new outcome is inherited by its outer source.
+        for &eq_i in &continuation_users[node] {
+            add_outcome::<S>(
+                &mut outcomes,
+                &mut q,
+                pushes[eq_i].source,
+                return_st,
+                added_colors,
+            );
+        }
+    }
 
-    SideExcursions { ret, pop }
+    // Build the old aggregate API only after the stronger exact-front fixed
+    // point is complete.  Existing halfblank/frontier/halt users therefore
+    // get the stronger relation without needing to carry another index.
+    let ret_len = C * S * C;
+    let mut ret = vec![0_u64; ret_len];
+    let mut pop = (!clean).then(|| vec![0_u64; ret_len * S]);
+
+    for back in 0..C {
+        for st in 0..S {
+            for co in 0..C {
+                let aggregate =
+                    SideExcursions::<S, C>::ret_index(back, st, co);
+                let mut front_colors = fronts[st][co][back];
+                while front_colors != 0 {
+                    let front = front_colors.trailing_zeros() as usize;
+                    front_colors &= front_colors - 1;
+                    let node = SideExcursions::<S, C>::exact_node_index(
+                        back, st, co, front,
+                    );
+
+                    for tr in 0..S {
+                        let outcomes = outcomes[node * S + tr];
+                        if outcomes == 0 {
+                            continue;
+                        }
+                        ret[aggregate] |= 1_u64 << tr;
+                        if let Some(pop) = &mut pop {
+                            pop[aggregate * S + tr] |=
+                                outcome_pop_colors::<S, C>(
+                                    outcomes, keep_front,
+                                );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    SideExcursions {
+        ret,
+        pop,
+        exact_pop: (!clean).then_some(outcomes),
+    }
 }
 
 /// Sound over-approximation of reachable one-sided-blank configurations.
@@ -14357,6 +14809,509 @@ fn frontier_slots<const S: usize, const C: usize>(
     }
 
     possible
+}
+
+/// Exact-window closure generated from fresh-frontier checkpoints and complete
+/// same-cell one-sided excursions.
+///
+/// Every tape cell is first visited while it is a visited-interval frontier.
+/// Between two consecutive visits to that same cell, the head must stay
+/// strictly on one side of it; otherwise it would have crossed the cell and
+/// visited it earlier.  Therefore seeding all reachable frontier windows and
+/// closing under the exact-front excursion relation is a sound
+/// over-approximation of every local window reachable from blank.
+fn same_cell_crossing_windows_radius1_from_blank<
+    const S: usize,
+    const C: usize,
+>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+    left_any: &SideExcursions<S, C>,
+    right_any: &SideExcursions<S, C>,
+) -> [[[u64; C]; C]; S] {
+    debug_assert!(left_any.exact_pop.is_some());
+    debug_assert!(right_any.exact_pop.is_some());
+
+    let left_frontier = frontier_slots(prog, windows, false, right_any);
+    let right_frontier = frontier_slots(prog, windows, true, left_any);
+    let mut possible = [[[0_u64; C]; C]; S];
+    let mut q = VecDeque::new();
+    let mut trans = [[None; C]; S];
+
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    let push =
+        |st: usize,
+         scan: usize,
+         left: usize,
+         right: usize,
+         possible: &mut [[[u64; C]; C]; S],
+         q: &mut VecDeque<(usize, usize, usize, usize)>| {
+            let bit = 1_u64 << right;
+            if windows.right[st][scan][left] & bit != 0
+                && possible[st][scan][left] & bit == 0
+            {
+                possible[st][scan][left] |= bit;
+                q.push_back((st, scan, left, right));
+            }
+        };
+
+    // Every frontier checkpoint is already an exact local window: the outward
+    // neighbor is fresh zero and the inward neighbor is retained exactly.
+    for st in 0..S {
+        for scan in 0..C {
+            let mut nears = left_frontier[st][scan];
+            while nears != 0 {
+                let near = nears.trailing_zeros() as usize;
+                nears &= nears - 1;
+                push(st, scan, 0, near, &mut possible, &mut q);
+            }
+
+            let mut nears = right_frontier[st][scan];
+            while nears != 0 {
+                let near = nears.trailing_zeros() as usize;
+                nears &= nears - 1;
+                push(st, scan, near, 0, &mut possible, &mut q);
+            }
+        }
+    }
+
+    // Keep the true initial window explicit even if later frontier tightening
+    // becomes stronger than necessary for some intermediate window relation.
+    push(0, 0, 0, 0, &mut possible, &mut q);
+
+    while let Some((st, scan, left, right)) = q.pop_front() {
+        let Some((print, shift, child_st)) = trans[st][scan] else {
+            continue;
+        };
+
+        if shift {
+            // Depart right.  The current cell becomes the child's exact back
+            // color `print`; the old right neighbor is the child's scan.  Keep
+            // its farther-front color exact through the complete excursion.
+            let mut fronts = window_child_mask(
+                child_st, right, true, print, windows,
+            );
+            while fronts != 0 {
+                let front = fronts.trailing_zeros() as usize;
+                fronts &= fronts - 1;
+
+                for return_st in 0..S {
+                    let mut pop_colors = right_any.exact_pop_colors(
+                        print, child_st, right, front, return_st,
+                    );
+                    while pop_colors != 0 {
+                        let pop_color =
+                            pop_colors.trailing_zeros() as usize;
+                        pop_colors &= pop_colors - 1;
+                        push(
+                            return_st,
+                            print,
+                            left,
+                            pop_color,
+                            &mut possible,
+                            &mut q,
+                        );
+                    }
+                }
+            }
+        } else {
+            let mut fronts = window_child_mask(
+                child_st, left, false, print, windows,
+            );
+            while fronts != 0 {
+                let front = fronts.trailing_zeros() as usize;
+                fronts &= fronts - 1;
+
+                for return_st in 0..S {
+                    let mut pop_colors = left_any.exact_pop_colors(
+                        print, child_st, left, front, return_st,
+                    );
+                    while pop_colors != 0 {
+                        let pop_color =
+                            pop_colors.trailing_zeros() as usize;
+                        pop_colors &= pop_colors - 1;
+                        push(
+                            return_st,
+                            print,
+                            pop_color,
+                            right,
+                            &mut possible,
+                            &mut q,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    possible
+}
+
+/// Exact two-cell inward prefixes at fresh-frontier checkpoints.
+///
+/// Bit `near * C + far` in `possible[state][scan]` means the frontier can be
+/// reached with the first two cells on the visited/inward side exactly
+/// `(near, far)`.  Keeping this pair here avoids the old radius-2 seed step
+/// taking a Cartesian product with every possible second-neighbor color.
+fn frontier_pair_slots<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+    frontier_side: Shift,
+    inward: &SideExcursions<S, C>,
+) -> [[u64; C]; S] {
+    debug_assert!(C <= 8);
+    debug_assert!(inward.exact_pop.is_some());
+
+    let mut possible = [[0_u64; C]; S];
+    let mut trans = [[None; C]; S];
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    let mut q = VecDeque::new();
+    let push = |st: usize,
+                co: usize,
+                near: usize,
+                far: usize,
+                possible: &mut [[u64; C]; S],
+                q: &mut VecDeque<(usize, usize)>| {
+        let window_ok = if frontier_side {
+            // Right frontier: `near [scan] 0`.
+            windows.right[st][co][near] & 1 != 0
+        } else {
+            // Left frontier: `0 [scan] near`.
+            windows.right[st][co][0] & (1_u64 << near) != 0
+        };
+        if !window_ok {
+            return;
+        }
+
+        let pair = near * C + far;
+        let bit = 1_u64 << pair;
+        if possible[st][co] & bit == 0 {
+            possible[st][co] |= bit;
+            q.push_back((SideExcursions::<S, C>::node(st, co), pair));
+        }
+    };
+
+    // The initial blank tape is both frontiers and has two exact inward zeros.
+    push(0, 0, 0, 0, &mut possible, &mut q);
+
+    let inward_side = !frontier_side;
+    while let Some((node, pair)) = q.pop_front() {
+        let (st, co) = SideExcursions::<S, C>::decode(node);
+        let near = pair / C;
+        let far = pair % C;
+        let Some((print, shift, tr)) = trans[st][co] else {
+            continue;
+        };
+
+        if shift == frontier_side {
+            // Move onto a fresh blank.  The old frontier cell and its old
+            // inward neighbor become the new first two inward cells.
+            push(tr, 0, print, near, &mut possible, &mut q);
+            continue;
+        }
+
+        debug_assert_eq!(shift, inward_side);
+
+        // Move inward and make a complete balanced excursion.  The strong
+        // excursion relation updates both retained inward cells jointly.
+        for return_st in 0..S {
+            let mut outcomes = inward
+                .exact_pop_front_pairs(print, tr, near, far, return_st);
+            while outcomes != 0 {
+                let outcome = outcomes.trailing_zeros() as usize;
+                outcomes &= outcomes - 1;
+                let pop_color = outcome / C;
+                let final_front = outcome % C;
+                push(
+                    return_st,
+                    print,
+                    pop_color,
+                    final_front,
+                    &mut possible,
+                    &mut q,
+                );
+            }
+        }
+    }
+
+    possible
+}
+
+/// Radius-2 same-cell crossing closure.  A checkpoint retains
+/// `l2 l1 [scan] r1 r2` in one forward witness.  The ordinary radius-one
+/// window remains the storage/reduced-product interface; the second-neighbor
+/// pair is packed into one u64 per exact local window.
+///
+/// Radius-2 frontier seeds are themselves propagated with exact two-cell
+/// inward prefixes.  This is both stronger and usually much smaller than the
+/// previous `frontier_slots x all second colors` Cartesian seed set.
+///
+/// The worklist is bucketed by the ordinary radius-one window.  Newly learned
+/// `(l2,r2)` bits for the same window are coalesced into one queue entry, which
+/// avoids pushing a six-usize tuple for every individual radius-2 checkpoint.
+fn same_cell_crossing_windows_radius2_from_blank<
+    const S: usize,
+    const C: usize,
+>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+    left_any: &SideExcursions<S, C>,
+    right_any: &SideExcursions<S, C>,
+) -> Radius2Possible<S, C> {
+    debug_assert!(C <= 8);
+    debug_assert!(left_any.exact_pop.is_some());
+    debug_assert!(right_any.exact_pop.is_some());
+
+    let left_frontier =
+        frontier_pair_slots(prog, windows, false, right_any);
+    let right_frontier =
+        frontier_pair_slots(prog, windows, true, left_any);
+    let window_count = S * C * C * C;
+    let mut possible2 = vec![0_u64; window_count];
+    let mut pending = vec![0_u64; window_count];
+    let mut q = VecDeque::<usize>::new();
+    let mut trans = [[None; C]; S];
+
+    for ((st, co), &(print, shift, tr)) in prog.iter() {
+        trans[st as usize][co as usize] =
+            Some((print as usize, shift, tr as usize));
+    }
+
+    let window_index =
+        |st: usize, scan: usize, left: usize, right: usize| {
+            (((st * C + scan) * C + left) * C) + right
+        };
+
+    let push = |st: usize,
+                scan: usize,
+                l2: usize,
+                left: usize,
+                right: usize,
+                r2: usize,
+                possible2: &mut [u64],
+                pending: &mut [u64],
+                q: &mut VecDeque<usize>| {
+        if windows.right[st][scan][left] & (1_u64 << right) == 0 {
+            return;
+        }
+
+        let pair = l2 * C + r2;
+        let bit = 1_u64 << pair;
+        let index = window_index(st, scan, left, right);
+        if possible2[index] & bit != 0 {
+            return;
+        }
+
+        possible2[index] |= bit;
+        let was_empty = pending[index] == 0;
+        pending[index] |= bit;
+        if was_empty {
+            q.push_back(index);
+        }
+    };
+
+    // Left frontier: `0 0 [scan] r1 r2`.
+    for st in 0..S {
+        for scan in 0..C {
+            let mut pairs = left_frontier[st][scan];
+            while pairs != 0 {
+                let pair = pairs.trailing_zeros() as usize;
+                pairs &= pairs - 1;
+                let r1 = pair / C;
+                let r2 = pair % C;
+                push(
+                    st,
+                    scan,
+                    0,
+                    0,
+                    r1,
+                    r2,
+                    &mut possible2,
+                    &mut pending,
+                    &mut q,
+                );
+            }
+
+            // Right frontier: `l2 l1 [scan] 0 0`.
+            let mut pairs = right_frontier[st][scan];
+            while pairs != 0 {
+                let pair = pairs.trailing_zeros() as usize;
+                pairs &= pairs - 1;
+                let l1 = pair / C;
+                let l2 = pair % C;
+                push(
+                    st,
+                    scan,
+                    l2,
+                    l1,
+                    0,
+                    0,
+                    &mut possible2,
+                    &mut pending,
+                    &mut q,
+                );
+            }
+        }
+    }
+
+    // Preserve the concrete initial radius-2 checkpoint explicitly.
+    push(0, 0, 0, 0, 0, 0, &mut possible2, &mut pending, &mut q);
+
+    while let Some(index) = q.pop_front() {
+        // Clear the pending bucket before propagating it.  If this propagation
+        // discovers another pair for the same window, `push` simply queues the
+        // window once more with only that new delta.
+        let mut checkpoint_pairs = core::mem::take(&mut pending[index]);
+
+        let right = index % C;
+        let rest = index / C;
+        let left = rest % C;
+        let rest = rest / C;
+        let scan = rest % C;
+        let st = rest / C;
+
+        let Some((print, shift, child_st)) = trans[st][scan] else {
+            continue;
+        };
+
+        while checkpoint_pairs != 0 {
+            let checkpoint = checkpoint_pairs.trailing_zeros() as usize;
+            checkpoint_pairs &= checkpoint_pairs - 1;
+            let l2 = checkpoint / C;
+            let r2 = checkpoint % C;
+
+            if shift {
+                for return_st in 0..S {
+                    let mut outcomes = right_any.exact_pop_front_pairs(
+                        print, child_st, right, r2, return_st,
+                    );
+                    while outcomes != 0 {
+                        let outcome =
+                            outcomes.trailing_zeros() as usize;
+                        outcomes &= outcomes - 1;
+                        let pop_color = outcome / C;
+                        let final_front = outcome % C;
+                        push(
+                            return_st,
+                            print,
+                            l2,
+                            left,
+                            pop_color,
+                            final_front,
+                            &mut possible2,
+                            &mut pending,
+                            &mut q,
+                        );
+                    }
+                }
+            } else {
+                for return_st in 0..S {
+                    let mut outcomes = left_any.exact_pop_front_pairs(
+                        print, child_st, left, l2, return_st,
+                    );
+                    while outcomes != 0 {
+                        let outcome =
+                            outcomes.trailing_zeros() as usize;
+                        outcomes &= outcomes - 1;
+                        let pop_color = outcome / C;
+                        let final_front = outcome % C;
+                        push(
+                            return_st,
+                            print,
+                            final_front,
+                            pop_color,
+                            right,
+                            r2,
+                            &mut possible2,
+                            &mut pending,
+                            &mut q,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    Radius2Possible::from_pairs(possible2)
+}
+
+/// Tighten the local-window relation with the same-cell crossing reduced
+/// product.  The radius-one closure is intentionally run first on each round:
+/// when that cheaper relation removes a window, rebuilding radius-2 immediately
+/// would be wasted work because the excursion grammar must be recomputed on the
+/// smaller graph anyway.  Radius-2 therefore runs only after radius-one is
+/// stable for the current window graph.  Both refinements are monotone
+/// intersections, so this scheduling preserves the same joint fixed point.
+fn refine_windows_by_same_cell_crossings<
+    const S: usize,
+    const C: usize,
+>(
+    prog: &Prog<S, C>,
+    windows: &mut WinPossible<S, C>,
+) -> (
+    SideExcursions<S, C>,
+    SideExcursions<S, C>,
+    Radius2Possible<S, C>,
+) {
+    loop {
+        let left_any = side_excursions(prog, windows, false, false);
+        let right_any = side_excursions(prog, windows, true, false);
+
+        let crossing1 = same_cell_crossing_windows_radius1_from_blank(
+            prog, windows, &left_any, &right_any,
+        );
+        if windows.refine_crossing_reachability_relation(&crossing1) {
+            continue;
+        }
+
+        if C <= 8 {
+            let radius2 = same_cell_crossing_windows_radius2_from_blank(
+                prog, windows, &left_any, &right_any,
+            );
+            let crossing2 = radius2.radius1_projection();
+            if windows.refine_crossing_reachability_relation(&crossing2)
+            {
+                continue;
+            }
+            return (left_any, right_any, radius2);
+        }
+
+        return (left_any, right_any, Radius2Possible::disabled());
+    }
+}
+
+/// Close same-cell crossings and whole-side reachability together.  This is
+/// used both for the initial forward relation and after an ordered-prefix
+/// domain removes local windows, so radius-2/JointShort feedback reaches the
+/// same reduced-product fixed point instead of using a stale radius-2 table.
+fn refine_windows_by_crossings_and_sides<
+    const S: usize,
+    const C: usize,
+>(
+    prog: &Prog<S, C>,
+    windows: &mut WinPossible<S, C>,
+) -> (
+    SidePossible<S, C>,
+    SideExcursions<S, C>,
+    SideExcursions<S, C>,
+    Radius2Possible<S, C>,
+) {
+    loop {
+        let (left_any, right_any, radius2) =
+            refine_windows_by_same_cell_crossings(prog, windows);
+        let sides = prog.side_possible_from_blank(windows);
+        if !windows.refine_side_reachability_relation(&sides) {
+            return (sides, left_any, right_any, radius2);
+        }
+    }
 }
 
 /// Independent per-color forward abstraction of capped counts strictly beyond
@@ -14920,19 +15875,22 @@ fn joint_blank_status_from_blank<const S: usize, const C: usize>(
     possible
 }
 
-fn blank_side_possible_from_blank<const S: usize, const C: usize>(
+fn blank_side_possible_from_blank_with_any<
+    const S: usize,
+    const C: usize,
+>(
     prog: &Prog<S, C>,
     windows: &WinPossible<S, C>,
+    left_any: &SideExcursions<S, C>,
+    right_any: &SideExcursions<S, C>,
 ) -> BlankSidePossible<S, C> {
     let left_clean = side_excursions(prog, windows, false, true);
     let right_clean = side_excursions(prog, windows, true, true);
-    let left_any = side_excursions(prog, windows, false, false);
-    let right_any = side_excursions(prog, windows, true, false);
 
     let left_half =
-        halfblank_slots(prog, windows, false, &left_clean, &right_any);
+        halfblank_slots(prog, windows, false, &left_clean, right_any);
     let right_half =
-        halfblank_slots(prog, windows, true, &right_clean, &left_any);
+        halfblank_slots(prog, windows, true, &right_clean, left_any);
     let joint = joint_blank_status_from_blank(prog, windows);
 
     BlankSidePossible {
@@ -14940,6 +15898,17 @@ fn blank_side_possible_from_blank<const S: usize, const C: usize>(
         right_half,
         joint,
     }
+}
+
+fn blank_side_possible_from_blank<const S: usize, const C: usize>(
+    prog: &Prog<S, C>,
+    windows: &WinPossible<S, C>,
+) -> BlankSidePossible<S, C> {
+    let left_any = side_excursions(prog, windows, false, false);
+    let right_any = side_excursions(prog, windows, true, false);
+    blank_side_possible_from_blank_with_any(
+        prog, windows, &left_any, &right_any,
+    )
 }
 
 fn scc_from_reach<const S: usize>(
@@ -15380,10 +16349,10 @@ impl<const S: usize, const C: usize> Prog<S, C> {
         }
 
         let (forbid_left, forbid_right) = self.shift_side_forbidden();
-        let windows =
+        let mut windows =
             self.win_possible_from_blank(&forbid_left, &forbid_right);
-        let left_any = side_excursions(self, &windows, false, false);
-        let right_any = side_excursions(self, &windows, true, false);
+        let (left_any, right_any, _) =
+            refine_windows_by_same_cell_crossings(self, &mut windows);
 
         let frontiers =
             slots.iter().any(|&(_, color)| color == 0).then(|| {
