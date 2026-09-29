@@ -493,7 +493,7 @@ fn test_deciders_slow() {
 
 /**************************************/
 
-const BKW_8: usize = 50;
+const BKW_8: usize = 1000;
 const CPS_8: usize = 21;
 const FAR_8: usize = 6;
 
