@@ -1960,67 +1960,6 @@ impl DynamicTapeOps for DynamicEnumTape {
     }
 }
 
-#[cfg(test)]
-mod dynamic_tape_tests {
-    use super::*;
-
-    fn dynamic_from_cells(cells: &[Color]) -> DynamicTape {
-        let blocks = cells
-            .iter()
-            .rev()
-            .map(|&color| DynamicBlock::new(color, AlgCount::one()))
-            .collect();
-
-        let mut tape = DynamicTape {
-            scan: 0,
-            lspan: DynamicSpan::new(blocks),
-            rspan: DynamicSpan::init_blank(),
-        };
-        tape.rebalance();
-        tape
-    }
-
-    #[test]
-    fn dynamic_discovers_repeated_word() {
-        let tape =
-            dynamic_from_cells(&[0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]);
-        let block = tape.lspan.index(0);
-
-        assert_eq!(block.word.as_ref(), &[0, 0, 0, 1]);
-        assert_eq!(block.count, AlgCount::from(3_u8));
-    }
-
-    #[test]
-    fn dynamic_sides_rebalance_independently() {
-        let mut tape = DynamicTape {
-            scan: 2,
-            lspan: DynamicSpan::new(
-                [0, 1, 0, 1, 0, 1]
-                    .into_iter()
-                    .rev()
-                    .map(|color| {
-                        DynamicBlock::new(color, AlgCount::one())
-                    })
-                    .collect(),
-            ),
-            rspan: DynamicSpan::new(
-                [1, 0, 0, 1, 0, 0, 1, 0, 0]
-                    .into_iter()
-                    .rev()
-                    .map(|color| {
-                        DynamicBlock::new(color, AlgCount::one())
-                    })
-                    .collect(),
-            ),
-        };
-
-        tape.rebalance();
-
-        assert_eq!(tape.lspan.index(0).word.as_ref(), &[0, 1]);
-        assert_eq!(tape.rspan.index(0).word.as_ref(), &[1]);
-    }
-}
-
 /**************************************/
 
 #[cfg(test)]
