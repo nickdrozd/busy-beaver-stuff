@@ -2,7 +2,7 @@
 #![expect(clippy::used_underscore_items, clippy::needless_for_each)]
 use rayon::prelude::*;
 
-use tm::{Goal, Prog, Steps};
+use tm::{Goal, Instr, Prog, Steps, instrs::Parse as _};
 
 pub mod check;
 pub mod harvesters;
@@ -40,6 +40,95 @@ fn get_goal(goal: u8) -> Option<Goal> {
 }
 
 /**************************************/
+
+macro_rules! assert_visited {
+    ( $instrs:literal => [
+        $steps:expr,
+        $total:expr,
+        [ $( $instr:literal => $visited:expr ),* $(,)? ],
+        $(,)?
+    ] ) => {{
+        let (total, by_instr) =
+            Visited::<$instrs, $instrs>::run_instrs::<$instrs>(
+                $steps,
+                &Visited::new,
+            );
+
+        assert_visited!(
+            @check
+            $instrs.to_string(),
+            total,
+            by_instr,
+            $total,
+            [ $( $instr => $visited ),* ]
+        );
+    }};
+
+    ( $( ($states:literal, $colors:literal) => [
+        $( $goal:literal => [
+            $steps:expr,
+            $total:expr,
+            [ $( $instr:literal => $visited:expr ),* $(,)? ],
+            $(,)?
+        ] ),* $(,)?
+    ] ),* $(,)? ) => {{
+        rayon::scope(|scope| {
+            $(
+                $(
+                    scope.spawn(move |_| {
+                        let (total, by_instr) =
+                            Visited::<$states, $colors>::run_params(
+                                get_goal($goal),
+                                $steps,
+                                &Visited::new,
+                            );
+
+                        assert_visited!(
+                            @check
+                            format!("(({}, {}), {})", $states, $colors, $goal),
+                            total,
+                            by_instr,
+                            $total,
+                            [ $( $instr => $visited ),* ]
+                        );
+                    });
+                )*
+            )*
+        });
+    }};
+
+    (@check
+        $label:expr,
+        $total:expr,
+        $by_instr:expr,
+        $expected_total:expr,
+        [ $( $instr:literal => $visited:expr ),* $(,)? ]
+    ) => {{
+        let expected = std::collections::HashMap::<Instr, u64>::from([
+            $( (Instr::read($instr), $visited), )*
+        ]);
+
+        if $total != $expected_total || $by_instr != expected {
+            let mut actual = $by_instr.into_iter().collect::<Vec<_>>();
+            actual.sort_by_key(|(_, visited)| *visited);
+
+            let actual = actual
+                .into_iter()
+                .map(|(instr, visited)| {
+                    format!("    \"{}\" => {},", instr.show(), show_num(visited))
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            panic!(
+                "{} visited mismatch; actual:\n{},\n[\n{}\n]",
+                $label,
+                show_num($total),
+                actual,
+            );
+        }
+    }};
+}
 
 macro_rules! assert_holdouts {
     ( $( ($states:literal, $colors:literal) => [ $( $goal:literal => ( $pipeline:ident, $steps:expr, ( $first:tt, $visited:expr ) ) ),* $(,)? ] ),* $(,)? ) => {{
@@ -256,6 +345,27 @@ macro_rules! assert_bkw {
     }};
 }
 
+#[expect(clippy::string_slice, clippy::sliced_string_as_bytes)]
+fn show_num(n: u64) -> String {
+    let s = n.to_string();
+    let first = s.len() % 3;
+    let mut out = String::new();
+
+    if first != 0 {
+        out.push_str(&s[..first]);
+    }
+
+    for chunk in s[first..].as_bytes().chunks(3) {
+        if !out.is_empty() {
+            out.push('_');
+        }
+
+        out.push_str(core::str::from_utf8(chunk).unwrap());
+    }
+
+    out
+}
+
 /**************************************/
 
 fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
@@ -438,67 +548,12 @@ fn test_quasihalt() {
 
 /**************************************/
 
-fn _5_2_0(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_halt(3).is_refuted()
-}
-
-fn _5_2_1(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_spinout(3).is_refuted()
-}
-
-fn _5_2_2(prog: &Prog<5, 2>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_blank(3).is_refuted()
-}
-
-fn _3_3_1(prog: &Prog<3, 3>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_spinout(3).is_refuted()
-}
-
-fn _3_3_2(prog: &Prog<3, 3>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_blank(3).is_refuted()
-}
-
-fn _2_5_0(prog: &Prog<2, 5>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_halt(3).is_refuted()
-}
-
-fn _2_5_1(prog: &Prog<2, 5>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_spinout(3).is_refuted()
-}
-
-fn _2_5_2(prog: &Prog<2, 5>, _: &mut PassConfig<'_>) -> bool {
-    !prog.is_complete() || prog.bkw_cant_blank(3).is_refuted()
-}
-
-fn test_deciders_slow() {
-    println!("deciders slow");
-
-    assert_holdouts![
-        (5, 2) => [
-            0 => (_5_2_0, 700, (1_402_373, 90_676_712)),
-            1 => (_5_2_1, TREE_LIM, (2_994_086, 180_764_612)),
-            2 => (_5_2_2, TREE_LIM, (9_700_355, 486_399_920)),
-        ],
-        (3, 3) => [
-            1 => (_3_3_1, 3_000, (1_756_509, 50_932_166)),
-            2 => (_3_3_2, 3_000, (2_641_776, 123_182_486)),
-        ],
-        (2, 5) => [
-            0 => (_2_5_0, TREE_LIM, (4_274_548, 69_763_571)),
-            1 => (_2_5_1, TREE_LIM, (14_438_861, 162_767_964)),
-            2 => (_2_5_2, TREE_LIM, (9_675_499, 366_717_085)),
-        ],
-    ];
-}
-
-/**************************************/
-
 const BKW_8: usize = 1000;
 const CPS_8: usize = 21;
 const FAR_8: usize = 6;
 
-fn test_8_instr() {
-    println!("8 instrs");
+fn test_pipeline_8() {
+    println!("pipeline 8 instrs");
 
     assert_holdouts![
         8 => [
@@ -513,23 +568,220 @@ fn test_8_instr() {
     ];
 }
 
-fn test_9_instr() {
-    println!("9 instrs");
+fn test_enum_8() {
+    println!("enum 8 instrs");
 
-    assert_eq!(
-        Visited::<9, 9>::run_instrs::<9>(1000, &Visited::new),
-        777_451_944_058,
-    );
+    assert_visited![
+        8 => [
+            500,
+            12_835_863_274,
+            [
+                "0LB" => 149_873_236,
+                "0LA" => 152_344_902,
+                "1LB" => 239_821_500,
+                "1LA" => 292_240_522,
+                "0RC" => 672_783_943,
+                "0LC" => 704_776_101,
+                "1RC" => 799_490_953,
+                "2LB" => 864_219_877,
+                "1LC" => 1_090_488_713,
+                "2LA" => 1_180_096_348,
+                "2RC" => 2_845_087_951,
+                "2LC" => 3_844_639_228,
+            ],
+        ]
+    ];
+}
+
+fn test_enum_9() {
+    println!("enum 9 instrs");
+
+    assert_visited![
+        9 => [
+            1000,
+            777_451_944_058,
+            [
+                "0LB" => 7_866_447_610,
+                "0LA" => 8_063_846_081,
+                "1LB" => 12_423_565_371,
+                "1LA" => 15_332_496_471,
+                "0RC" => 39_098_051_860,
+                "0LC" => 41_041_631_526,
+                "1RC" => 46_319_757_671,
+                "2LB" => 49_275_058_835,
+                "1LC" => 62_674_393_651,
+                "2LA" => 67_891_560_224,
+                "2RC" => 182_986_656_496,
+                "2LC" => 244_478_478_262,
+            ],
+        ]
+    ];
 }
 
 /**************************************/
 
-const FAST: &[fn()] = &[test_deciders, test_quasihalt];
+fn test_enum_p() {
+    println!("enum params");
 
-const SLOW: &[fn()] = &[test_deciders_slow, test_9_instr];
+    assert_visited![
+        (5, 2) => [
+            0 => [
+                700,
+                90_676_712,
+                [
+                    "0LB" => 1_875_871,
+                    "0LA" => 2_278_046,
+                    "1LB" => 4_335_648,
+                    "1LA" => 7_799_522,
+                    "0LC" => 9_937_507,
+                    "0RC" => 15_120_269,
+                    "1RC" => 22_976_562,
+                    "1LC" => 26_353_287,
+                ],
+            ],
+            1 => [
+                TREE_LIM,
+                180_764_612,
+                [
+                    "0LA" => 4_319_768,
+                    "0LB" => 9_802_638,
+                    "1LA" => 15_748_226,
+                    "0LC" => 16_712_156,
+                    "1LB" => 22_420_637,
+                    "0RC" => 28_256_467,
+                    "1RC" => 39_540_818,
+                    "1LC" => 43_963_902,
+                ],
+            ],
+            2 => [
+                TREE_LIM,
+                486_399_920,
+                [
+                    "0LB" => 8_818_482,
+                    "0LA" => 11_858_029,
+                    "1LB" => 21_513_613,
+                    "1LA" => 43_586_149,
+                    "0LC" => 50_093_900,
+                    "0RC" => 79_933_668,
+                    "1RC" => 127_398_399,
+                    "1LC" => 143_197_680,
+                ],
+            ],
+        ],
+        (3, 3) => [
+            1 => [
+                3_000,
+                50_932_166,
+                [
+                    "0LA" => 883_989,
+                    "0LC" => 1_450_831,
+                    "0RC" => 2_234_664,
+                    "1RC" => 2_260_643,
+                    "1LC" => 3_132_895,
+                    "1LA" => 3_587_666,
+                    "2RC" => 3_769_678,
+                    "0LB" => 3_927_972,
+                    "2LC" => 4_402_660,
+                    "2LA" => 5_467_929,
+                    "1LB" => 9_831_302,
+                    "2LB" => 9_981_937,
+                ],
+            ],
+            2 => [
+                3_000,
+                123_182_486,
+                [
+                    "0LB" => 2_921_470,
+                    "0LA" => 3_237_014,
+                    "0RC" => 4_061_211,
+                    "0LC" => 5_779_297,
+                    "1LB" => 8_182_973,
+                    "2LB" => 8_374_131,
+                    "1RC" => 9_050_647,
+                    "1LA" => 14_014_227,
+                    "2RC" => 14_190_918,
+                    "1LC" => 15_595_636,
+                    "2LC" => 17_823_691,
+                    "2LA" => 19_951_271,
+                ],
+            ],
+        ],
+        (2, 5) => [
+            0 => [
+                TREE_LIM,
+                69_763_571,
+                [
+                    "0LA" => 1_607_731,
+                    "0LB" => 1_879_647,
+                    "1LB" => 4_114_959,
+                    "1LA" => 4_312_300,
+                    "2LB" => 17_625_217,
+                    "2LA" => 40_223_717,
+                ],
+            ],
+            1 => [
+                TREE_LIM,
+                162_767_964,
+                [
+                    "0LB" => 12_569_613,
+                    "1LB" => 29_094_418,
+                    "2LB" => 121_103_933,
+                ],
+            ],
+            2 => [
+                TREE_LIM,
+                366_717_085,
+                [
+                    "0LA" => 6_684_597,
+                    "0LB" => 7_116_675,
+                    "1LB" => 19_479_064,
+                    "1LA" => 20_307_890,
+                    "2LB" => 84_655_887,
+                    "2LA" => 228_472_972,
+                ],
+            ],
+        ],
+        (6, 2) => [
+            0 => [
+                TREE_LIM,
+                24_415_867_910,
+                [
+                    "0LB" => 379_620_882,
+                    "0LA" => 475_137_678,
+                    "1LB" => 888_336_991,
+                    "1LA" => 1_578_696_463,
+                    "0LC" => 2_717_127_448,
+                    "0RC" => 4_591_613_661,
+                    "1RC" => 6_606_298_097,
+                    "1LC" => 7_179_036_690,
+                ],
+            ],
+        ],
+        (2, 6) => [
+            0 => [
+                TREE_LIM,
+                22_923_400_494,
+                [
+                    "0LA" => 445_738_126,
+                    "0LB" => 450_386_123,
+                    "1LB" => 963_457_305,
+                    "1LA" => 1_088_214_558,
+                    "2LB" => 5_699_902_127,
+                    "2LA" => 14_275_702_255,
+                ],
+            ],
+        ],
+    ];
+}
+
+/**************************************/
+
+const FAST: &[fn()] = &[test_bkw, test_deciders, test_quasihalt];
+
+const SLOW: &[fn()] = &[test_enum_p, test_enum_9];
 
 fn main() {
-    test_bkw();
+    test_enum_8();
 
     if !std::env::args().any(|x| x == "--all") {
         return;
@@ -539,7 +791,7 @@ fn main() {
 
     test_holdouts();
 
-    test_8_instr();
+    test_pipeline_8();
 
     if !std::env::args().any(|x| x == "--extra") {
         return;

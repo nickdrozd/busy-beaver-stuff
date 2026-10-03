@@ -1,4 +1,6 @@
-use tm::Prog;
+use std::collections::HashMap as Dict;
+
+use tm::{Instr, Prog};
 
 use crate::tree::{Harvester, PassConfig, TreeResult};
 
@@ -21,10 +23,16 @@ impl<const s: usize, const c: usize> Harvester<s, c> for Visited<s, c> {
         // prog.print();
     }
 
-    type Output = u64;
+    type Output = (u64, Dict<Instr, u64>);
 
     fn combine(results: &TreeResult<Self>) -> Self::Output {
-        results.values().map(|harv| harv.visited).sum()
+        let by_instr = results
+            .iter()
+            .map(|(&instr, harv)| (instr, harv.visited))
+            .collect::<Dict<_, _>>();
+        let visited = by_instr.values().sum();
+
+        (visited, by_instr)
     }
 }
 
