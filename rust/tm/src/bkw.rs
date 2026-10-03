@@ -126,15 +126,6 @@ struct WinPossible<const S: usize, const C: usize> {
     left: [[[u64; C]; C]; S],
     any: [[bool; C]; S],
 
-    // Two-bit masks of possible total nonblank-cell parities.  The exact
-    // table retains `(state, left, scan, right)` correlation; the three
-    // aggregate tables mirror `right`/`left`/`any` so queries with unknown
-    // neighbors remain constant-time. Bit 0 is even, bit 1 is odd.
-    parity: Vec<u8>,
-    parity_right: [[[u8; C]; C]; S],
-    parity_left: [[[u8; C]; C]; S],
-    parity_any: [[u8; C]; S],
-
     // Four-bit masks of possible `(left nonblank parity, right nonblank
     // parity)` combinations.  Combination `lp | (rp << 1)` is represented by
     // bit `1 << combination`.  Keeping the two side parities jointly is
@@ -166,23 +157,13 @@ struct WinPossible<const S: usize, const C: usize> {
 }
 
 impl<const S: usize, const C: usize> WinPossible<S, C> {
-    const fn parity_index(
+    const fn window_index(
         st: usize,
         scan: usize,
         left: usize,
         right: usize,
     ) -> usize {
         (((st * C) + scan) * C + left) * C + right
-    }
-
-    fn exact_parity_mask(
-        &self,
-        st: usize,
-        scan: usize,
-        left: usize,
-        right: usize,
-    ) -> u8 {
-        self.parity[Self::parity_index(st, scan, left, right)]
     }
 
     fn exact_side_parity_mask(
@@ -192,7 +173,7 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         left: usize,
         right: usize,
     ) -> u8 {
-        self.side_parity[Self::parity_index(st, scan, left, right)]
+        self.side_parity[Self::window_index(st, scan, left, right)]
     }
 
     fn exact_side_mod3_mask(
@@ -202,7 +183,7 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         left: usize,
         right: usize,
     ) -> u16 {
-        self.side_mod3[Self::parity_index(st, scan, left, right)]
+        self.side_mod3[Self::window_index(st, scan, left, right)]
     }
 
     fn exact_color_parity_mask(
@@ -212,7 +193,7 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         left: usize,
         right: usize,
     ) -> u64 {
-        self.color_parity[Self::parity_index(st, scan, left, right)]
+        self.color_parity[Self::window_index(st, scan, left, right)]
     }
 
     const fn color_parity_enabled() -> bool {
@@ -699,15 +680,11 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
     /// Exact parity/residue masks are retained only for reachable windows.
     /// Their one-neighbor/unknown-neighbor aggregates must be rebuilt as well;
     /// otherwise a removed exact window could still witness a later query via
-    /// `parity_right`, `side_mod3_any`, etc.
+    /// `side_parity_right`, `side_mod3_any`, etc.
     fn refine_reachability(&mut self, sides: &SidePossible<S, C>) {
         self.right = [[[0; C]; C]; S];
         self.left = [[[0; C]; C]; S];
         self.any = [[false; C]; S];
-
-        self.parity_right = [[[0; C]; C]; S];
-        self.parity_left = [[[0; C]; C]; S];
-        self.parity_any = [[0; C]; S];
 
         self.side_parity_right = [[[0; C]; C]; S];
         self.side_parity_left = [[[0; C]; C]; S];
@@ -726,13 +703,12 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
                 for left in 0..C {
                     for right in 0..C {
                         let index =
-                            Self::parity_index(st, scan, left, right);
+                            Self::window_index(st, scan, left, right);
 
                         if !sides
                             .window(st, scan, left, right)
                             .reachable
                         {
-                            self.parity[index] = 0;
                             self.side_parity[index] = 0;
                             self.side_mod3[index] = 0;
                             self.color_parity[index] = 0;
@@ -742,11 +718,6 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
                         self.right[st][scan][left] |= 1_u64 << right;
                         self.left[st][scan][right] |= 1_u64 << left;
                         self.any[st][scan] = true;
-
-                        let parity = self.parity[index];
-                        self.parity_right[st][scan][left] |= parity;
-                        self.parity_left[st][scan][right] |= parity;
-                        self.parity_any[st][scan] |= parity;
 
                         let side_parity = self.side_parity[index];
                         self.side_parity_right[st][scan][left] |=
@@ -4332,11 +4303,6 @@ where
     let left_fresh_zero = !writes_blank_on_r;
     let right_fresh_zero = !writes_blank_on_l;
 
-    // Sound state/nonblank-count parity invariant. This is especially useful
-    // after the fresh-zero rules turn a formerly unknown tape end into `0+`,
-    // making the total nonblank parity exact.
-    let nonblank_parity = prog.nonblank_parity_from_blank();
-
     let mut configs = get_configs(slots);
 
     // Apply the cheap static side filters before constructing the window
@@ -4354,9 +4320,14 @@ where
             )
     });
 
-    configs.retain(|Config { state, tape }| {
-        nonblank_parity_possible(*state, tape, &nonblank_parity)
-    });
+    // The cheap state-only parity filter can avoid all forward-domain work.
+    // Later checks use the stronger window-conditioned side-parity pairs.
+    {
+        let nonblank_parity = prog.nonblank_parity_from_blank();
+        configs.retain(|Config { state, tape }| {
+            nonblank_parity_possible(*state, tape, &nonblank_parity)
+        });
+    }
 
     if configs.is_empty() {
         return Refuted(0);
@@ -4408,21 +4379,21 @@ where
     // `(state, scanned color)` pair must still occur in at least one reachable
     // window after the cheaper side filters above have canonicalized the tape.
     configs.retain(|Config { state, tape }| {
-        window_nonblank_parity_possible(*state, tape, &win_possible)
-            && window_side_nonblank_parity_possible(
+        window_side_nonblank_parity_possible(
+            *state,
+            tape,
+            &win_possible,
+        ) && window_side_nonblank_mod3_possible(
+            *state,
+            tape,
+            &win_possible,
+        ) && window_color_parity_possible(*state, tape, &win_possible)
+            && tape.obeys_state_side(
                 *state,
-                tape,
                 &win_possible,
+                &side_possible,
             )
-            && window_side_nonblank_mod3_possible(
-                *state,
-                tape,
-                &win_possible,
-            )
-            && window_color_parity_possible(*state, tape, &win_possible)
-            && window_possible(*state, tape, &win_possible)
             && window_radius2_possible(*state, tape, &radius2_possible)
-            && tape.obeys_state_side(*state, &side_possible)
             && tape
                 .obeys_blank_side_possible(*state, &blank_side_possible)
             && tape.obeys_tail_presence(
@@ -4442,7 +4413,7 @@ where
     // these rounds because SidePossible/SidePrefixPossible consult only
     // `right/left/any`.  If the relation actually shrinks, rebuild all
     // aggregates and cheap summaries exactly once at the final fixed point.
-    let mut prefix_refined_windows = false;
+    let mut windows_refined = false;
     // Same-witness whole-side parity is enabled only when the initial target
     // frontier contains an unknown tape end.  Fully finite blank targets use
     // the original shape-only joint domain, where this refinement has not added
@@ -4451,14 +4422,13 @@ where
         config.tape.lspan.end == TapeEnd::Unknown
             || config.tape.rspan.end == TapeEnd::Unknown
     });
-    let mut crossing_dirty = false;
     let (
         side_prefix_possible,
         joint_short_possible,
-        joint_side_prefix_fixed,
+        joint_side_prefix_possible,
         joint_side_word_prefix_possible,
     ) = loop {
-        if crossing_dirty {
+        if windows_refined {
             let (sides, _, _, next_radius2) =
                 refine_windows_by_crossings_and_sides(
                     prog,
@@ -4483,8 +4453,7 @@ where
         if win_possible
             .refine_run_prefix_reachability_relation(&prefixes)
         {
-            prefix_refined_windows = true;
-            crossing_dirty = true;
+            windows_refined = true;
             continue;
         }
 
@@ -4498,8 +4467,7 @@ where
         if win_possible
             .refine_word_prefix_reachability_relation(&prefixes)
         {
-            prefix_refined_windows = true;
-            crossing_dirty = true;
+            windows_refined = true;
             continue;
         }
 
@@ -4518,8 +4486,7 @@ where
         );
         if win_possible.refine_joint_short_reachability_relation(&joint)
         {
-            prefix_refined_windows = true;
-            crossing_dirty = true;
+            windows_refined = true;
             continue;
         }
 
@@ -4541,16 +4508,12 @@ where
         if win_possible
             .refine_joint_side_prefix_reachability_relation(&joint_side)
         {
-            prefix_refined_windows = true;
-            crossing_dirty = true;
+            windows_refined = true;
             continue;
         }
 
         configs.retain(|Config { state, tape }| {
-            tape.obeys_joint_side_prefix_possible(
-                *state,
-                Some(&joint_side),
-            )
+            tape.obeys_joint_side_prefix_possible(*state, &joint_side)
         });
         if configs.is_empty() {
             return Refuted(0);
@@ -4561,8 +4524,7 @@ where
         if win_possible
             .refine_joint_side_word_reachability_relation(&joint_word)
         {
-            prefix_refined_windows = true;
-            crossing_dirty = true;
+            windows_refined = true;
             continue;
         }
 
@@ -4579,11 +4541,7 @@ where
         break (prefixes, joint, joint_side, joint_word);
     };
 
-    // Both sides can query the joint run relation, including targets and
-    // later predecessors with no exactly blank side.
-    let joint_side_prefix_possible = Some(joint_side_prefix_fixed);
-
-    if prefix_refined_windows {
+    if windows_refined {
         // Finalize every exact/aggregate table once.  `side_possible` was
         // computed on the already-prefix-refined relation, so this cannot
         // resurrect a removed exact window.
@@ -4600,33 +4558,28 @@ where
         // The smaller final window graph can sharpen all of the cheap filters
         // too, so recheck only the targets that survived their first pass.
         configs.retain(|Config { state, tape }| {
-            window_nonblank_parity_possible(*state, tape, &win_possible)
-                && window_side_nonblank_parity_possible(
-                    *state,
-                    tape,
-                    &win_possible,
-                )
-                && window_side_nonblank_mod3_possible(
-                    *state,
-                    tape,
-                    &win_possible,
-                )
-                && window_color_parity_possible(
-                    *state,
-                    tape,
-                    &win_possible,
-                )
-                && window_possible(*state, tape, &win_possible)
-                && window_radius2_possible(
-                    *state,
-                    tape,
-                    &radius2_possible,
-                )
-                && tape.obeys_state_side(*state, &side_possible)
-                && tape.obeys_blank_side_possible(
-                    *state,
-                    &blank_side_possible,
-                )
+            window_side_nonblank_parity_possible(
+                *state,
+                tape,
+                &win_possible,
+            ) && window_side_nonblank_mod3_possible(
+                *state,
+                tape,
+                &win_possible,
+            ) && window_color_parity_possible(
+                *state,
+                tape,
+                &win_possible,
+            ) && tape.obeys_state_side(
+                *state,
+                &win_possible,
+                &side_possible,
+            ) && window_radius2_possible(
+                *state,
+                tape,
+                &radius2_possible,
+            ) && tape
+                .obeys_blank_side_possible(*state, &blank_side_possible)
                 && tape.obeys_tail_presence(
                     *state,
                     &color_tail_count,
@@ -4771,7 +4724,7 @@ where
             &joint_side_triple_possible,
             &side_prefix_possible,
             &joint_short_possible,
-            joint_side_prefix_possible.as_ref(),
+            &joint_side_prefix_possible,
             &joint_side_word_prefix_possible,
             &blank_side_possible,
             &color_tail_count,
@@ -4782,7 +4735,6 @@ where
             right_fresh_zero,
             left_forced_blank,
             right_forced_blank,
-            &nonblank_parity,
         ) {
             Err(err) => return err,
             Ok(stepped) => stepped,
@@ -4927,27 +4879,6 @@ fn get_indef(
     Ok(Some((steps, next_config)))
 }
 
-fn window_possible<const s: usize, const c: usize>(
-    state: State,
-    tape: &Tape,
-    win_possible: &WinPossible<s, c>,
-) -> bool {
-    let st = state as usize;
-    let sc = tape.scan as usize;
-
-    let l = tape.left_neighbor_color().map(|x| x as usize);
-    let r = tape.right_neighbor_color().map(|x| x as usize);
-
-    match (l, r) {
-        (Some(lc), Some(rc)) => {
-            (win_possible.right[st][sc][lc] & (1_u64 << rc)) != 0
-        },
-        (Some(lc), None) => win_possible.right[st][sc][lc] != 0,
-        (None, Some(rc)) => win_possible.left[st][sc][rc] != 0,
-        (None, None) => win_possible.any[st][sc],
-    }
-}
-
 fn window_radius2_possible<const S: usize, const C: usize>(
     state: State,
     tape: &Tape,
@@ -4961,7 +4892,7 @@ fn window_radius2_possible<const S: usize, const C: usize>(
     let right2 = tape.right_second_neighbor_color().map(usize::from);
 
     // With neither second neighbor fixed, radius-2 adds nothing beyond the
-    // ordinary local-window test that is already run immediately before this.
+    // ordinary local-window test inside `obeys_state_side`.
     if left2.is_none() && right2.is_none() {
         return true;
     }
@@ -5015,37 +4946,6 @@ fn nonblank_parity_possible<const s: usize>(
     let st = state as usize;
 
     (parity.possible[st] & tape.nonblank_parity_mask()) != 0
-}
-
-fn window_nonblank_parity_possible<const S: usize, const C: usize>(
-    state: State,
-    tape: &Tape,
-    possible: &WinPossible<S, C>,
-) -> bool {
-    let required = tape.nonblank_parity_mask();
-
-    // Unknown ends or indefinite nonblank runs permit either parity, so this
-    // invariant cannot prune them. Avoid even the small window lookup in the
-    // common halt-target case.
-    if required == 0b11 {
-        return true;
-    }
-
-    let st = state as usize;
-    let sc = tape.scan as usize;
-    let left = tape.left_neighbor_color().map(usize::from);
-    let right = tape.right_neighbor_color().map(usize::from);
-
-    let parity_mask = match (left, right) {
-        (Some(left), Some(right)) => {
-            possible.exact_parity_mask(st, sc, left, right)
-        },
-        (Some(left), None) => possible.parity_right[st][sc][left],
-        (None, Some(right)) => possible.parity_left[st][sc][right],
-        (None, None) => possible.parity_any[st][sc],
-    };
-
-    (parity_mask & required) != 0
 }
 
 fn window_side_nonblank_parity_possible<
@@ -5193,7 +5093,7 @@ fn step_instrs<
     joint_side_triple_possible: &JointSideTriplePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
     joint_short_possible: &JointShortPossible<s, c>,
-    joint_side_prefix_possible: Option<&JointSidePrefixPossible<s, c>>,
+    joint_side_prefix_possible: &JointSidePrefixPossible<s, c>,
     joint_side_word_prefix_possible: &JointSideWordPrefixPossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
@@ -5204,7 +5104,6 @@ fn step_instrs<
     right_fresh_zero: bool,
     left_forced_blank: bool,
     right_forced_blank: bool,
-    nonblank_parity: &NonblankParity<s>,
     stepped: &mut Configs,
 ) -> Result<(), BackwardResult> {
     for (color, shift, state) in instrs {
@@ -5266,30 +5165,24 @@ fn step_instrs<
             continue;
         }
 
-        if !nonblank_parity_possible(state, &tape, nonblank_parity)
-            || !window_nonblank_parity_possible(
-                state,
-                &tape,
-                win_possible,
-            )
-            || !window_side_nonblank_parity_possible(
-                state,
-                &tape,
-                win_possible,
-            )
-            || !window_side_nonblank_mod3_possible(
-                state,
-                &tape,
-                win_possible,
-            )
-            || !window_color_parity_possible(state, &tape, win_possible)
-        {
+        if !window_side_nonblank_parity_possible(
+            state,
+            &tape,
+            win_possible,
+        ) || !window_side_nonblank_mod3_possible(
+            state,
+            &tape,
+            win_possible,
+        ) || !window_color_parity_possible(
+            state,
+            &tape,
+            win_possible,
+        ) {
             continue;
         }
 
-        if !window_possible(state, &tape, win_possible)
+        if !tape.obeys_state_side(state, win_possible, side_possible)
             || !window_radius2_possible(state, &tape, radius2_possible)
-            || !tape.obeys_state_side(state, side_possible)
             || !tape.obeys_state_triples(state, side_triple_possible)
             || !tape.obeys_joint_state_triples(
                 state,
@@ -5354,7 +5247,7 @@ fn step_configs<
     joint_side_triple_possible: &JointSideTriplePossible<s, c>,
     side_prefix_possible: &SidePrefixPossible<s, c>,
     joint_short_possible: &JointShortPossible<s, c>,
-    joint_side_prefix_possible: Option<&JointSidePrefixPossible<s, c>>,
+    joint_side_prefix_possible: &JointSidePrefixPossible<s, c>,
     joint_side_word_prefix_possible: &JointSideWordPrefixPossible<s, c>,
     blank_side_possible: &BlankSidePossible<s, c>,
     color_tail_count: &ColorTailCountPossible<s, c>,
@@ -5365,7 +5258,6 @@ fn step_configs<
     right_fresh_zero: bool,
     left_forced_blank: bool,
     right_forced_blank: bool,
-    nonblank_parity: &NonblankParity<s>,
 ) -> Result<Configs, BackwardResult> {
     let mut stepped = Configs::new();
 
@@ -5403,7 +5295,6 @@ fn step_configs<
                 right_fresh_zero,
                 left_forced_blank,
                 right_forced_blank,
-                nonblank_parity,
                 &mut stepped,
             )?;
         }
@@ -5436,7 +5327,6 @@ fn step_configs<
                 right_fresh_zero,
                 left_forced_blank,
                 right_forced_blank,
-                nonblank_parity,
                 &mut stepped,
             )?;
         }
@@ -5465,7 +5355,6 @@ fn step_configs<
             right_fresh_zero,
             left_forced_blank,
             right_forced_blank,
-            nonblank_parity,
             &mut stepped,
         )?;
     }
@@ -5712,20 +5601,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             }};
         }
 
-        fn total_parity_mask(side_mask: u8, scan_nonblank: bool) -> u8 {
-            let mut bits = side_mask;
-            let mut out = 0_u8;
-            let scan = u8::from(scan_nonblank);
-            while bits != 0 {
-                let code = bits.trailing_zeros() as u8;
-                bits &= bits - 1;
-                let left = code & 1;
-                let right = (code >> 1) & 1;
-                out |= 1_u8 << (left ^ right ^ scan);
-            }
-            out
-        }
-
         const fn xor_side_parity_mask(side_mask: u8, xor: u8) -> u8 {
             let mut bits = side_mask;
             let mut out = 0_u8;
@@ -5774,10 +5649,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             right: [[[0; c]; c]; s],
             left: [[[0; c]; c]; s],
             any: [[false; c]; s],
-            parity: vec![0; s * c * c * c],
-            parity_right: [[[0; c]; c]; s],
-            parity_left: [[[0; c]; c]; s],
-            parity_any: [[0; c]; s],
             side_parity: vec![0; s * c * c * c],
             side_parity_right: [[[0; c]; c]; s],
             side_parity_left: [[[0; c]; c]; s],
@@ -5817,15 +5688,10 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             possible.left[st][sc][r] |= 1_u64 << l;
             possible.any[st][sc] = true;
 
-            let parity_index =
-                WinPossible::<s, c>::parity_index(st, sc, l, r);
-            let parity = total_parity_mask(fresh, sc != 0);
-            possible.parity[parity_index] |= parity;
-            possible.parity_right[st][sc][l] |= parity;
-            possible.parity_left[st][sc][r] |= parity;
-            possible.parity_any[st][sc] |= parity;
+            let window_index =
+                WinPossible::<s, c>::window_index(st, sc, l, r);
 
-            possible.side_parity[parity_index] |= fresh;
+            possible.side_parity[window_index] |= fresh;
             possible.side_parity_right[st][sc][l] |= fresh;
             possible.side_parity_left[st][sc][r] |= fresh;
             possible.side_parity_any[st][sc] |= fresh;
@@ -5916,7 +5782,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             mod3_processed[id] |= fresh;
 
             let residue_index =
-                WinPossible::<s, c>::parity_index(st, sc, l, r);
+                WinPossible::<s, c>::window_index(st, sc, l, r);
             possible.side_mod3[residue_index] |= fresh;
             possible.side_mod3_right[st][sc][l] |= fresh;
             possible.side_mod3_left[st][sc][r] |= fresh;
@@ -6015,7 +5881,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 color_processed[id] |= fresh;
 
                 let vector_index =
-                    WinPossible::<s, c>::parity_index(st, sc, l, r);
+                    WinPossible::<s, c>::window_index(st, sc, l, r);
                 possible.color_parity[vector_index] |= fresh;
                 possible.color_parity_right[st][sc][l] |= fresh;
                 possible.color_parity_left[st][sc][r] |= fresh;
@@ -10552,6 +10418,7 @@ impl Tape {
     fn obeys_state_side<const S: usize, const C: usize>(
         &self,
         state: State,
+        win_possible: &WinPossible<S, C>,
         possible: &SidePossible<S, C>,
     ) -> bool {
         struct SideRequirements<const C: usize> {
@@ -10666,12 +10533,26 @@ impl Tape {
 
         let st = state as usize;
         let sc = self.scan as usize;
+        let known_left = self.left_neighbor_color().map(usize::from);
+        let known_right = self.right_neighbor_color().map(usize::from);
+
+        // Reject unreachable local windows before compiling either span.
+        let reachable = match (known_left, known_right) {
+            (Some(left), Some(right)) => {
+                win_possible.right[st][sc][left] & (1_u64 << right) != 0
+            },
+            (Some(left), None) => win_possible.right[st][sc][left] != 0,
+            (None, Some(right)) => {
+                win_possible.left[st][sc][right] != 0
+            },
+            (None, None) => win_possible.any[st][sc],
+        };
+        if !reachable {
+            return false;
+        }
 
         let left_req = compile_span::<C>(&self.lspan);
         let right_req = compile_span::<C>(&self.rspan);
-
-        let known_left = self.left_neighbor_color().map(usize::from);
-        let known_right = self.right_neighbor_color().map(usize::from);
 
         let matches_window = |left: usize, right: usize| {
             let summary = possible.window(st, sc, left, right);
@@ -11344,7 +11225,7 @@ impl Tape {
     >(
         &self,
         state: State,
-        possible: Option<&JointSidePrefixPossible<S, C>>,
+        possible: &JointSidePrefixPossible<S, C>,
     ) -> bool {
         let mut requirements = SideMatchRequirements::default();
         self.obeys_joint_side_prefix_possible_cached(
@@ -11361,13 +11242,9 @@ impl Tape {
     >(
         &self,
         state: State,
-        possible: Option<&JointSidePrefixPossible<S, C>>,
+        possible: &JointSidePrefixPossible<S, C>,
         requirements: &mut SideMatchRequirements,
     ) -> bool {
-        let Some(possible) = possible else {
-            return true;
-        };
-
         let matches =
             |prefix, req: &RequirementSet, far_colors: u64| {
                 req.unconstrained
