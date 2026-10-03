@@ -1,4 +1,7 @@
-use core::fmt;
+use core::{
+    fmt,
+    hash::{Hash, Hasher},
+};
 use std::collections::hash_map::Entry;
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
@@ -142,16 +145,43 @@ fn cps_cant_reach(
     goal: Goal,
     configs: &mut Configs,
 ) -> bool {
-    // Level 0 is the legacy abstraction.  A reachable abstract goal is
-    // the only outcome that enables the next, strictly finer level.
-    for refinement_level in 0..=TAIL_SIG_REFINEMENTS.len() {
-        configs.refinement_level = refinement_level;
+    match goal {
+        Halt => {
+            cps_cant_reach_goal::<CPS_GOAL_HALT>(prog, rad, configs)
+        },
+        Blank => {
+            cps_cant_reach_goal::<CPS_GOAL_BLANK>(prog, rad, configs)
+        },
+        Spinout => {
+            cps_cant_reach_goal::<CPS_GOAL_SPINOUT>(prog, rad, configs)
+        },
+    }
+}
 
-        match cps_cant_reach_obs(prog, rad, goal, &mut NoObs, configs) {
-            CpsOutcome::Proved => return true,
-            CpsOutcome::Counterexample => {},
-            CpsOutcome::Inconclusive => return false,
-        }
+#[inline]
+fn cps_cant_reach_goal<const G: u8>(
+    prog: &impl GetInstr,
+    rad: Radius,
+    configs: &mut Configs,
+) -> bool {
+    macro_rules! try_level {
+        ($level:literal) => {
+            match cps_cant_reach_obs::<G, $level>(
+                prog, rad, &mut NoObs, configs,
+            ) {
+                CpsOutcome::Proved => return true,
+                CpsOutcome::Counterexample => {},
+                CpsOutcome::Inconclusive => return false,
+            }
+        };
+    }
+
+    try_level!(0);
+    if !TAIL_SIG_REFINEMENTS.is_empty() {
+        try_level!(1);
+    }
+    if TAIL_SIG_REFINEMENTS.len() >= 2 {
+        try_level!(2);
     }
 
     false
@@ -164,43 +194,49 @@ fn cps_cant_quasihalt(
     configs: &mut Configs,
     scratch: &mut QuasihaltScratch,
 ) -> bool {
-    // The same refinement ladder is applied to both a reachable halt and
-    // a surviving avoidable-state trap in the quasihalt graph.
-    for refinement_level in 0..=TAIL_SIG_REFINEMENTS.len() {
-        configs.refinement_level = refinement_level;
-        scratch.graph.reset();
+    macro_rules! try_level {
+        ($level:literal) => {{
+            scratch.graph.reset();
 
-        match cps_cant_reach_obs(
-            prog,
-            rad,
-            Halt,
-            &mut scratch.graph,
-            configs,
-        ) {
-            CpsOutcome::Proved => {},
-            CpsOutcome::Counterexample => continue,
-            CpsOutcome::Inconclusive => return false,
-        }
+            match cps_cant_reach_obs::<CPS_GOAL_HALT, $level>(
+                prog,
+                rad,
+                &mut scratch.graph,
+                configs,
+            ) {
+                CpsOutcome::Counterexample => {},
+                CpsOutcome::Inconclusive => return false,
+                CpsOutcome::Proved => {
+                    scratch.graph.dedup_edges();
 
-        scratch.graph.dedup_edges();
+                    if scratch.graph.cant_quasihalt_functional_fastpath(
+                        ignored_state,
+                        &mut scratch.analysis,
+                    ) == Some(true)
+                    {
+                        return true;
+                    }
 
-        // A positive functional result is final.  A negative result still
-        // goes through SCC refinement, which may reject a spurious monotone
-        // CPS cycle that cannot persist on fresh canonical-zero cells.
-        if scratch.graph.cant_quasihalt_functional_fastpath(
-            ignored_state,
-            &mut scratch.analysis,
-        ) == Some(true)
-        {
-            return true;
-        }
+                    if scratch
+                        .graph
+                        .cant_quasihalt_no_avoidable_state_cycle(
+                            ignored_state,
+                            &mut scratch.analysis,
+                        )
+                    {
+                        return true;
+                    }
+                },
+            }
+        }};
+    }
 
-        if scratch.graph.cant_quasihalt_no_avoidable_state_cycle(
-            ignored_state,
-            &mut scratch.analysis,
-        ) {
-            return true;
-        }
+    try_level!(0);
+    if !TAIL_SIG_REFINEMENTS.is_empty() {
+        try_level!(1);
+    }
+    if TAIL_SIG_REFINEMENTS.len() >= 2 {
+        try_level!(2);
     }
 
     false
@@ -208,33 +244,53 @@ fn cps_cant_quasihalt(
 
 /**************************************/
 
-const fn parity_lower_bound(nz: usize, odd: bool) -> usize {
+const CPS_GOAL_HALT: u8 = 0;
+const CPS_GOAL_BLANK: u8 = 1;
+const CPS_GOAL_SPINOUT: u8 = 2;
+
+const MAX_NONZERO_COUNT: NonzeroCount = 0x7fff;
+
+const fn parity_lower_bound(
+    nz: NonzeroCount,
+    odd: bool,
+) -> NonzeroCount {
+    let nz = if nz > MAX_NONZERO_COUNT {
+        MAX_NONZERO_COUNT
+    } else {
+        nz
+    };
     let nz_odd = nz & 1 != 0;
     if nz_odd == odd {
         nz
+    } else if nz == MAX_NONZERO_COUNT {
+        // At saturation, step down to the largest representable lower bound
+        // with the required parity. This only weakens the lower bound.
+        nz - 1
     } else {
-        nz.saturating_add(1)
+        nz + 1
     }
 }
 
-fn cps_cant_reach_obs(
+#[expect(clippy::cognitive_complexity)]
+fn cps_cant_reach_obs<const G: u8, const LEVEL: usize>(
     prog: &impl GetInstr,
     rad: Radius,
-    goal: Goal,
     obs: &mut impl CpsObs,
     configs: &mut Configs,
 ) -> CpsOutcome {
-    configs.reset(rad);
+    debug_assert!(G <= CPS_GOAL_SPINOUT);
+    debug_assert!(LEVEL <= TAIL_SIG_REFINEMENTS.len());
+    configs.reset::<G>(rad);
 
     while configs.todo_head < configs.todo.len() {
         let config_id = configs.todo[configs.todo_head];
         configs.todo_head += 1;
-        if !configs.is_active(config_id) {
+        if !configs.is_active::<G>(config_id) {
             continue;
         }
 
         let (state, mut tape) = {
-            let config = &configs.by_id[config_id];
+            let config = &configs.by_id[id_index(config_id)];
             obs.see(config_id, config);
             (config.state, config.tape)
         };
@@ -244,9 +300,11 @@ fn cps_cant_reach_obs(
         let (print, shift, next_state) =
             match prog.get_instr(&(state, init_scan)) {
                 Err(_) => return CpsOutcome::Inconclusive,
-                Ok(None) => match goal {
-                    Halt => return CpsOutcome::Counterexample,
-                    _ => continue,
+                Ok(None) => {
+                    if G == CPS_GOAL_HALT {
+                        return CpsOutcome::Counterexample;
+                    }
+                    continue;
                 },
                 Ok(Some(instr)) => instr,
             };
@@ -255,90 +313,100 @@ fn cps_cant_reach_obs(
         // push.last.  Record it together with that continuation color so a
         // later pull cannot combine the color from one occurrence with the
         // tail evidence from another.
-        let refinement_level = configs.refinement_level;
         let push_tail_nz =
             if shift { tape.left_nz } else { tape.right_nz };
-        let push_tail_sig =
-            if shift { tape.left_sig } else { tape.right_sig };
-        let push_tail_parity = match goal {
-            Blank | Spinout if shift => tape.left_parity,
-            Blank | Spinout => tape.right_parity,
-            Halt => false,
-        };
-
-        let (pull, push): (&mut Span, &mut Span) = if shift {
-            (&mut tape.rspan, &mut tape.lspan)
+        let push_tail_sig = if shift {
+            tape.left_sig()
         } else {
-            (&mut tape.lspan, &mut tape.rspan)
+            tape.right_sig()
+        };
+        let push_tail_parity = if G == CPS_GOAL_HALT {
+            false
+        } else if shift {
+            tape.left_parity()
+        } else {
+            tape.right_parity()
         };
 
-        configs.add_span(
-            shift,
-            push,
-            push_tail_nz,
-            push_tail_parity,
-            push_tail_sig,
-        );
+        // Keep the mutable borrows of the two span fields local.  Span is
+        // Copy, so after the push/pull transition we retain value snapshots
+        // instead of references into `tape`.  This lets the packed metadata
+        // accessors mutate/read `tape` freely below.
+        let dropped = if shift {
+            configs.add_span::<G>(
+                shift,
+                &tape.lspan,
+                push_tail_nz,
+                push_tail_parity,
+                push_tail_sig,
+            );
+            let dropped =
+                tape.lspan.push(print, &mut configs.span_pool);
+            tape.scan = tape.rspan.pull(&mut configs.span_pool);
+            dropped
+        } else {
+            configs.add_span::<G>(
+                shift,
+                &tape.rspan,
+                push_tail_nz,
+                push_tail_parity,
+                push_tail_sig,
+            );
+            let dropped =
+                tape.rspan.push(print, &mut configs.span_pool);
+            tape.scan = tape.lspan.pull(&mut configs.span_pool);
+            dropped
+        };
 
-        let dropped = push.push(print, &mut configs.span_pool);
-        tape.scan = pull.pull(&mut configs.span_pool);
+        let pull = if shift { tape.rspan } else { tape.lspan };
+        let push = if shift { tape.lspan } else { tape.rspan };
 
         if shift {
-            tape.left_sig =
-                tape.left_sig.prepend(dropped, refinement_level);
+            let next_sig = tape.left_sig().prepend::<LEVEL>(dropped);
+            tape.set_left_sig(next_sig);
         } else {
-            tape.right_sig =
-                tape.right_sig.prepend(dropped, refinement_level);
+            let next_sig = tape.right_sig().prepend::<LEVEL>(dropped);
+            tape.set_right_sig(next_sig);
         }
 
-        match goal {
-            Halt => {},
-            Blank | Spinout => {
-                let dropped_nz = match goal {
-                    // For blank, nz means nonblank in the base alphabet.
-                    Blank => !prog.is_blank(dropped),
-                    // Spinout distinguishes canonical macro-zero from
-                    // nonzero.  In particular, history-decorated blank
-                    // colors are not interchangeable with a canonical
-                    // blank ray.
-                    Spinout => dropped != 0,
-                    Halt => unreachable!(),
-                };
+        if G != CPS_GOAL_HALT {
+            let dropped_nz = if G == CPS_GOAL_BLANK {
+                !prog.is_blank(dropped)
+            } else {
+                dropped != 0
+            };
 
-                // The pushed-away cell becomes part of the hidden ray.
-                // Keep an uncapped lower bound on how many known nonzero
-                // cells are hidden on each side.
+            if dropped_nz {
                 if shift {
-                    tape.left_nz =
-                        tape.left_nz.saturating_add(dropped_nz.into());
-
-                    tape.left_parity ^= dropped_nz;
+                    tape.toggle_left_parity();
+                    tape.left_nz = parity_lower_bound(
+                        tape.left_nz.saturating_add(1),
+                        tape.left_parity(),
+                    );
                 } else {
-                    tape.right_nz =
-                        tape.right_nz.saturating_add(dropped_nz.into());
-
-                    tape.right_parity ^= dropped_nz;
+                    tape.toggle_right_parity();
+                    tape.right_nz = parity_lower_bound(
+                        tape.right_nz.saturating_add(1),
+                        tape.right_parity(),
+                    );
                 }
-            },
+            }
         }
 
         // These whole-window predicates do not depend on which
         // continuation enters the represented window.  Computing them once
         // avoids rescanning both spans for every continuation.
-        let blank_window = match goal {
-            Blank => {
-                prog.is_blank(tape.scan)
-                    && pull
-                        .base_blank_span(prog, &mut configs.span_pool)
-                    && push.base_all_blank(prog, &mut configs.span_pool)
-            },
-            Spinout => {
-                init_scan == 0
-                    && tape.scan == 0
-                    && pull.blank_span(&configs.span_pool)
-                    && state == next_state
-            },
-            Halt => false,
+        let blank_window = if G == CPS_GOAL_BLANK {
+            prog.is_blank(tape.scan)
+                && pull.base_blank_span(prog, &mut configs.span_pool)
+                && push.base_all_blank(prog, &mut configs.span_pool)
+        } else if G == CPS_GOAL_SPINOUT {
+            init_scan == 0
+                && tape.scan == 0
+                && pull.blank_span(&configs.span_pool)
+                && state == next_state
+        } else {
+            false
         };
 
         let Configs {
@@ -367,183 +435,108 @@ fn cps_cant_reach_obs(
                 let tail_parity = $tail_parity;
                 let tail_sig = $tail_sig;
 
-                let current_sig =
-                    if shift { tape.right_sig } else { tape.left_sig };
-                if !current_sig.is_prepend_of(
-                    color,
-                    tail_sig,
-                    refinement_level,
-                ) {
+                let current_sig = if shift {
+                    tape.right_sig()
+                } else {
+                    tape.left_sig()
+                };
+                if !current_sig.is_prepend_of::<LEVEL>(color, tail_sig)
+                {
                     continue;
                 }
 
                 let (left_sig, right_sig) = if shift {
-                    (tape.left_sig, tail_sig)
+                    (tape.left_sig(), tail_sig)
                 } else {
-                    (tail_sig, tape.right_sig)
+                    (tail_sig, tape.right_sig())
                 };
 
                 let (left_nz, right_nz, left_parity, right_parity) =
-                    match goal {
-                        // Halt and quasihalt do not use hidden nonzero evidence.
-                        // Keeping all summaries zero avoids splitting otherwise
-                        // identical CPS configurations.
-                        Halt => (0, 0, false, false),
-                        Blank => {
-                            let entered_nz = !prog.is_blank(color);
+                    if G == CPS_GOAL_HALT {
+                        (0, 0, false, false)
+                    } else {
+                        let entered_nz = if G == CPS_GOAL_BLANK {
+                            !prog.is_blank(color)
+                        } else {
+                            color != 0
+                        };
 
-                            // The current hidden ray consists of the entering
-                            // color followed by the continuation's hidden tail.
-                            // Exact base-nonblank parities must agree.
-                            let current_parity = if shift {
-                                tape.right_parity
-                            } else {
-                                tape.left_parity
-                            };
+                        let current_parity = if shift {
+                            tape.right_parity()
+                        } else {
+                            tape.left_parity()
+                        };
 
-                            if current_parity
-                                != (entered_nz ^ tail_parity)
-                            {
-                                continue;
-                            }
+                        if current_parity != (entered_nz ^ tail_parity)
+                        {
+                            continue;
+                        }
 
-                            // Normalize each lower bound to the least count with
-                            // the required exact parity before removing the
-                            // entering color, then combine it with the
-                            // continuation's independently learned tail bound.
-                            let current_nz = if shift {
-                                tape.right_nz
-                            } else {
-                                tape.left_nz
-                            };
-                            let current_tail_nz = parity_lower_bound(
-                                current_nz,
-                                current_parity,
+                        let current_nz = if shift {
+                            tape.right_nz
+                        } else {
+                            tape.left_nz
+                        };
+                        let current_tail_nz = parity_lower_bound(
+                            current_nz,
+                            current_parity,
+                        )
+                        .saturating_sub(entered_nz.into());
+                        let continuation_tail_nz =
+                            parity_lower_bound(tail_nz, tail_parity);
+                        let next_tail_nz =
+                            current_tail_nz.max(continuation_tail_nz);
+
+                        if shift {
+                            (
+                                tape.left_nz,
+                                next_tail_nz,
+                                tape.left_parity(),
+                                tail_parity,
                             )
-                            .saturating_sub(entered_nz.into());
-                            let continuation_tail_nz =
-                                parity_lower_bound(tail_nz, tail_parity);
-                            let next_tail_nz =
-                                current_tail_nz.max(continuation_tail_nz);
-
-                            // The current count constrains the whole hidden ray:
-                            // after its first color enters the represented window,
-                            // at least current_nz - entered_nz remain.  The learned
-                            // continuation independently supplies a lower bound for
-                            // that exact tail.  Both facts hold, so retain their max.
-                            if shift {
-                                (
-                                    tape.left_nz,
-                                    next_tail_nz,
-                                    tape.left_parity,
-                                    tail_parity,
-                                )
-                            } else {
-                                (
-                                    next_tail_nz,
-                                    tape.right_nz,
-                                    tail_parity,
-                                    tape.right_parity,
-                                )
-                            }
-                        },
-                        Spinout => {
-                            let entered_nz = color != 0;
-
-                            // For Spinout, parity counts non-canonical-zero macro
-                            // cells.  The current hidden ray consists of the
-                            // entering color followed by the continuation tail,
-                            // so their exact parities must agree.
-                            let current_parity = if shift {
-                                tape.right_parity
-                            } else {
-                                tape.left_parity
-                            };
-
-                            if current_parity
-                                != (entered_nz ^ tail_parity)
-                            {
-                                continue;
-                            }
-
-                            // As for Blank, normalize the lower bound to its exact
-                            // parity before removing the entering color, then
-                            // merge that fact with the continuation's tail
-                            // evidence.
-                            let current_nz = if shift {
-                                tape.right_nz
-                            } else {
-                                tape.left_nz
-                            };
-                            let current_tail_nz = parity_lower_bound(
-                                current_nz,
-                                current_parity,
+                        } else {
+                            (
+                                next_tail_nz,
+                                tape.right_nz,
+                                tail_parity,
+                                tape.right_parity(),
                             )
-                            .saturating_sub(entered_nz.into());
-                            let continuation_tail_nz =
-                                parity_lower_bound(tail_nz, tail_parity);
-                            let next_tail_nz =
-                                current_tail_nz.max(continuation_tail_nz);
-
-                            if shift {
-                                (
-                                    tape.left_nz,
-                                    next_tail_nz,
-                                    tape.left_parity,
-                                    tail_parity,
-                                )
-                            } else {
-                                (
-                                    next_tail_nz,
-                                    tape.right_nz,
-                                    tail_parity,
-                                    tape.right_parity,
-                                )
-                            }
-                        },
+                        }
                     };
 
-                let reached_goal = match goal {
-                    Blank => {
-                        blank_window
-                            && prog.is_blank(color)
-                            && left_nz == 0
-                            && right_nz == 0
-                            && !left_parity
-                            && !right_parity
-                    },
-                    Spinout => {
-                        // The transition must itself be the state's blank
-                        // transition.  Merely entering a blank ray from a
-                        // nonblank cell does not imply that the next step
-                        // repeats the same instruction.  Any retained nonzero
-                        // evidence ahead also rules out a canonical blank ray.
-                        let (ahead_nz, ahead_parity, ahead_sig) =
-                            if shift {
-                                (right_nz, right_parity, right_sig)
-                            } else {
-                                (left_nz, left_parity, left_sig)
-                            };
+                let reached_goal = if G == CPS_GOAL_BLANK {
+                    blank_window
+                        && prog.is_blank(color)
+                        && left_nz == 0
+                        && right_nz == 0
+                        && !left_parity
+                        && !right_parity
+                } else if G == CPS_GOAL_SPINOUT {
+                    let (ahead_nz, ahead_parity, ahead_sig) = if shift {
+                        (right_nz, right_parity, right_sig)
+                    } else {
+                        (left_nz, left_parity, left_sig)
+                    };
 
-                        blank_window
-                            && color == 0
-                            && ahead_nz == 0
-                            && !ahead_parity
-                            && ahead_sig == TailSig::default()
-                    },
-                    Halt => false,
+                    blank_window
+                        && color == 0
+                        && ahead_nz == 0
+                        && !ahead_parity
+                        && ahead_sig == TailSig::default()
+                } else {
+                    false
                 };
 
                 if reached_goal {
                     return CpsOutcome::Counterexample;
                 }
 
-                let mut pull_clone = *pull;
-                pull_clone.last = color;
+                let mut pull_clone = pull;
+                pull_clone.set_last(color);
 
                 let next_tape = Tape::from_spans(
                     tape.scan,
-                    *push,
+                    push,
                     pull_clone,
                     shift,
                     left_nz,
@@ -559,7 +552,7 @@ fn cps_cant_reach_obs(
                     tape: next_tape,
                 };
 
-                let (next_id, is_new) = interner.intern(
+                let (next_id, is_new) = interner.intern::<G>(
                     next_config,
                     by_id,
                     active,
@@ -569,62 +562,61 @@ fn cps_cant_reach_obs(
                 obs.edge(config_id, next_id, init_scan, print, shift);
 
                 if is_new {
-                    debug_assert_eq!(continuation_cursor.len(), next_id);
-                    continuation_cursor.push(UNSEEN_CONTINUATION_CURSOR);
+                    debug_assert_eq!(
+                        continuation_cursor.len(),
+                        id_index(next_id)
+                    );
+                    continuation_cursor
+                        .push(UNSEEN_CONTINUATION_CURSOR);
                     todo.push(next_id);
                 }
             }};
         }
 
-        let pull_key = pull.span;
-        let cursor = continuation_cursor[config_id];
+        let pull_key = pull.span();
+        let cursor = continuation_cursor[id_index(config_id)];
         let pull_spans = if shift { &*rspans } else { &*lspans };
-        let next_cursor = pull_spans.delta_len(pull);
+        let next_cursor = pull_spans.delta_len::<G>(&pull);
         let continuations: &[Continuation] =
             if cursor == UNSEEN_CONTINUATION_CURSOR {
                 // First processing of this configuration: consume only the
                 // current canonical set, not obsolete historical Rich values.
-                pull_spans.current_continuations(pull)
+                pull_spans.current_continuations::<G>(&pull)
             } else {
                 // Wakeup: consume only facts learned since the last time this
                 // config drained this span's event stream.
-                pull_spans.continuation_deltas(pull, cursor)
+                pull_spans.continuation_deltas::<G>(&pull, cursor)
             };
 
-        for &Continuation {
-            color,
-            tail_nz,
-            tail_parity,
-            tail_sig,
-        } in continuations
-        {
+        for &continuation in continuations {
             process_continuation!(
-                color,
-                tail_nz,
-                tail_parity,
-                tail_sig
+                continuation.color(),
+                continuation.tail_nz(),
+                continuation.tail_parity(),
+                continuation.tail_sig()
             );
         }
 
-        continuation_cursor[config_id] = next_cursor;
+        continuation_cursor[id_index(config_id)] = next_cursor;
 
-        let config_is_active = match interner {
-            ConfigInterner::Exact(_) => true,
-            ConfigInterner::Antichain { .. } => {
-                active.get(config_id).copied().unwrap_or(false)
-            },
+        let config_is_active = if G == CPS_GOAL_HALT {
+            true
+        } else {
+            active.get(id_index(config_id)).copied().unwrap_or(false)
         };
 
         if config_is_active {
             let watch = if shift { r_watch } else { l_watch };
 
-            if watch.len() <= pull_key {
-                watch.resize_with(pull_key + 1, Vec::new);
+            let pull_idx = id_index(pull_key);
+            if watch.len() <= pull_idx {
+                watch.resize_with(pull_idx + 1, Vec::new);
             }
-            watch[pull_key].push(config_id);
+            watch[pull_idx].push(config_id);
         }
 
-        if interner.at_capacity(by_id.len(), *active_count) {
+        if ConfigInterner::at_capacity::<G>(by_id.len(), *active_count)
+        {
             return CpsOutcome::Inconclusive;
         }
     }
@@ -651,11 +643,47 @@ struct NoObs;
 impl CpsObs for NoObs {}
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct CpsEdge {
-    to: usize,
-    read: Color,
-    write: Color,
-    shift: Shift,
+struct CpsEdge(u32);
+
+#[expect(clippy::cast_possible_truncation)]
+impl CpsEdge {
+    // Quasihalt records the exact Halt CPS graph, whose node ids are bounded
+    // by MAX_DEPTH. 14 bits therefore suffice for the destination.
+    //  0..=13  destination config id
+    // 14..=21  read color
+    // 22..=29  written color
+    // 30       shift
+    const TO_MASK: u32 = 0x3fff;
+
+    fn new(
+        to: ConfigId,
+        read: Color,
+        write: Color,
+        shift: Shift,
+    ) -> Self {
+        debug_assert!(to <= Self::TO_MASK);
+        Self(
+            to | (u32::from(read) << 14)
+                | (u32::from(write) << 22)
+                | (u32::from(shift) << 30),
+        )
+    }
+
+    const fn to(self) -> ConfigId {
+        self.0 & Self::TO_MASK
+    }
+
+    const fn read(self) -> Color {
+        (self.0 >> 14) as Color
+    }
+
+    const fn write(self) -> Color {
+        (self.0 >> 22) as Color
+    }
+
+    const fn shift(self) -> Shift {
+        self.0 & (1_u32 << 30) != 0
+    }
 }
 
 #[derive(Default)]
@@ -663,7 +691,7 @@ struct GraphObs {
     node_count: usize,
     node_states: Vec<u8>,
     succ: Vec<Vec<CpsEdge>>,
-    edge_offsets: Vec<usize>,
+    edge_offsets: Vec<u32>,
     states: Set<u8>,
 }
 
@@ -674,10 +702,12 @@ struct QuasihaltScratch {
 }
 
 struct QuasihaltAnalysisScratch {
-    seen_step: Vec<Option<usize>>,
-    order: Vec<usize>,
+    // u32::MAX is the unseen sentinel. This keeps the hot functional-path
+    // metadata at four bytes per node instead of Option<usize>.
+    seen_step: Vec<u32>,
+    order: Vec<ConfigId>,
     reachable: Vec<bool>,
-    reach_stack: Vec<usize>,
+    reach_stack: Vec<ConfigId>,
     active: Vec<bool>,
     in_comp: Vec<bool>,
     outer_scc: SccScratch,
@@ -704,9 +734,9 @@ impl Default for QuasihaltAnalysisScratch {
 impl QuasihaltAnalysisScratch {
     fn prepare_functional(&mut self, n: usize) {
         if self.seen_step.len() < n {
-            self.seen_step.resize(n, None);
+            self.seen_step.resize(n, u32::MAX);
         }
-        self.seen_step[..n].fill(None);
+        self.seen_step[..n].fill(u32::MAX);
         self.order.clear();
     }
 
@@ -730,8 +760,8 @@ impl QuasihaltAnalysisScratch {
 
 impl CpsObs for GraphObs {
     fn see(&mut self, id: ConfigId, c: &Config) {
-        self.ensure_node(id);
-        self.node_states[id] = c.state;
+        self.ensure_node(id_index(id));
+        self.node_states[id_index(id)] = c.state;
         self.states.insert(c.state);
     }
 
@@ -743,14 +773,10 @@ impl CpsObs for GraphObs {
         write: Color,
         shift: Shift,
     ) {
-        self.ensure_node(from.max(to));
+        self.ensure_node(id_index(from.max(to)));
 
-        self.succ[from].push(CpsEdge {
-            to,
-            read,
-            write,
-            shift,
-        });
+        self.succ[id_index(from)]
+            .push(CpsEdge::new(to, read, write, shift));
     }
 }
 
@@ -794,15 +820,15 @@ impl GraphObs {
         self.edge_offsets.push(0);
 
         for outs in &self.succ[..self.node_count] {
-            let next =
-                self.edge_offsets.last().copied().unwrap() + outs.len();
-            self.edge_offsets.push(next);
+            let next = id_index(*self.edge_offsets.last().unwrap())
+                .checked_add(outs.len())
+                .expect("CPS edge count overflow");
+            self.edge_offsets.push(compact_id(next));
         }
     }
 
-    #[inline]
     fn edge_id(&self, u: usize, edge_idx: usize) -> usize {
-        self.edge_offsets[u] + edge_idx
+        id_index(self.edge_offsets[u]) + edge_idx
     }
 
     fn cant_quasihalt_functional_fastpath(
@@ -815,7 +841,6 @@ impl GraphObs {
             return Some(false);
         }
 
-        // If any node has 0 or >1 successors, not functional.
         if self.succ[..n].iter().any(|outs| outs.len() != 1) {
             return None;
         }
@@ -824,26 +849,26 @@ impl GraphObs {
         let seen_step = &mut scratch.seen_step;
         let order = &mut scratch.order;
 
-        // Follow successors from start node 0 to find the eventual cycle.
-        let mut cur = 0;
+        let mut cur: ConfigId = 0;
 
         for _ in 0..=n {
-            if let Some(prev) = seen_step[cur] {
-                // If every non-ignored state seen before the eventual
-                // cycle also appears on it, then cannot quasihalt.
+            let cur_idx = id_index(cur);
+            let prev = seen_step[cur_idx];
+            if prev != u32::MAX {
+                let prev = id_index(prev);
                 return Some(order[..prev].iter().all(|&u| {
-                    let state = self.node_states[u];
+                    let state = self.node_states[id_index(u)];
 
                     ignored_state == Some(state)
-                        || order[prev..]
-                            .iter()
-                            .any(|&v| self.node_states[v] == state)
+                        || order[prev..].iter().any(|&v| {
+                            self.node_states[id_index(v)] == state
+                        })
                 }));
             }
 
-            seen_step[cur] = Some(order.len());
+            seen_step[cur_idx] = compact_id(order.len());
             order.push(cur);
-            cur = self.succ[cur][0].to;
+            cur = self.succ[cur_idx][0].to();
         }
 
         Some(false)
@@ -859,7 +884,8 @@ impl GraphObs {
             return false;
         }
 
-        let edge_count = self.edge_offsets.last().copied().unwrap_or(0);
+        let edge_count =
+            self.edge_offsets.last().copied().map_or(0, id_index);
         scratch.prepare_graph(n, edge_count);
 
         mark_reachable(
@@ -869,9 +895,6 @@ impl GraphObs {
             &mut scratch.reach_stack,
         );
 
-        // Any infinite path that eventually avoids q must eventually stay
-        // inside a cyclic SCC of the graph induced by state != q, with an
-        // optional statically transient start state removed throughout.
         for q in self
             .states
             .iter()
@@ -900,7 +923,7 @@ impl GraphObs {
                 }
 
                 for &u in comp {
-                    scratch.in_comp[u] = true;
+                    scratch.in_comp[id_index(u)] = true;
                 }
 
                 let possible_trap = self.scc_can_be_infinite_trap(
@@ -911,7 +934,7 @@ impl GraphObs {
                 );
 
                 for &u in comp {
-                    scratch.in_comp[u] = false;
+                    scratch.in_comp[id_index(u)] = false;
                 }
 
                 if possible_trap {
@@ -923,26 +946,20 @@ impl GraphObs {
         true
     }
 
-    /// Keep only a greatest fixed point of recurrently supportable edges.
-    /// A nonzero color read infinitely often must also be written
-    /// infinitely often: only finitely many nonzero cells exist when the
-    /// eventual SCC is entered.  Edges outside cyclic SCCs are discarded
-    /// before collecting writes so transient writes cannot supply support.
     fn scc_can_be_infinite_trap(
         &self,
-        comp: &[usize],
+        comp: &[ConfigId],
         in_comp: &[bool],
         scc: &mut SccScratch,
         scratch: &mut TrapScratch,
     ) -> bool {
-        // Reuse the graph-wide liveness bit-vector for every candidate.
         scratch.live.fill(false);
 
-        for &u in comp {
+        for &u_id in comp {
+            let u = id_index(u_id);
             for (edge_idx, edge) in self.succ[u].iter().enumerate() {
-                if in_comp[edge.to] {
-                    let edge_id = self.edge_id(u, edge_idx);
-                    scratch.live[edge_id] = true;
+                if in_comp[id_index(edge.to())] {
+                    scratch.live[self.edge_id(u, edge_idx)] = true;
                 }
             }
         }
@@ -957,9 +974,8 @@ impl GraphObs {
                 Some(&scratch.live),
             );
 
-            // Reset only nodes assigned a cyclic ID in the prior iteration.
             while let Some(u) = scratch.cyclic_nodes.pop() {
-                scratch.cyclic_id[u] = usize::MAX;
+                scratch.cyclic_id[id_index(u)] = u32::MAX;
             }
             scratch.cyclic_comp_indices.clear();
 
@@ -973,12 +989,12 @@ impl GraphObs {
                     continue;
                 }
 
-                let id = scratch.cyclic_comp_indices.len();
+                let id = compact_id(scratch.cyclic_comp_indices.len());
                 for &u in subcomp {
-                    scratch.cyclic_id[u] = id;
+                    scratch.cyclic_id[id_index(u)] = id;
                     scratch.cyclic_nodes.push(u);
                 }
-                scratch.cyclic_comp_indices.push(comp_idx);
+                scratch.cyclic_comp_indices.push(compact_id(comp_idx));
             }
 
             let cyclic_count = scratch.cyclic_comp_indices.len();
@@ -986,15 +1002,17 @@ impl GraphObs {
                 return false;
             }
 
-            // Only edges internal to a cyclic SCC can recur infinitely.
-            for &u in comp {
+            for &u_id in comp {
+                let u = id_index(u_id);
                 for (edge_idx, edge) in self.succ[u].iter().enumerate()
                 {
                     let edge_id = self.edge_id(u, edge_idx);
+                    let uid = scratch.cyclic_id[u];
                     if scratch.live[edge_id]
-                        && (scratch.cyclic_id[u] == usize::MAX
-                            || scratch.cyclic_id[u]
-                                != scratch.cyclic_id[edge.to])
+                        && (uid == u32::MAX
+                            || uid
+                                != scratch.cyclic_id
+                                    [id_index(edge.to())])
                     {
                         scratch.live[edge_id] = false;
                     }
@@ -1008,27 +1026,30 @@ impl GraphObs {
                 written.clear();
             }
 
-            for &u in comp {
+            for &u_id in comp {
+                let u = id_index(u_id);
                 for (edge_idx, edge) in self.succ[u].iter().enumerate()
                 {
                     if scratch.live[self.edge_id(u, edge_idx)]
-                        && edge.write != 0
+                        && edge.write() != 0
                     {
-                        scratch.written[scratch.cyclic_id[u]]
-                            .insert(edge.write);
+                        scratch.written[id_index(scratch.cyclic_id[u])]
+                            .insert(edge.write());
                     }
                 }
             }
 
             let mut pruned = false;
-            for &u in comp {
+            for &u_id in comp {
+                let u = id_index(u_id);
                 for (edge_idx, edge) in self.succ[u].iter().enumerate()
                 {
                     let edge_id = self.edge_id(u, edge_idx);
                     if scratch.live[edge_id]
-                        && edge.read != 0
-                        && !scratch.written[scratch.cyclic_id[u]]
-                            .contains(&edge.read)
+                        && edge.read() != 0
+                        && !scratch.written
+                            [id_index(scratch.cyclic_id[u])]
+                        .contains(&edge.read())
                     {
                         scratch.live[edge_id] = false;
                         pruned = true;
@@ -1041,13 +1062,14 @@ impl GraphObs {
             }
 
             for pos in 0..cyclic_count {
-                let comp_idx = scratch.cyclic_comp_indices[pos];
+                let comp_idx =
+                    id_index(scratch.cyclic_comp_indices[pos]);
                 let recurrent_comp = &scc.comps[comp_idx];
 
                 if self.recurrent_scc_can_be_infinite_trap(
                     recurrent_comp,
                     &scratch.cyclic_id,
-                    pos,
+                    compact_id(pos),
                     &scratch.live,
                     &mut scratch.zero_indeg,
                     &mut scratch.node_stack,
@@ -1060,30 +1082,28 @@ impl GraphObs {
         }
     }
 
-    /// A bidirectional recurrent SCC remains a possible trap.  A strictly
-    /// one-directional SCC can trap a run from a blank tape only if its
-    /// canonical-zero edges contain a directed cycle in that direction.
     fn recurrent_scc_can_be_infinite_trap(
         &self,
-        comp: &[usize],
-        cyclic_id: &[usize],
-        id: usize,
+        comp: &[ConfigId],
+        cyclic_id: &[u32],
+        id: u32,
         live: &[bool],
-        zero_indeg: &mut [usize],
-        node_stack: &mut Vec<usize>,
+        zero_indeg: &mut [u32],
+        node_stack: &mut Vec<ConfigId>,
     ) -> bool {
         let mut has_l = false;
         let mut has_r = false;
 
-        for &u in comp {
+        for &u_id in comp {
+            let u = id_index(u_id);
             for (edge_idx, edge) in self.succ[u].iter().enumerate() {
                 if !live[self.edge_id(u, edge_idx)]
-                    || cyclic_id[edge.to] != id
+                    || cyclic_id[id_index(edge.to())] != id
                 {
                     continue;
                 }
 
-                if edge.shift {
+                if edge.shift() {
                     has_r = true;
                 } else {
                     has_l = true;
@@ -1094,10 +1114,6 @@ impl GraphObs {
         if has_l && has_r {
             return true;
         }
-
-        // A cyclic SCC necessarily has an internal edge, so one of these
-        // directions must be present.  Keep the conservative answer if an
-        // inconsistent graph ever violates that invariant.
         if !has_l && !has_r {
             return true;
         }
@@ -1109,26 +1125,28 @@ impl GraphObs {
 
     fn has_zero_dir_cycle_in_comp(
         &self,
-        comp: &[usize],
-        cyclic_id: &[usize],
-        id: usize,
+        comp: &[ConfigId],
+        cyclic_id: &[u32],
+        id: u32,
         live: &[bool],
-        indeg: &mut [usize],
-        stack: &mut Vec<usize>,
+        indeg: &mut [u32],
+        stack: &mut Vec<ConfigId>,
         dir_is_r: bool,
     ) -> bool {
         for &u in comp {
-            indeg[u] = 0;
+            indeg[id_index(u)] = 0;
         }
 
-        for &u in comp {
+        for &u_id in comp {
+            let u = id_index(u_id);
             for (edge_idx, edge) in self.succ[u].iter().enumerate() {
+                let v = edge.to();
                 if live[self.edge_id(u, edge_idx)]
-                    && cyclic_id[edge.to] == id
-                    && edge.read == 0
-                    && edge.shift == dir_is_r
+                    && cyclic_id[id_index(v)] == id
+                    && edge.read() == 0
+                    && edge.shift() == dir_is_r
                 {
-                    indeg[edge.to] += 1;
+                    indeg[id_index(v)] += 1;
                 }
             }
         }
@@ -1138,28 +1156,31 @@ impl GraphObs {
             stack.reserve(comp.len() - stack.capacity());
         }
         for &u in comp {
-            if indeg[u] == 0 {
+            if indeg[id_index(u)] == 0 {
                 stack.push(u);
             }
         }
 
         let mut removed = 0;
 
-        while let Some(u) = stack.pop() {
+        while let Some(u_id) = stack.pop() {
             removed += 1;
+            let u = id_index(u_id);
 
             for (edge_idx, edge) in self.succ[u].iter().enumerate() {
+                let v = edge.to();
                 if !live[self.edge_id(u, edge_idx)]
-                    || cyclic_id[edge.to] != id
-                    || edge.read != 0
-                    || edge.shift != dir_is_r
+                    || cyclic_id[id_index(v)] != id
+                    || edge.read() != 0
+                    || edge.shift() != dir_is_r
                 {
                     continue;
                 }
 
-                indeg[edge.to] -= 1;
-                if indeg[edge.to] == 0 {
-                    stack.push(edge.to);
+                let vi = id_index(v);
+                indeg[vi] -= 1;
+                if indeg[vi] == 0 {
+                    stack.push(v);
                 }
             }
         }
@@ -1170,9 +1191,9 @@ impl GraphObs {
 
 fn mark_reachable(
     succ: &[Vec<CpsEdge>],
-    start: usize,
+    start: ConfigId,
     vis: &mut [bool],
-    stack: &mut Vec<usize>,
+    stack: &mut Vec<ConfigId>,
 ) {
     vis.fill(false);
     stack.clear();
@@ -1181,14 +1202,17 @@ fn mark_reachable(
         return;
     }
 
-    vis[start] = true;
+    vis[id_index(start)] = true;
     stack.push(start);
 
-    while let Some(u) = stack.pop() {
+    while let Some(u_id) = stack.pop() {
+        let u = id_index(u_id);
         for edge in &succ[u] {
-            if !vis[edge.to] {
-                vis[edge.to] = true;
-                stack.push(edge.to);
+            let v = edge.to();
+            let vi = id_index(v);
+            if !vis[vi] {
+                vis[vi] = true;
+                stack.push(v);
             }
         }
     }
@@ -1202,12 +1226,12 @@ struct SccScratch {
     generation: u32,
     seen_mark: Vec<u32>,
     assigned_mark: Vec<u32>,
-    order: Vec<usize>,
-    dfs_stack: Vec<(usize, usize)>,
-    node_stack: Vec<usize>,
-    rev: Vec<Vec<usize>>,
-    comps: Vec<Vec<usize>>,
-    spare_comps: Vec<Vec<usize>>,
+    order: Vec<ConfigId>,
+    dfs_stack: Vec<(ConfigId, u32)>,
+    node_stack: Vec<ConfigId>,
+    rev: Vec<Vec<ConfigId>>,
+    comps: Vec<Vec<ConfigId>>,
+    spare_comps: Vec<Vec<ConfigId>>,
 }
 
 impl SccScratch {
@@ -1252,13 +1276,10 @@ impl SccScratch {
         }
     }
 
-    /// Iterative Kosaraju decomposition restricted to active nodes and,
-    /// when supplied, flat edge liveness indexed by
-    /// `edge_offsets[u] + edge_idx`.
     fn decompose(
         &mut self,
         succ: &[Vec<CpsEdge>],
-        edge_offsets: &[usize],
+        edge_offsets: &[u32],
         active: &[bool],
         live: Option<&[bool]>,
     ) {
@@ -1274,8 +1295,6 @@ impl SccScratch {
         self.node_stack.clear();
         self.recycle_components();
 
-        // Build only the currently active/live reverse graph while
-        // retaining all inner vector capacities between SCC passes.
         for incoming in &mut self.rev[..n] {
             incoming.clear();
         }
@@ -1284,11 +1303,14 @@ impl SccScratch {
                 continue;
             }
 
+            let u_id = compact_id(u);
             for (edge_idx, edge) in succ[u].iter().enumerate() {
-                if active[edge.to]
+                let v = edge.to();
+                let vi = id_index(v);
+                if active[vi]
                     && edge_is_live(live, edge_offsets, u, edge_idx)
                 {
-                    self.rev[edge.to].push(u);
+                    self.rev[vi].push(u_id);
                 }
             }
         }
@@ -1299,33 +1321,37 @@ impl SccScratch {
             }
 
             self.seen_mark[start] = generation;
-            self.dfs_stack.push((start, 0));
+            self.dfs_stack.push((compact_id(start), 0));
 
-            while let Some((u, edge_idx)) = self.dfs_stack.pop() {
+            while let Some((u_id, edge_idx_id)) = self.dfs_stack.pop() {
+                let u = id_index(u_id);
+                let edge_idx = id_index(edge_idx_id);
                 if edge_idx == succ[u].len() {
-                    self.order.push(u);
+                    self.order.push(u_id);
                     continue;
                 }
 
-                self.dfs_stack.push((u, edge_idx + 1));
+                self.dfs_stack.push((u_id, compact_id(edge_idx + 1)));
                 if !edge_is_live(live, edge_offsets, u, edge_idx) {
                     continue;
                 }
 
-                let v = succ[u][edge_idx].to;
-                if active[v] && self.seen_mark[v] != generation {
-                    self.seen_mark[v] = generation;
+                let v = succ[u][edge_idx].to();
+                let vi = id_index(v);
+                if active[vi] && self.seen_mark[vi] != generation {
+                    self.seen_mark[vi] = generation;
                     self.dfs_stack.push((v, 0));
                 }
             }
         }
 
         while let Some(start) = self.order.pop() {
-            if self.assigned_mark[start] == generation {
+            let start_idx = id_index(start);
+            if self.assigned_mark[start_idx] == generation {
                 continue;
             }
 
-            self.assigned_mark[start] = generation;
+            self.assigned_mark[start_idx] = generation;
             self.node_stack.push(start);
 
             let mut comp = self.spare_comps.pop().unwrap_or_default();
@@ -1334,12 +1360,13 @@ impl SccScratch {
             while let Some(u) = self.node_stack.pop() {
                 comp.push(u);
 
-                for &from in &self.rev[u] {
-                    if self.assigned_mark[from] == generation {
+                for &from in &self.rev[id_index(u)] {
+                    let from_idx = id_index(from);
+                    if self.assigned_mark[from_idx] == generation {
                         continue;
                     }
 
-                    self.assigned_mark[from] = generation;
+                    self.assigned_mark[from_idx] = generation;
                     self.node_stack.push(from);
                 }
             }
@@ -1351,19 +1378,19 @@ impl SccScratch {
 
 struct TrapScratch {
     live: Vec<bool>,
-    cyclic_id: Vec<usize>,
-    cyclic_nodes: Vec<usize>,
-    cyclic_comp_indices: Vec<usize>,
+    cyclic_id: Vec<u32>,
+    cyclic_nodes: Vec<ConfigId>,
+    cyclic_comp_indices: Vec<u32>,
     written: Vec<Set<Color>>,
-    zero_indeg: Vec<usize>,
-    node_stack: Vec<usize>,
+    zero_indeg: Vec<u32>,
+    node_stack: Vec<ConfigId>,
 }
 
 impl TrapScratch {
     fn new(n: usize, edge_count: usize) -> Self {
         Self {
             live: vec![false; edge_count],
-            cyclic_id: vec![usize::MAX; n],
+            cyclic_id: vec![u32::MAX; n],
             cyclic_nodes: Vec::with_capacity(n),
             cyclic_comp_indices: Vec::with_capacity(n),
             written: vec![],
@@ -1379,10 +1406,10 @@ impl TrapScratch {
         self.live.fill(false);
 
         if self.cyclic_id.len() < n {
-            self.cyclic_id.resize(n, usize::MAX);
+            self.cyclic_id.resize(n, u32::MAX);
             self.zero_indeg.resize(n, 0);
         }
-        self.cyclic_id[..n].fill(usize::MAX);
+        self.cyclic_id[..n].fill(u32::MAX);
         self.zero_indeg[..n].fill(0);
 
         self.cyclic_nodes.clear();
@@ -1397,26 +1424,26 @@ impl TrapScratch {
 #[inline]
 fn edge_is_live(
     live: Option<&[bool]>,
-    edge_offsets: &[usize],
+    edge_offsets: &[u32],
     u: usize,
     edge_idx: usize,
 ) -> bool {
-    live.is_none_or(|live| live[edge_offsets[u] + edge_idx])
+    live.is_none_or(|live| live[id_index(edge_offsets[u]) + edge_idx])
 }
 
-fn scc_has_cycle(comp: &[usize], succ: &[Vec<CpsEdge>]) -> bool {
+fn scc_has_cycle(comp: &[ConfigId], succ: &[Vec<CpsEdge>]) -> bool {
     if comp.len() > 1 {
         return true;
     }
 
     let u = comp[0];
-    succ[u].iter().any(|edge| edge.to == u)
+    succ[id_index(u)].iter().any(|edge| edge.to() == u)
 }
 
 fn scc_has_cycle_filtered(
-    comp: &[usize],
+    comp: &[ConfigId],
     succ: &[Vec<CpsEdge>],
-    edge_offsets: &[usize],
+    edge_offsets: &[u32],
     live: &[bool],
 ) -> bool {
     if comp.len() > 1 {
@@ -1424,8 +1451,9 @@ fn scc_has_cycle_filtered(
     }
 
     let u = comp[0];
-    succ[u].iter().enumerate().any(|(edge_idx, edge)| {
-        live[edge_offsets[u] + edge_idx] && edge.to == u
+    let ui = id_index(u);
+    succ[ui].iter().enumerate().any(|(edge_idx, edge)| {
+        live[id_index(edge_offsets[ui]) + edge_idx] && edge.to() == u
     })
 }
 
@@ -1436,7 +1464,17 @@ fn scc_has_cycle_filtered(
 /// channel is an exact homomorphism of a finite-support ray, so collisions
 /// can only preserve spurious behavior, never remove concrete behavior.
 /// Entries are `(polynomial_base, modulus)`.
-const TAIL_SIG_REFINEMENTS: [(u16, u16); 2] = [(2, 3), (3, 4)];
+const TAIL_SIG_REFINEMENTS: [(u8, u8); 2] = [(2, 3), (3, 4)];
+
+const _: () = {
+    assert!(TAIL_SIG_REFINEMENTS.len() * 3 <= 8);
+    let mut i = 0;
+    while i < TAIL_SIG_REFINEMENTS.len() {
+        let modulus = TAIL_SIG_REFINEMENTS[i].1;
+        assert!(modulus > 0 && modulus <= 8);
+        i += 1;
+    }
+};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum CpsOutcome {
@@ -1448,47 +1486,110 @@ enum CpsOutcome {
 #[derive(
     Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
-struct TailSig([u16; TAIL_SIG_REFINEMENTS.len()]);
+struct TailSig(u8);
 
+#[expect(clippy::cast_possible_truncation)]
 impl TailSig {
-    fn prepend(self, color: Color, level: usize) -> Self {
-        debug_assert!(level <= TAIL_SIG_REFINEMENTS.len());
+    const BITS_PER_CHANNEL: usize = 3;
+    const CHANNEL_MASK: u8 = (1 << Self::BITS_PER_CHANNEL) - 1;
+    const USED_BITS: usize =
+        Self::BITS_PER_CHANNEL * TAIL_SIG_REFINEMENTS.len();
+    const PACKED_MASK: u8 = if Self::USED_BITS == 8 {
+        u8::MAX
+    } else {
+        ((1_u16 << Self::USED_BITS) - 1) as u8
+    };
 
-        let color = u64::from(color);
-        let mut next = self;
-        for (slot, &(base, modulus)) in next
-            .0
-            .iter_mut()
-            .zip(TAIL_SIG_REFINEMENTS.iter())
-            .take(level)
-        {
-            let value = color + u64::from(base) * u64::from(*slot);
-            *slot = u16::try_from(value % u64::from(modulus))
-                .expect("tail-signature residue must fit in u16");
-        }
-        next
+    const fn raw(self) -> u8 {
+        self.0
     }
 
-    fn is_prepend_of(
+    #[inline]
+    fn prepend<const LEVEL: usize>(self, color: Color) -> Self {
+        debug_assert!(LEVEL <= TAIL_SIG_REFINEMENTS.len());
+
+        let color = u16::from(color);
+        let mut packed = self.0;
+
+        if LEVEL >= 1 {
+            let (base, modulus) = TAIL_SIG_REFINEMENTS[0];
+            let old = packed & Self::CHANNEL_MASK;
+            let next = (color + u16::from(base) * u16::from(old))
+                % u16::from(modulus);
+            packed = (packed & !Self::CHANNEL_MASK) | next as u8;
+        }
+
+        if LEVEL >= 2 {
+            let (base, modulus) = TAIL_SIG_REFINEMENTS[1];
+            let shift = Self::BITS_PER_CHANNEL;
+            let old = (packed >> shift) & Self::CHANNEL_MASK;
+            let next = (color + u16::from(base) * u16::from(old))
+                % u16::from(modulus);
+            let mask = Self::CHANNEL_MASK << shift;
+            packed = (packed & !mask) | ((next as u8) << shift);
+        }
+
+        Self(packed)
+    }
+
+    #[inline]
+    fn is_prepend_of<const LEVEL: usize>(
         self,
         color: Color,
         tail: Self,
-        level: usize,
     ) -> bool {
-        self == tail.prepend(color, level)
+        self == tail.prepend::<LEVEL>(color)
     }
 }
 
-type SpanId = usize;
+type SpanId = u32;
 
 type Colors = Vec<Color>;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-struct Continuation {
-    color: Color,
-    tail_nz: usize,
-    tail_parity: bool,
-    tail_sig: TailSig,
+struct Continuation(u32);
+
+#[expect(clippy::cast_possible_truncation)]
+impl Continuation {
+    //  0..=7   color
+    //  8..=22  compact nonzero lower bound (15 bits)
+    //  23       exact parity
+    // 24..=31  packed tail signature
+    fn new(
+        color: Color,
+        tail_nz: NonzeroCount,
+        tail_parity: bool,
+        tail_sig: TailSig,
+    ) -> Self {
+        debug_assert!(tail_nz <= MAX_NONZERO_COUNT);
+        Self(
+            u32::from(color)
+                | (u32::from(tail_nz) << 8)
+                | (u32::from(tail_parity) << 23)
+                | (u32::from(tail_sig.raw()) << 24),
+        )
+    }
+
+    const fn color(self) -> Color {
+        self.0 as Color
+    }
+
+    const fn tail_nz(self) -> NonzeroCount {
+        ((self.0 >> 8) & 0x7fff) as NonzeroCount
+    }
+
+    const fn tail_parity(self) -> bool {
+        self.0 & (1 << 23) != 0
+    }
+
+    const fn tail_sig(self) -> TailSig {
+        TailSig((self.0 >> 24) as u8)
+    }
+
+    fn set_tail_nz(&mut self, tail_nz: NonzeroCount) {
+        debug_assert!(tail_nz <= MAX_NONZERO_COUNT);
+        self.0 = (self.0 & !(0x7fff << 8)) | (u32::from(tail_nz) << 8);
+    }
 }
 
 type Continuations = Vec<Continuation>;
@@ -1511,167 +1612,302 @@ enum Spans {
     Rich(RichSpans),
 }
 
-type ConfigId = usize;
+type ConfigId = u32;
+type NonzeroCount = u16;
+type ContinuationCursor = u32;
 type Watch = Vec<Vec<ConfigId>>;
 
-const UNSEEN_CONTINUATION_CURSOR: usize = usize::MAX;
+const UNSEEN_CONTINUATION_CURSOR: ContinuationCursor =
+    ContinuationCursor::MAX;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct HaltConfigShape {
-    state: u8,
-    scan: Color,
-    lspan: Span,
-    rspan: Span,
-    left_sig: TailSig,
-    right_sig: TailSig,
+fn id_index(id: u32) -> usize {
+    usize::try_from(id).expect("u32 CPS index must fit usize")
 }
 
-impl From<&Config> for HaltConfigShape {
-    fn from(config: &Config) -> Self {
-        Self {
-            state: config.state,
-            scan: config.tape.scan,
-            lspan: config.tape.lspan,
-            rspan: config.tape.rspan,
-            left_sig: config.tape.left_sig,
-            right_sig: config.tape.right_sig,
-        }
-    }
+#[inline]
+fn compact_id(index: usize) -> u32 {
+    u32::try_from(index).expect("CPS table exceeded u32 index space")
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct ConfigShape {
-    state: u8,
-    scan: Color,
-    lspan: Span,
-    rspan: Span,
-    left_parity: bool,
-    right_parity: bool,
-    left_sig: TailSig,
-    right_sig: TailSig,
-}
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct ConfigShape([u32; 3]);
 
 impl From<&Config> for ConfigShape {
     fn from(config: &Config) -> Self {
-        Self {
-            state: config.state,
-            scan: config.tape.scan,
-            lspan: config.tape.lspan,
-            rspan: config.tape.rspan,
-            left_parity: config.tape.left_parity,
-            right_parity: config.tape.right_parity,
-            left_sig: config.tape.left_sig,
-            right_sig: config.tape.right_sig,
-        }
+        Self([
+            config.tape.lspan.raw(),
+            config.tape.rspan.raw(),
+            u32::from(config.tape.tail_meta)
+                | (u32::from(config.state) << 16)
+                | (u32::from(config.tape.scan) << 24),
+        ])
+    }
+}
+
+impl Hash for ConfigShape {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u64(
+            u64::from(self.0[0]) | (u64::from(self.0[1]) << 32),
+        );
+        state.write_u32(self.0[2]);
     }
 }
 
 #[derive(Clone, Copy)]
-struct AntichainEntry {
-    left_nz: usize,
-    right_nz: usize,
-    id: ConfigId,
+struct AntichainEntry(u64);
+
+#[expect(clippy::cast_possible_truncation)]
+impl AntichainEntry {
+    const COUNT_MASK: u64 = 0x7fff;
+
+    fn new(
+        left_nz: NonzeroCount,
+        right_nz: NonzeroCount,
+        id: ConfigId,
+    ) -> Self {
+        Self(
+            u64::from(left_nz)
+                | (u64::from(right_nz) << 15)
+                | (u64::from(id) << 30),
+        )
+    }
+
+    const fn left_nz(self) -> NonzeroCount {
+        (self.0 & Self::COUNT_MASK) as NonzeroCount
+    }
+
+    const fn right_nz(self) -> NonzeroCount {
+        ((self.0 >> 15) & Self::COUNT_MASK) as NonzeroCount
+    }
+
+    const fn id(self) -> ConfigId {
+        (self.0 >> 30) as ConfigId
+    }
+}
+
+#[derive(Clone, Copy)]
+struct AntichainEntries {
+    first: u64,
+    second: u64,
+}
+
+#[expect(clippy::cast_possible_truncation)]
+impl AntichainEntries {
+    const EMPTY: u64 = u64::MAX;
+    const OVERFLOW_TAG: u64 = 1_u64 << 63;
+
+    const fn empty() -> Self {
+        Self {
+            first: Self::EMPTY,
+            second: Self::EMPTY,
+        }
+    }
+
+    const fn overflow_index(self) -> Option<u32> {
+        if self.second != Self::EMPTY
+            && self.second & Self::OVERFLOW_TAG != 0
+        {
+            Some(self.second as u32)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    fn find_subsuming(
+        self,
+        left_nz: NonzeroCount,
+        right_nz: NonzeroCount,
+        overflow: &[Vec<AntichainEntry>],
+    ) -> Option<AntichainEntry> {
+        if let Some(index) = self.overflow_index() {
+            return overflow[id_index(index)].iter().copied().find(
+                |entry| {
+                    entry.left_nz() <= left_nz
+                        && entry.right_nz() <= right_nz
+                },
+            );
+        }
+
+        [self.first, self.second]
+            .into_iter()
+            .filter(|&raw| raw != Self::EMPTY)
+            .map(AntichainEntry)
+            .find(|entry| {
+                entry.left_nz() <= left_nz
+                    && entry.right_nz() <= right_nz
+            })
+    }
+
+    fn retire_dominated(
+        &mut self,
+        left_nz: NonzeroCount,
+        right_nz: NonzeroCount,
+        overflow: &mut [Vec<AntichainEntry>],
+        active: &mut [bool],
+        active_count: &mut usize,
+    ) {
+        let mut retire = |entry: AntichainEntry| {
+            let dominated = left_nz <= entry.left_nz()
+                && right_nz <= entry.right_nz();
+            if dominated {
+                let idx = id_index(entry.id());
+                debug_assert!(active[idx]);
+                active[idx] = false;
+                *active_count -= 1;
+            }
+            dominated
+        };
+
+        if let Some(index) = self.overflow_index() {
+            overflow[id_index(index)].retain(|&entry| !retire(entry));
+            return;
+        }
+
+        let mut kept = [Self::EMPTY; 2];
+        let mut len = 0;
+        for raw in [self.first, self.second] {
+            if raw == Self::EMPTY {
+                continue;
+            }
+            let entry = AntichainEntry(raw);
+            if !retire(entry) {
+                kept[len] = raw;
+                len += 1;
+            }
+        }
+        self.first = kept[0];
+        self.second = kept[1];
+    }
+
+    fn push(
+        &mut self,
+        entry: AntichainEntry,
+        overflow: &mut Vec<Vec<AntichainEntry>>,
+        free_overflow: &mut Vec<u32>,
+    ) {
+        if let Some(index) = self.overflow_index() {
+            overflow[id_index(index)].push(entry);
+            return;
+        }
+
+        if self.first == Self::EMPTY {
+            self.first = entry.0;
+            return;
+        }
+        if self.second == Self::EMPTY {
+            self.second = entry.0;
+            return;
+        }
+
+        let index = if let Some(index) = free_overflow.pop() {
+            overflow[id_index(index)].clear();
+            index
+        } else {
+            let index = compact_id(overflow.len());
+            overflow.push(Vec::new());
+            index
+        };
+
+        let entries = &mut overflow[id_index(index)];
+        entries.push(AntichainEntry(self.first));
+        entries.push(AntichainEntry(self.second));
+        entries.push(entry);
+        self.first = Self::EMPTY;
+        self.second = Self::OVERFLOW_TAG | u64::from(index);
+    }
 }
 
 enum ConfigInterner {
-    Exact(Dict<HaltConfigShape, ConfigId>),
+    Exact(Dict<ConfigShape, ConfigId>),
     Antichain {
-        seen: Dict<ConfigShape, Vec<AntichainEntry>>,
-        spare_entries: Vec<Vec<AntichainEntry>>,
+        seen: Dict<ConfigShape, AntichainEntries>,
+        overflow: Vec<Vec<AntichainEntry>>,
+        free_overflow: Vec<u32>,
     },
 }
 
 impl ConfigInterner {
-    fn intern(
+    #[inline]
+    fn intern<const G: u8>(
         &mut self,
         config: Config,
         by_id: &mut Vec<Config>,
         active: &mut Vec<bool>,
         active_count: &mut usize,
     ) -> (ConfigId, bool) {
-        match self {
-            Self::Exact(seen) => {
-                debug_assert_eq!(config.tape.left_nz, 0);
-                debug_assert_eq!(config.tape.right_nz, 0);
-                debug_assert!(!config.tape.left_parity);
-                debug_assert!(!config.tape.right_parity);
+        if G == CPS_GOAL_HALT {
+            let Self::Exact(seen) = self else {
+                unreachable!("halt CPS must use exact interning")
+            };
 
-                let shape = HaltConfigShape::from(&config);
-                match seen.entry(shape) {
-                    Entry::Occupied(entry) => (*entry.get(), false),
-                    Entry::Vacant(entry) => {
-                        let next_id = by_id.len();
-                        by_id.push(config);
-                        entry.insert(next_id);
+            debug_assert_eq!(config.tape.left_nz, 0);
+            debug_assert_eq!(config.tape.right_nz, 0);
+            debug_assert!(!config.tape.left_parity());
+            debug_assert!(!config.tape.right_parity());
 
-                        (next_id, true)
-                    },
-                }
-            },
-            Self::Antichain {
+            let shape = ConfigShape::from(&config);
+            match seen.entry(shape) {
+                Entry::Occupied(entry) => (*entry.get(), false),
+                Entry::Vacant(entry) => {
+                    let next_id = compact_id(by_id.len());
+                    by_id.push(config);
+                    entry.insert(next_id);
+                    (next_id, true)
+                },
+            }
+        } else {
+            let Self::Antichain {
                 seen,
-                spare_entries,
-            } => {
-                let shape = ConfigShape::from(&config);
-                let left_nz = parity_lower_bound(
-                    config.tape.left_nz,
-                    config.tape.left_parity,
-                );
-                let right_nz = parity_lower_bound(
-                    config.tape.right_nz,
-                    config.tape.right_parity,
-                );
-                let entries = match seen.entry(shape) {
-                    Entry::Occupied(entry) => entry.into_mut(),
-                    Entry::Vacant(entry) => {
-                        let mut entries =
-                            spare_entries.pop().unwrap_or_default();
-                        entries.clear();
-                        entry.insert(entries)
-                    },
-                };
+                overflow,
+                free_overflow,
+            } = self
+            else {
+                unreachable!("rich CPS must use antichain interning")
+            };
 
-                // Smaller lower bounds are more general: they represent every
-                // tape represented by a configuration with larger bounds.  If
-                // an active representative already subsumes this pair,
-                // redirect to it.
-                if let Some(entry) = entries.iter().find(|entry| {
-                    entry.left_nz <= left_nz
-                        && entry.right_nz <= right_nz
-                }) {
-                    return (entry.id, false);
-                }
+            let shape = ConfigShape::from(&config);
+            let left_nz = parity_lower_bound(
+                config.tape.left_nz,
+                config.tape.left_parity(),
+            );
+            let right_nz = parity_lower_bound(
+                config.tape.right_nz,
+                config.tape.right_parity(),
+            );
+            let entries = match seen.entry(shape) {
+                Entry::Occupied(entry) => entry.into_mut(),
+                Entry::Vacant(entry) => {
+                    entry.insert(AntichainEntries::empty())
+                },
+            };
 
-                // This pair is genuinely broader than every existing
-                // representative.  Retire all narrower pairs it subsumes,
-                // leaving only a componentwise antichain for this structural
-                // configuration shape.
-                entries.retain(|entry| {
-                    let dominated = left_nz <= entry.left_nz
-                        && right_nz <= entry.right_nz;
+            if let Some(entry) =
+                entries.find_subsuming(left_nz, right_nz, overflow)
+            {
+                return (entry.id(), false);
+            }
 
-                    if dominated {
-                        debug_assert!(active[entry.id]);
-                        active[entry.id] = false;
-                        *active_count -= 1;
-                    }
+            entries.retire_dominated(
+                left_nz,
+                right_nz,
+                overflow,
+                active,
+                active_count,
+            );
 
-                    !dominated
-                });
+            let next_id = compact_id(active.len());
+            debug_assert_eq!(by_id.len(), id_index(next_id));
+            by_id.push(config);
+            active.push(true);
+            *active_count += 1;
+            entries.push(
+                AntichainEntry::new(left_nz, right_nz, next_id),
+                overflow,
+                free_overflow,
+            );
 
-                let next_id = active.len();
-                debug_assert_eq!(by_id.len(), next_id);
-                by_id.push(config);
-                active.push(true);
-                *active_count += 1;
-                entries.push(AntichainEntry {
-                    left_nz,
-                    right_nz,
-                    id: next_id,
-                });
-
-                (next_id, true)
-            },
+            (next_id, true)
         }
     }
 
@@ -1680,26 +1916,30 @@ impl ConfigInterner {
             Self::Exact(seen) => seen.clear(),
             Self::Antichain {
                 seen,
-                spare_entries,
+                overflow,
+                free_overflow,
             } => {
-                for (_, mut entries) in seen.drain() {
-                    entries.clear();
-                    spare_entries.push(entries);
+                for entries in seen.values().copied() {
+                    if let Some(index) = entries.overflow_index() {
+                        overflow[id_index(index)].clear();
+                        free_overflow.push(index);
+                    }
                 }
+                seen.clear();
             },
         }
     }
 
-    const fn at_capacity(
-        &self,
+    #[inline]
+    const fn at_capacity<const G: u8>(
         by_id_len: usize,
         active_count: usize,
     ) -> bool {
-        let count = match self {
-            Self::Exact(_) => by_id_len,
-            Self::Antichain { .. } => active_count,
+        let count = if G == CPS_GOAL_HALT {
+            by_id_len
+        } else {
+            active_count
         };
-
         MAX_DEPTH < count
     }
 }
@@ -1707,17 +1947,51 @@ impl ConfigInterner {
 /**************************************/
 
 #[derive(Clone, Copy)]
-struct PushTransition {
-    last: Color,
-    color: Color,
-    next: Span,
+struct PushTransition(u64);
+
+#[expect(clippy::cast_possible_truncation)]
+impl PushTransition {
+    fn new(last: Color, color: Color, next: Span) -> Self {
+        Self(
+            u64::from(last)
+                | (u64::from(color) << 8)
+                | (u64::from(next.raw()) << 16),
+        )
+    }
+
+    fn matches(self, last: Color, color: Color) -> bool {
+        self.0 as u16 == (u16::from(last) | (u16::from(color) << 8))
+    }
+
+    const fn next(self) -> Span {
+        Span::from_raw((self.0 >> 16) as u32)
+    }
 }
 
 #[derive(Clone, Copy)]
-struct PullTransition {
-    last: Color,
-    next: Span,
-    pulled: Color,
+struct PullTransition(u64);
+
+#[expect(clippy::cast_possible_truncation)]
+impl PullTransition {
+    fn new(last: Color, next: Span, pulled: Color) -> Self {
+        Self(
+            u64::from(last)
+                | (u64::from(pulled) << 8)
+                | (u64::from(next.raw()) << 16),
+        )
+    }
+
+    const fn last(self) -> Color {
+        self.0 as Color
+    }
+
+    const fn next(self) -> Span {
+        Span::from_raw((self.0 >> 16) as u32)
+    }
+
+    const fn pulled(self) -> Color {
+        (self.0 >> 8) as Color
+    }
 }
 
 struct SpanPool {
@@ -1808,24 +2082,32 @@ impl SpanPool {
             return id;
         }
 
-        let id = self.span_count;
+        let id = compact_id(self.span_count);
+        assert!(
+            id <= Span::ID_MASK,
+            "CPS span table exceeded packed span id space"
+        );
         self.span_count += 1;
 
-        if id == self.spans.len() {
+        if id_index(id) == self.spans.len() {
             let mut stored = self.take_colors(colors.len());
             stored.extend_from_slice(&colors);
             self.spans.push(stored);
             self.push_cache.push(Vec::new());
             self.pull_cache.push(Vec::new());
         } else {
-            let stored = &mut self.spans[id];
+            let stored = &mut self.spans[id_index(id)];
             stored.clear();
             stored.extend_from_slice(&colors);
         }
         self.index.insert(colors, id);
 
         if let Some(blank) = &mut self.blank {
-            blank.push(self.spans[id].iter().all(|&color| color == 0));
+            blank.push(
+                self.spans[id_index(id)]
+                    .iter()
+                    .all(|&color| color == 0),
+            );
         }
         if let Some(base_blank) = &mut self.base_blank {
             base_blank.push(None);
@@ -1835,15 +2117,15 @@ impl SpanPool {
     }
 
     fn colors(&self, id: SpanId) -> &Colors {
-        debug_assert!(id < self.span_count);
-        &self.spans[id]
+        debug_assert!(id_index(id) < self.span_count);
+        &self.spans[id_index(id)]
     }
 
     fn blank_span(&self, id: SpanId) -> bool {
         self.blank
             .as_ref()
             .expect("canonical blank cache is only used for Spinout")
-            [id]
+            [id_index(id)]
     }
 
     fn base_blank_span(
@@ -1854,17 +2136,19 @@ impl SpanPool {
         if let Some(blank) = self
             .base_blank
             .as_ref()
-            .expect("base blank cache is only used for Blank")[id]
+            .expect("base blank cache is only used for Blank")
+            [id_index(id)]
         {
             return blank;
         }
 
-        let blank =
-            self.spans[id].iter().all(|&color| prog.is_blank(color));
+        let blank = self.spans[id_index(id)]
+            .iter()
+            .all(|&color| prog.is_blank(color));
         self.base_blank
             .as_mut()
-            .expect("base blank cache is only used for Blank")[id] =
-            Some(blank);
+            .expect("base blank cache is only used for Blank")
+            [id_index(id)] = Some(blank);
         blank
     }
 }
@@ -1883,11 +2167,10 @@ struct Configs {
     active_count: usize,
     todo: Vec<ConfigId>,
     todo_head: usize,
-    refinement_level: usize,
     // Per-config offset into the delta stream of the span it waits on.
-    // usize::MAX means the config has never processed that span, so its
+    // ContinuationCursor::MAX means the config has never processed that span, so its
     // first visit consumes the canonical continuation set instead.
-    continuation_cursor: Vec<usize>,
+    continuation_cursor: Vec<ContinuationCursor>,
 
     l_watch: Watch,
     r_watch: Watch,
@@ -1904,7 +2187,8 @@ impl Configs {
             } else {
                 ConfigInterner::Antichain {
                     seen: Dict::new(),
-                    spare_entries: Vec::new(),
+                    overflow: Vec::new(),
+                    free_overflow: Vec::new(),
                 }
             },
             by_id: Vec::new(),
@@ -1912,14 +2196,13 @@ impl Configs {
             active_count: 0,
             todo: Vec::new(),
             todo_head: 0,
-            refinement_level: 0,
             continuation_cursor: Vec::new(),
             l_watch: Vec::new(),
             r_watch: Vec::new(),
         }
     }
 
-    fn reset(&mut self, rad: Radius) {
+    fn reset<const G: u8>(&mut self, rad: Radius) {
         let old_span_count = self.span_pool.span_count;
 
         // Span IDs are reassigned from zero. Only the prefix used by the
@@ -1948,27 +2231,30 @@ impl Configs {
 
         let init = Config::init(rad, &mut self.span_pool);
 
-        self.lspans.add_span(
+        self.lspans.add_span::<G>(
             &init.tape.lspan,
             init.tape.left_nz,
-            init.tape.left_parity,
-            init.tape.left_sig,
+            init.tape.left_parity(),
+            init.tape.left_sig(),
         );
-        self.rspans.add_span(
+        self.rspans.add_span::<G>(
             &init.tape.rspan,
             init.tape.right_nz,
-            init.tape.right_parity,
-            init.tape.right_sig,
+            init.tape.right_parity(),
+            init.tape.right_sig(),
         );
 
-        let (init_id, is_new) = self.intern_config(init);
+        let (init_id, is_new) = self.intern_config::<G>(init);
         assert!(is_new);
         debug_assert_eq!(init_id, 0);
         self.todo.push(init_id);
     }
 
-    fn intern_config(&mut self, config: Config) -> (ConfigId, bool) {
-        let (id, is_new) = self.interner.intern(
+    fn intern_config<const G: u8>(
+        &mut self,
+        config: Config,
+    ) -> (ConfigId, bool) {
+        let (id, is_new) = self.interner.intern::<G>(
             config,
             &mut self.by_id,
             &mut self.active,
@@ -1976,49 +2262,50 @@ impl Configs {
         );
 
         if is_new {
-            debug_assert_eq!(self.continuation_cursor.len(), id);
+            debug_assert_eq!(
+                self.continuation_cursor.len(),
+                id_index(id)
+            );
             self.continuation_cursor.push(UNSEEN_CONTINUATION_CURSOR);
         }
 
         (id, is_new)
     }
 
-    fn is_active(&self, id: ConfigId) -> bool {
-        match &self.interner {
-            ConfigInterner::Exact(_) => true,
-            ConfigInterner::Antichain { .. } => {
-                self.active.get(id).copied().unwrap_or(false)
-            },
+    #[inline]
+    fn is_active<const G: u8>(&self, id: ConfigId) -> bool {
+        if G == CPS_GOAL_HALT {
+            true
+        } else {
+            self.active.get(id_index(id)).copied().unwrap_or(false)
         }
     }
 
-    fn add_span(
+    #[inline]
+    fn add_span<const G: u8>(
         &mut self,
         shift: Shift,
         span: &Span,
-        tail_nz: usize,
+        tail_nz: NonzeroCount,
         tail_parity: bool,
         tail_sig: TailSig,
     ) {
-        let exact = matches!(&self.interner, ConfigInterner::Exact(_));
         let (spans, watch) = if shift {
             (&mut self.lspans, &mut self.l_watch)
         } else {
             (&mut self.rspans, &mut self.r_watch)
         };
 
-        if spans.add_span(span, tail_nz, tail_parity, tail_sig)
-            && let Some(waiting) = watch.get_mut(span.span)
+        if spans.add_span::<G>(span, tail_nz, tail_parity, tail_sig)
+            && let Some(waiting) = watch.get_mut(id_index(span.span()))
         {
-            if exact {
+            if G == CPS_GOAL_HALT {
                 self.todo.append(waiting);
             } else {
                 let active = &self.active;
-                self.todo.extend(
-                    waiting
-                        .drain(..)
-                        .filter(|id| active.get(*id) == Some(&true)),
-                );
+                self.todo.extend(waiting.drain(..).filter(|id| {
+                    active.get(id_index(*id)) == Some(&true)
+                }));
             }
         }
     }
@@ -2045,119 +2332,139 @@ impl Spans {
         }
     }
 
-    fn add_span(
+    #[inline]
+    fn add_span<const G: u8>(
         &mut self,
         span: &Span,
-        tail_nz: usize,
+        tail_nz: NonzeroCount,
         tail_parity: bool,
         tail_sig: TailSig,
     ) -> bool {
-        match self {
-            Self::Halt(spans) => {
-                debug_assert_eq!(tail_nz, 0);
-                debug_assert!(!tail_parity);
+        if G == CPS_GOAL_HALT {
+            let Self::Halt(spans) = self else {
+                unreachable!(
+                    "halt CPS must use halt continuation tables"
+                )
+            };
 
-                let continuation = Continuation {
-                    color: span.last,
-                    tail_nz: 0,
-                    tail_parity: false,
-                    tail_sig,
-                };
+            debug_assert_eq!(tail_nz, 0);
+            debug_assert!(!tail_parity);
+            let continuation =
+                Continuation::new(span.last(), 0, false, tail_sig);
+            let span_idx = id_index(span.span());
+            if spans.len() <= span_idx {
+                spans.resize_with(
+                    span_idx + 1,
+                    SpanContinuations::default,
+                );
+            }
 
-                if spans.len() <= span.span {
-                    spans.resize_with(
-                        span.span + 1,
-                        SpanContinuations::default,
-                    );
-                }
+            let SpanContinuations { current, deltas } =
+                &mut spans[span_idx];
+            match current
+                .binary_search_by_key(&(span.last(), tail_sig), |cnt| {
+                    (cnt.color(), cnt.tail_sig())
+                }) {
+                Ok(_) => false,
+                Err(pos) => {
+                    current.insert(pos, continuation);
+                    deltas.push(continuation);
+                    true
+                },
+            }
+        } else {
+            let Self::Rich(spans) = self else {
+                unreachable!(
+                    "rich CPS must use rich continuation tables"
+                )
+            };
 
-                let SpanContinuations { current, deltas } =
-                    &mut spans[span.span];
-                match current.binary_search_by_key(
-                    &(span.last, tail_sig),
-                    |cnt| (cnt.color, cnt.tail_sig),
-                ) {
-                    Ok(_) => false,
-                    Err(pos) => {
-                        current.insert(pos, continuation);
+            let tail_nz = parity_lower_bound(tail_nz, tail_parity);
+            let continuation = Continuation::new(
+                span.last(),
+                tail_nz,
+                tail_parity,
+                tail_sig,
+            );
+            let span_idx = id_index(span.span());
+            if spans.len() <= span_idx {
+                spans.resize_with(
+                    span_idx + 1,
+                    SpanContinuations::default,
+                );
+            }
+
+            let SpanContinuations { current, deltas } =
+                &mut spans[span_idx];
+            match current.binary_search_by_key(
+                &(span.last(), tail_parity, tail_sig),
+                |cnt| (cnt.color(), cnt.tail_parity(), cnt.tail_sig()),
+            ) {
+                Ok(pos) => {
+                    if tail_nz < current[pos].tail_nz() {
+                        current[pos].set_tail_nz(tail_nz);
                         deltas.push(continuation);
-                        true
-                    },
-                }
-            },
-            Self::Rich(spans) => {
-                let tail_nz = parity_lower_bound(tail_nz, tail_parity);
-                let continuation = Continuation {
-                    color: span.last,
-                    tail_nz,
-                    tail_parity,
-                    tail_sig,
-                };
-
-                if spans.len() <= span.span {
-                    spans.resize_with(
-                        span.span + 1,
-                        SpanContinuations::default,
-                    );
-                }
-
-                let SpanContinuations { current, deltas } =
-                    &mut spans[span.span];
-                match current.binary_search_by_key(
-                    &(span.last, tail_parity, tail_sig),
-                    |cnt| (cnt.color, cnt.tail_parity, cnt.tail_sig),
-                ) {
-                    Ok(pos) => {
-                        // Counts are lower bounds. For the same continuation
-                        // color, exact tail parity, and exact active signature,
-                        // a smaller bound subsumes every larger one. Record the
-                        // stronger value as a delta so existing watchers only
-                        // revisit this changed continuation.
-                        if tail_nz < current[pos].tail_nz {
-                            current[pos].tail_nz = tail_nz;
-                            deltas.push(continuation);
-                            return true;
-                        }
-                        false
-                    },
-                    Err(pos) => {
-                        current.insert(pos, continuation);
-                        deltas.push(continuation);
-                        true
-                    },
-                }
-            },
+                        return true;
+                    }
+                    false
+                },
+                Err(pos) => {
+                    current.insert(pos, continuation);
+                    deltas.push(continuation);
+                    true
+                },
+            }
         }
     }
 
-    fn current_continuations(&self, span: &Span) -> &Continuations {
-        let continuations = match self {
-            Self::Halt(spans) | Self::Rich(spans) => {
-                &spans[span.span].current
-            },
-        };
+    #[inline]
+    fn table<const G: u8>(&self) -> &Vec<SpanContinuations> {
+        if G == CPS_GOAL_HALT {
+            let Self::Halt(spans) = self else {
+                unreachable!(
+                    "halt CPS must use halt continuation tables"
+                )
+            };
+            spans
+        } else {
+            let Self::Rich(spans) = self else {
+                unreachable!(
+                    "rich CPS must use rich continuation tables"
+                )
+            };
+            spans
+        }
+    }
+
+    #[inline]
+    fn current_continuations<const G: u8>(
+        &self,
+        span: &Span,
+    ) -> &Continuations {
+        let continuations =
+            &self.table::<G>()[id_index(span.span())].current;
         debug_assert!(!continuations.is_empty());
         continuations
     }
 
-    fn delta_len(&self, span: &Span) -> usize {
-        match self {
-            Self::Halt(spans) | Self::Rich(spans) => {
-                spans[span.span].deltas.len()
-            },
-        }
-    }
-
-    fn continuation_deltas(
+    #[inline]
+    fn delta_len<const G: u8>(
         &self,
         span: &Span,
-        cursor: usize,
+    ) -> ContinuationCursor {
+        compact_id(
+            self.table::<G>()[id_index(span.span())].deltas.len(),
+        )
+    }
+
+    #[inline]
+    fn continuation_deltas<const G: u8>(
+        &self,
+        span: &Span,
+        cursor: ContinuationCursor,
     ) -> &[Continuation] {
-        let deltas = match self {
-            Self::Halt(spans) | Self::Rich(spans) => {
-                &spans[span.span].deltas
-            },
-        };
+        let deltas = &self.table::<G>()[id_index(span.span())].deltas;
+        let cursor = id_index(cursor);
         debug_assert!(cursor <= deltas.len());
         &deltas[cursor..]
     }
@@ -2180,29 +2487,80 @@ impl Config {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Tape {
-    scan: Color,
     lspan: Span,
     rspan: Span,
-    left_nz: usize,
-    right_nz: usize,
-    left_parity: bool,
-    right_parity: bool,
-    left_sig: TailSig,
-    right_sig: TailSig,
+    left_nz: NonzeroCount,
+    right_nz: NonzeroCount,
+    tail_meta: u16,
+    scan: Color,
 }
 
+#[expect(clippy::cast_possible_truncation)]
 impl Tape {
+    const SIG_BITS: u32 = TailSig::USED_BITS as u32;
+    const SIG_MASK: u16 = TailSig::PACKED_MASK as u16;
+    const RIGHT_SIG_SHIFT: u32 = Self::SIG_BITS;
+    const LEFT_PARITY_SHIFT: u32 = Self::SIG_BITS * 2;
+    const RIGHT_PARITY_SHIFT: u32 = Self::LEFT_PARITY_SHIFT + 1;
+
+    const fn pack_tail_meta(
+        left_parity: bool,
+        right_parity: bool,
+        left_sig: TailSig,
+        right_sig: TailSig,
+    ) -> u16 {
+        (left_sig.raw() as u16)
+            | ((right_sig.raw() as u16) << Self::RIGHT_SIG_SHIFT)
+            | ((left_parity as u16) << Self::LEFT_PARITY_SHIFT)
+            | ((right_parity as u16) << Self::RIGHT_PARITY_SHIFT)
+    }
+
+    const fn left_sig(self) -> TailSig {
+        TailSig((self.tail_meta & Self::SIG_MASK) as u8)
+    }
+
+    const fn right_sig(self) -> TailSig {
+        TailSig(
+            ((self.tail_meta >> Self::RIGHT_SIG_SHIFT) & Self::SIG_MASK)
+                as u8,
+        )
+    }
+
+    fn set_left_sig(&mut self, sig: TailSig) {
+        self.tail_meta =
+            (self.tail_meta & !Self::SIG_MASK) | u16::from(sig.raw());
+    }
+
+    fn set_right_sig(&mut self, sig: TailSig) {
+        let mask = Self::SIG_MASK << Self::RIGHT_SIG_SHIFT;
+        self.tail_meta = (self.tail_meta & !mask)
+            | (u16::from(sig.raw()) << Self::RIGHT_SIG_SHIFT);
+    }
+
+    const fn left_parity(self) -> bool {
+        self.tail_meta & (1 << Self::LEFT_PARITY_SHIFT) != 0
+    }
+
+    const fn right_parity(self) -> bool {
+        self.tail_meta & (1 << Self::RIGHT_PARITY_SHIFT) != 0
+    }
+
+    const fn toggle_left_parity(&mut self) {
+        self.tail_meta ^= 1 << Self::LEFT_PARITY_SHIFT;
+    }
+
+    const fn toggle_right_parity(&mut self) {
+        self.tail_meta ^= 1 << Self::RIGHT_PARITY_SHIFT;
+    }
+
     fn init(rad: Radius, pool: &mut SpanPool) -> Self {
         Self {
-            scan: 0,
             lspan: Span::init(rad, pool),
             rspan: Span::init(rad, pool),
             left_nz: 0,
             right_nz: 0,
-            left_parity: false,
-            right_parity: false,
-            left_sig: TailSig::default(),
-            right_sig: TailSig::default(),
+            tail_meta: 0,
+            scan: 0,
         }
     }
 
@@ -2212,8 +2570,8 @@ impl Tape {
         push: Span,
         pull: Span,
         shift: Shift,
-        left_nz: usize,
-        right_nz: usize,
+        left_nz: NonzeroCount,
+        right_nz: NonzeroCount,
         left_parity: bool,
         right_parity: bool,
         left_sig: TailSig,
@@ -2223,15 +2581,17 @@ impl Tape {
             if shift { (push, pull) } else { (pull, push) };
 
         Self {
-            scan,
             lspan,
             rspan,
             left_nz,
             right_nz,
-            left_parity,
-            right_parity,
-            left_sig,
-            right_sig,
+            tail_meta: Self::pack_tail_meta(
+                left_parity,
+                right_parity,
+                left_sig,
+                right_sig,
+            ),
+            scan,
         }
     }
 }
@@ -2247,17 +2607,17 @@ impl fmt::Display for Tape {
         write!(
             f,
             "L(pat={}, last={}, nz={}, odd={}, sig={:?}) [{}] R(pat={}, last={}, nz={}, odd={}, sig={:?})",
-            self.lspan.span,
-            self.lspan.last,
+            self.lspan.span(),
+            self.lspan.last(),
             self.left_nz,
-            self.left_parity,
-            self.left_sig,
+            self.left_parity(),
+            self.left_sig(),
             self.scan,
-            self.rspan.span,
-            self.rspan.last,
+            self.rspan.span(),
+            self.rspan.last(),
             self.right_nz,
-            self.right_parity,
-            self.right_sig
+            self.right_parity(),
+            self.right_sig()
         )
     }
 }
@@ -2265,34 +2625,57 @@ impl fmt::Display for Tape {
 /**************************************/
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct Span {
-    span: SpanId,
-    last: Color,
-}
+struct Span(u32);
 
 impl Span {
+    const ID_MASK: u32 = 0x00ff_ffff;
+
+    const fn raw(self) -> u32 {
+        self.0
+    }
+
+    const fn from_raw(raw: u32) -> Self {
+        Self(raw)
+    }
+
+    fn new(span: SpanId, last: Color) -> Self {
+        assert!(
+            span <= Self::ID_MASK,
+            "CPS span id exceeded 24-bit packing"
+        );
+        Self(span | (u32::from(last) << 24))
+    }
+
+    const fn span(self) -> SpanId {
+        self.0 & Self::ID_MASK
+    }
+
+    const fn last(self) -> Color {
+        (self.0 >> 24) as Color
+    }
+
+    fn set_last(&mut self, color: Color) {
+        self.0 = (self.0 & Self::ID_MASK) | (u32::from(color) << 24);
+    }
+
     fn init(rad: Radius, pool: &mut SpanPool) -> Self {
         assert!(rad > 0);
 
         let mut colors = pool.take_colors(rad - 1);
         colors.resize(rad - 1, 0);
 
-        Self {
-            span: pool.intern(colors),
-            last: 0,
-        }
+        Self::new(pool.intern(colors), 0)
     }
 
     fn push(&mut self, color: Color, pool: &mut SpanPool) -> Color {
-        let span_id = self.span;
-        let last = self.last;
+        let span_id = self.span();
+        let span_idx = id_index(span_id);
+        let last = self.last();
 
-        if let Some(next) = pool.push_cache[span_id]
+        if let Some(next) = pool.push_cache[span_idx]
             .iter()
-            .find(|transition| {
-                transition.last == last && transition.color == color
-            })
-            .map(|transition| transition.next)
+            .find(|transition| transition.matches(last, color))
+            .map(|transition| transition.next())
         {
             *self = next;
             return last;
@@ -2312,28 +2695,23 @@ impl Span {
             }
         };
 
-        let next = Self {
-            span: pool.intern(v),
-            last: new_last,
-        };
+        let next = Self::new(pool.intern(v), new_last);
 
-        pool.push_cache[span_id].push(PushTransition {
-            last,
-            color,
-            next,
-        });
+        pool.push_cache[span_idx]
+            .push(PushTransition::new(last, color, next));
         *self = next;
         last
     }
 
     fn pull(&mut self, pool: &mut SpanPool) -> Color {
-        let span_id = self.span;
-        let last = self.last;
+        let span_id = self.span();
+        let span_idx = id_index(span_id);
+        let last = self.last();
 
-        if let Some((next, pulled)) = pool.pull_cache[span_id]
+        if let Some((next, pulled)) = pool.pull_cache[span_idx]
             .iter()
-            .find(|transition| transition.last == last)
-            .map(|transition| (transition.next, transition.pulled))
+            .find(|transition| transition.last() == last)
+            .map(|transition| (transition.next(), transition.pulled()))
         {
             *self = next;
             return pulled;
@@ -2353,22 +2731,16 @@ impl Span {
             }
         };
 
-        let next = Self {
-            span: pool.intern(v),
-            last,
-        };
+        let next = Self::new(pool.intern(v), last);
 
-        pool.pull_cache[span_id].push(PullTransition {
-            last,
-            next,
-            pulled,
-        });
+        pool.pull_cache[span_idx]
+            .push(PullTransition::new(last, next, pulled));
         *self = next;
         pulled
     }
 
     fn blank_span(&self, pool: &SpanPool) -> bool {
-        pool.blank_span(self.span)
+        pool.blank_span(self.span())
     }
 
     fn base_blank_span(
@@ -2376,7 +2748,7 @@ impl Span {
         prog: &impl GetInstr,
         pool: &mut SpanPool,
     ) -> bool {
-        pool.base_blank_span(prog, self.span)
+        pool.base_blank_span(prog, self.span())
     }
 
     fn base_all_blank(
@@ -2384,22 +2756,24 @@ impl Span {
         prog: &impl GetInstr,
         pool: &mut SpanPool,
     ) -> bool {
-        prog.is_blank(self.last) && self.base_blank_span(prog, pool)
+        prog.is_blank(self.last()) && self.base_blank_span(prog, pool)
     }
 }
 
 #[test]
 fn test_tail_sig() {
-    let zero = TailSig::default();
+    fn check<const LEVEL: usize>() {
+        let zero = TailSig::default();
+        let tail = zero.prepend::<LEVEL>(2);
+        let whole = tail.prepend::<LEVEL>(1);
 
-    for level in 1..=TAIL_SIG_REFINEMENTS.len() {
-        let tail = zero.prepend(2, level);
-        let whole = tail.prepend(1, level);
-
-        assert!(whole.is_prepend_of(1, tail, level));
-        assert!(!whole.is_prepend_of(0, tail, level));
-        assert_eq!(zero.prepend(0, level), zero);
+        assert!(whole.is_prepend_of::<LEVEL>(1, tail));
+        assert!(!whole.is_prepend_of::<LEVEL>(0, tail));
+        assert_eq!(zero.prepend::<LEVEL>(0), zero);
     }
+
+    check::<1>();
+    check::<2>();
 }
 
 #[test]
@@ -2407,13 +2781,85 @@ fn test_span() {
     let mut pool = SpanPool::new(Halt);
     let mut span = Span::init(3, &mut pool);
 
-    assert_eq!(pool.colors(span.span).as_slice(), &[0, 0]);
-    assert_eq!(span.last, 0);
+    assert_eq!(pool.colors(span.span()).as_slice(), &[0, 0]);
+    assert_eq!(span.last(), 0);
 
     span.push(1, &mut pool);
     span.push(1, &mut pool);
     span.push(0, &mut pool);
 
-    assert_eq!(pool.colors(span.span).as_slice(), &[0, 1]);
-    assert_eq!(span.last, 1);
+    assert_eq!(pool.colors(span.span()).as_slice(), &[0, 1]);
+    assert_eq!(span.last(), 1);
+}
+
+#[test]
+fn test_compact_cps_layouts() {
+    use core::mem::size_of;
+
+    assert_eq!(size_of::<TailSig>(), 1);
+    assert_eq!(size_of::<Span>(), 4);
+    assert_eq!(size_of::<Continuation>(), 4);
+    assert_eq!(size_of::<Tape>(), 16);
+    assert_eq!(size_of::<ConfigShape>(), 12);
+    assert_eq!(size_of::<CpsEdge>(), 4);
+    assert_eq!(size_of::<PushTransition>(), 8);
+    assert_eq!(size_of::<PullTransition>(), 8);
+    assert_eq!(size_of::<AntichainEntry>(), 8);
+    assert_eq!(size_of::<AntichainEntries>(), 16);
+    assert_eq!(size_of::<(ConfigId, u32)>(), 8);
+}
+
+#[test]
+fn test_packed_cps_records_roundtrip() {
+    let edge = CpsEdge::new(1234, 5, 7, true);
+    assert_eq!(edge.to(), 1234);
+    assert_eq!(edge.read(), 5);
+    assert_eq!(edge.write(), 7);
+    assert!(edge.shift());
+
+    let next = Span::new(123, 9);
+    let push = PushTransition::new(4, 6, next);
+    assert!(push.matches(4, 6));
+    assert!(!push.matches(4, 7));
+    assert_eq!(push.next().raw(), next.raw());
+
+    let pull = PullTransition::new(4, next, 8);
+    assert_eq!(pull.last(), 4);
+    assert_eq!(pull.next().raw(), next.raw());
+    assert_eq!(pull.pulled(), 8);
+}
+
+#[test]
+fn test_inline_antichain_spill() {
+    let mut entries = AntichainEntries::empty();
+    let mut overflow = Vec::new();
+    let mut free_overflow = Vec::new();
+
+    entries.push(
+        AntichainEntry::new(1, 4, 10),
+        &mut overflow,
+        &mut free_overflow,
+    );
+    entries.push(
+        AntichainEntry::new(3, 2, 11),
+        &mut overflow,
+        &mut free_overflow,
+    );
+    assert!(entries.overflow_index().is_none());
+    assert_eq!(
+        entries.find_subsuming(4, 4, &overflow).unwrap().id(),
+        10
+    );
+
+    entries.push(
+        AntichainEntry::new(5, 1, 12),
+        &mut overflow,
+        &mut free_overflow,
+    );
+    let index = entries.overflow_index().unwrap();
+    assert_eq!(overflow[id_index(index)].len(), 3);
+    assert_eq!(
+        entries.find_subsuming(5, 1, &overflow).unwrap().id(),
+        12
+    );
 }

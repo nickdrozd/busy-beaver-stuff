@@ -1,7 +1,7 @@
 allow-panic-in-tests = true
 excessive-nesting-threshold = 7
 too-many-arguments-threshold = 8
-cognitive-complexity-threshold = 41
+cognitive-complexity-threshold = 42
 
 disallowed-names = ["row", "rows", ".."]
 
