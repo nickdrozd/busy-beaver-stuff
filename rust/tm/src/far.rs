@@ -21,7 +21,10 @@
 //! block lengths `1..=block` are tried, subject to the alphabet-size
 //! and hard safety caps.  Per-run budgets are fixed functions of `block_len`.
 
-use core::{cmp::Ordering, hash::Hash};
+use core::{
+    cmp::Ordering,
+    hash::{Hash, Hasher},
+};
 
 use ahash::{AHashMap as Map, AHashSet as Set};
 
@@ -96,15 +99,15 @@ const FAR_SET_PAIR_LEN_H_TAIL: usize = 1;
 /// when the total retained list exceeds `len1 + len2`, the element immediately
 /// after that protected prefix is discarded.  This is intentionally different
 /// from a plain fixed-length FIFO/LRU queue.
-const FAR_RWL_DEFAULT_MNC: u64 = 2;
-const FAR_RWL_DEFAULT_LEN1: usize = 8;
-const FAR_RWL_DEFAULT_LEN2: usize = 0;
-const FAR_RWL_DEFAULT_MODS: &[usize] = &[1, 2, 3];
+const FAR_RWL_DEFAULT_MNC: u8 = 2;
+const FAR_RWL_DEFAULT_LEN1: u8 = 8;
+const FAR_RWL_DEFAULT_LEN2: u8 = 0;
+const FAR_RWL_DEFAULT_MODS: &[u8] = &[1, 2, 3];
 
 /// Additional exact RWL_mod profiles.  Every tuple is
 /// `(mnc, mod_, len1, len2)` and is crossed independently with every FAR block
 /// length in the late generalized sweep.
-const FAR_RWL_GENERAL_PROFILES: &[(u64, u64, usize, usize)] = &[
+const FAR_RWL_GENERAL_PROFILES: &[(u8, u8, u8, u8)] = &[
     (2, 0, 8, 0),
     (2, 0, 4, 4),
     (2, 1, 4, 4),
@@ -141,7 +144,7 @@ const FAR_CPS_LRU_EXACT_BLOCK_LEN_CAP: usize = 31;
 /// suffix capacity, and `len3` is the exact x3 stack filled before x12 is
 /// touched.  These profiles subsume the removed experimental `(LRUH,H,tH)`
 /// portfolio at `LRU_n = 0` under `(len1,len2,len3) = (H,LRUH,tH)`.
-const FAR_CPS_LRU_EXACT_PROFILES: &[(usize, usize, usize)] = &[
+const FAR_CPS_LRU_EXACT_PROFILES: &[(u8, u8, u8)] = &[
     (0, 2, 0),
     (0, 1, 0),
     (1, 3, 0),
@@ -157,7 +160,7 @@ const FAR_CPS_LRU_EXACT_PROFILES: &[(usize, usize, usize)] = &[
 /// Upstream `LRU_n` is the zero-based matching duplicate removed from the
 /// LRU suffix.  Sweep it independently of both the history-size triple and
 /// FAR block/DFA size.  Values above two are easy to add if this axis pays.
-const FAR_CPS_LRU_EXACT_LRU_NS: &[usize] = &[0, 1, 2];
+const FAR_CPS_LRU_EXACT_LRU_NS: &[u8] = &[0, 1, 2];
 
 /// FAR over tape symbols augmented with finite per-cell execution history.
 ///
@@ -187,15 +190,15 @@ const FAR_CPS_COLOR_WORDS: usize = 4;
 /// `NG_n` is a count of FAR *block symbols*, not a count of raw tape cells.
 /// `bs_n` is the exact staging-buffer length before an n-gram is promoted into
 /// the repeated-history list.
-const FAR_RNGS_DEFAULT_MNC: u64 = 2;
-const FAR_RNGS_DEFAULT_MOD: u64 = 1;
-const FAR_RNGS_DEFAULT_NG_N: usize = 4;
-const FAR_RNGS_DEFAULT_LEN_H: usize = 8;
-const FAR_RNGS_DEFAULT_BS_N: usize = 0;
+const FAR_RNGS_DEFAULT_MNC: u8 = 2;
+const FAR_RNGS_DEFAULT_MOD: u8 = 1;
+const FAR_RNGS_DEFAULT_NG_N: u8 = 4;
+const FAR_RNGS_DEFAULT_LEN_H: u8 = 8;
+const FAR_RNGS_DEFAULT_BS_N: u8 = 0;
 
 /// Additional exact RNGS_mod profiles.  Every tuple is
 /// `(mnc, mod_, NG_n, len_h, bs_n)` and is crossed independently with FAR size.
-const FAR_RNGS_GENERAL_PROFILES: &[(u64, u64, usize, usize, usize)] = &[
+const FAR_RNGS_GENERAL_PROFILES: &[(u8, u8, u8, u8, u8)] = &[
     (2, 2, 4, 8, 0),
     (2, 3, 4, 8, 0),
     (2, 1, 4, 8, 1),
@@ -218,6 +221,7 @@ const FAR_RNGS_GENERAL_PROFILES: &[(u64, u64, usize, usize, usize)] = &[
 ];
 
 const FAR_RNGS_GENERAL_BLOCK_LEN_CAP: usize = 31;
+const FAR_RNGS_INLINE_NG_CAP: usize = 4;
 
 /// C++ FAR::RS_mod defaults.
 const FAR_RS_NG_N: usize = 4;
@@ -460,16 +464,46 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
 /// A block-word: a length-`len` vector of tape symbols.
 ///
-/// `Word` uses a `Vec<Color>` so it supports any number of colors.
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+/// `Word` uses a `Vec<Color>` so it supports any number of colors.  The cached
+/// fingerprint makes hash-table probes O(1) in the block length.  Equality still
+/// compares the full cells, so fingerprint collisions affect performance only.
+#[derive(Clone, Debug)]
 struct Word {
     cells: Vec<Color>,
+    fingerprint: u64,
 }
 
 impl Word {
+    #[inline]
+    const fn fingerprint_base(len: usize) -> u64 {
+        (len as u64).wrapping_mul(0xD6E8_FEB8_6659_FD93)
+    }
+
+    #[inline]
+    fn cell_fingerprint(idx: usize, color: Color) -> u64 {
+        // Canonical zero contributes nothing.  This makes construction of the
+        // overwhelmingly common all-zero block O(1), while the position is mixed
+        // into every nonzero contribution so permutations normally hash apart.
+        if color == 0 {
+            return 0;
+        }
+        let x = (((idx as u64) << 8) | u64::from(color))
+            .wrapping_mul(0x9E37_79B1_85EB_CA87);
+        x ^ x.rotate_left(29) ^ (x >> 23)
+    }
+
+    fn recompute_fingerprint(&mut self) {
+        let mut fingerprint = Self::fingerprint_base(self.cells.len());
+        for (idx, &color) in self.cells.iter().enumerate() {
+            fingerprint ^= Self::cell_fingerprint(idx, color);
+        }
+        self.fingerprint = fingerprint;
+    }
+
     fn zero(len: usize) -> Self {
         Self {
             cells: vec![0; len],
+            fingerprint: Self::fingerprint_base(len),
         }
     }
 
@@ -485,7 +519,14 @@ impl Word {
         self.cells[idx]
     }
 
+    #[inline]
     fn set(&mut self, idx: usize, v: Color) {
+        let old = self.cells[idx];
+        if old == v {
+            return;
+        }
+        self.fingerprint ^= Self::cell_fingerprint(idx, old)
+            ^ Self::cell_fingerprint(idx, v);
         self.cells[idx] = v;
     }
 
@@ -500,7 +541,25 @@ impl Word {
     /// Reverse the cell order in the word (length-preserving).
     fn reverse(mut self) -> Self {
         self.cells.reverse();
+        self.recompute_fingerprint();
         self
+    }
+}
+
+impl PartialEq for Word {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.fingerprint == other.fingerprint
+            && self.cells == other.cells
+    }
+}
+
+impl Eq for Word {}
+
+impl Hash for Word {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u64(self.fingerprint);
     }
 }
 
@@ -516,12 +575,18 @@ impl PartialOrd for Word {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
-struct WordId(usize);
+#[derive(
+    Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Default,
+)]
+struct WordId(u32);
 
 #[derive(Clone, Debug)]
 struct WordInterner {
-    ids: Map<Word, WordId>,
+    // Store each full Word only once, in `words`. The primary table uses the
+    // cached fingerprint as its compact key; collision storage is allocated
+    // only if two unequal Words actually share the same u64 fingerprint.
+    ids: Map<u64, WordId>,
+    collisions: Map<u64, Vec<WordId>>,
     words: Vec<Word>,
 }
 
@@ -529,22 +594,46 @@ impl WordInterner {
     fn new() -> Self {
         Self {
             ids: Map::new(),
+            collisions: Map::new(),
             words: Vec::new(),
         }
     }
 
     fn intern(&mut self, w: Word) -> WordId {
-        if let Some(&id) = self.ids.get(&w) {
+        let fingerprint = w.fingerprint;
+        if let Some(&id) = self.ids.get(&fingerprint) {
+            if self.words[id.0 as usize] == w {
+                return id;
+            }
+            if let Some(collisions) = self.collisions.get(&fingerprint)
+            {
+                for &candidate in collisions {
+                    if self.words[candidate.0 as usize] == w {
+                        return candidate;
+                    }
+                }
+            }
+
+            let id =
+                WordId(u32::try_from(self.words.len()).expect(
+                    "FAR word interner exceeded u32::MAX entries",
+                ));
+            self.words.push(w);
+            self.collisions.entry(fingerprint).or_default().push(id);
             return id;
         }
-        let id = WordId(self.words.len());
-        self.words.push(w.clone());
-        self.ids.insert(w, id);
+
+        let id = WordId(
+            u32::try_from(self.words.len())
+                .expect("FAR word interner exceeded u32::MAX entries"),
+        );
+        self.words.push(w);
+        self.ids.insert(fingerprint, id);
         id
     }
 
     fn get(&self, id: WordId) -> &Word {
-        &self.words[id.0]
+        &self.words[id.0 as usize]
     }
 
     fn clone_word(&self, id: WordId) -> Word {
@@ -637,11 +726,14 @@ impl RawWordUpdateLemma {
 
 /// History summarizer used by the FAR DFA.
 trait Summary: Clone + Eq + Hash {
-    fn new() -> Self;
+    type Config: Copy;
+
+    fn new(config: Self::Config) -> Self;
     fn push(
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        config: Self::Config,
     ) -> Result<(), SummaryOverflow>;
 
     /// Conservative summary-level all-zero compatibility.  Blank target
@@ -653,6 +745,135 @@ trait Summary: Clone + Eq + Hash {
 
 #[derive(Clone, Copy, Debug)]
 struct SummaryOverflow;
+
+/// Fixed-capacity vector for summary fragments with a genuinely tiny hard cap.
+/// It hashes and compares exactly like the live slice, but needs no allocation.
+#[derive(Clone, Copy)]
+struct InlineVec<T: Copy + Default, const N: usize> {
+    data: [T; N],
+    len: u8,
+}
+
+impl<T: Copy + Default, const N: usize> InlineVec<T, N> {
+    fn new() -> Self {
+        debug_assert!(u8::try_from(N).is_ok());
+        Self {
+            data: [T::default(); N],
+            len: 0,
+        }
+    }
+    #[inline]
+    fn push(&mut self, value: T) {
+        let len = self.len as usize;
+        debug_assert!(len < N, "InlineVec capacity exceeded");
+        self.data[len] = value;
+        self.len += 1;
+    }
+    #[inline]
+    fn insert(&mut self, pos: usize, value: T) {
+        let len = self.len as usize;
+        debug_assert!(
+            pos <= len && len < N,
+            "InlineVec capacity exceeded"
+        );
+        for i in (pos..len).rev() {
+            self.data[i + 1] = self.data[i];
+        }
+        self.data[pos] = value;
+        self.len += 1;
+    }
+    #[inline]
+    fn remove(&mut self, pos: usize) -> T {
+        let len = self.len as usize;
+        debug_assert!(pos < len);
+        let out = self.data[pos];
+        for i in pos + 1..len {
+            self.data[i - 1] = self.data[i];
+        }
+        self.len -= 1;
+        self.data[self.len as usize] = T::default();
+        out
+    }
+    #[inline]
+    fn pop(&mut self) -> Option<T> {
+        if self.len == 0 {
+            return None;
+        }
+        self.len -= 1;
+        let idx = self.len as usize;
+        let out = self.data[idx];
+        self.data[idx] = T::default();
+        Some(out)
+    }
+    #[inline]
+    fn truncate(&mut self, len: usize) {
+        while self.len as usize > len {
+            let _ = self.pop();
+        }
+    }
+    #[inline]
+    fn as_slice(&self) -> &[T] {
+        &self.data[..self.len as usize]
+    }
+}
+impl<T: Copy + Default, const N: usize> Default for InlineVec<T, N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl<T: Copy + Default, const N: usize> core::ops::Deref
+    for InlineVec<T, N>
+{
+    type Target = [T];
+    fn deref(&self) -> &Self::Target {
+        self.as_slice()
+    }
+}
+impl<T: Copy + Default, const N: usize> core::ops::DerefMut
+    for InlineVec<T, N>
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        let len = self.len as usize;
+        &mut self.data[..len]
+    }
+}
+impl<T: Copy + Default + PartialEq, const N: usize> PartialEq
+    for InlineVec<T, N>
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+impl<T: Copy + Default + Eq, const N: usize> Eq for InlineVec<T, N> {}
+impl<T: Copy + Default + PartialOrd, const N: usize> PartialOrd
+    for InlineVec<T, N>
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.as_slice().partial_cmp(other.as_slice())
+    }
+}
+impl<T: Copy + Default + Ord, const N: usize> Ord for InlineVec<T, N> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_slice().cmp(other.as_slice())
+    }
+}
+impl<T: Copy + Default + Hash, const N: usize> Hash
+    for InlineVec<T, N>
+{
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_slice().hash(state);
+    }
+}
+impl<T: Copy + Default + core::fmt::Debug, const N: usize>
+    core::fmt::Debug for InlineVec<T, N>
+{
+    fn fmt(
+        &self,
+        f: &mut core::fmt::Formatter<'_>,
+    ) -> core::fmt::Result {
+        self.as_slice().fmt(f)
+    }
+}
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RepeatWord {
@@ -668,18 +889,23 @@ impl RepeatWord {
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct Ng1Summary {
-    q: Vec<WordId>,
+    q: InlineVec<WordId, FAR_NG1_N>,
 }
 
 impl Summary for Ng1Summary {
-    fn new() -> Self {
-        Self { q: Vec::new() }
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
+        Self {
+            q: InlineVec::new(),
+        }
     }
 
     fn push(
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         if self.q.is_empty() && words.get(w).is_zero() {
             return Ok(());
@@ -698,26 +924,30 @@ impl Summary for Ng1Summary {
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct NgSummary<const TAIL_H: usize, const POS_MOD: usize> {
-    q: Vec<WordId>,
-    q0: Vec<WordId>,
-    mod_pos: usize,
+    q: InlineVec<WordId, FAR_NG_N>,
+    q0: InlineVec<WordId, TAIL_H>,
+    mod_pos: u8,
 }
 
 impl<const TAIL_H: usize, const POS_MOD: usize> Summary
     for NgSummary<TAIL_H, POS_MOD>
 {
-    fn new() -> Self {
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
         Self {
-            q: Vec::new(),
-            q0: Vec::new(),
+            q: InlineVec::new(),
+            q0: InlineVec::new(),
             mod_pos: 0,
         }
     }
 
+    #[expect(clippy::unwrap_in_result)]
     fn push(
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         if self.q.is_empty() && words.get(w).is_zero() {
             return Ok(());
@@ -732,7 +962,9 @@ impl<const TAIL_H: usize, const POS_MOD: usize> Summary
             self.q0.push(w);
         }
 
-        self.mod_pos = (self.mod_pos + 1) % POS_MOD;
+        self.mod_pos =
+            u8::try_from((usize::from(self.mod_pos) + 1) % POS_MOD)
+                .expect("NG position modulus must fit u8");
         Ok(())
     }
 
@@ -744,14 +976,16 @@ impl<const TAIL_H: usize, const POS_MOD: usize> Summary
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct NgSetSummary {
-    q: Vec<WordId>,
-    lru: Vec<Vec<WordId>>,
+    q: InlineVec<WordId, FAR_NGSET_NG_N>,
+    lru: Vec<InlineVec<WordId, FAR_NGSET_NG_N>>,
 }
 
 impl Summary for NgSetSummary {
-    fn new() -> Self {
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
         Self {
-            q: Vec::new(),
+            q: InlineVec::new(),
             lru: Vec::new(),
         }
     }
@@ -760,17 +994,19 @@ impl Summary for NgSetSummary {
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         if self.q.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
 
-        let old_ngram = self.q.clone();
+        let old_ngram = self.q;
+        if self.q.len() == FAR_NGSET_NG_N {
+            let _ = self.q.pop();
+        }
         self.q.insert(0, w);
 
-        if self.q.len() > FAR_NGSET_NG_N {
-            self.q.truncate(FAR_NGSET_NG_N);
-
+        if old_ngram.len() == FAR_NGSET_NG_N {
             match self.lru.binary_search(&old_ngram) {
                 Ok(_) => {},
                 Err(pos) => {
@@ -795,14 +1031,19 @@ impl Summary for NgSetSummary {
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct LruPairSummary {
-    q: Vec<WordId>,
+    q: InlineVec<
+        WordId,
+        { FAR_LRU_PAIR_LEN_H_NO_LRU + FAR_LRU_PAIR_LEN_H_TAIL },
+    >,
     lru: Vec<(WordId, WordId)>,
 }
 
 impl Summary for LruPairSummary {
-    fn new() -> Self {
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
         Self {
-            q: Vec::new(),
+            q: InlineVec::new(),
             lru: Vec::new(),
         }
     }
@@ -811,15 +1052,16 @@ impl Summary for LruPairSummary {
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         if self.q.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
 
-        self.q.push(w);
         if self.q.len()
-            <= FAR_LRU_PAIR_LEN_H_NO_LRU + FAR_LRU_PAIR_LEN_H_TAIL
+            < FAR_LRU_PAIR_LEN_H_NO_LRU + FAR_LRU_PAIR_LEN_H_TAIL
         {
+            self.q.push(w);
             return Ok(());
         }
 
@@ -838,6 +1080,7 @@ impl Summary for LruPairSummary {
         self.lru.insert(0, pair);
 
         self.q.remove(FAR_LRU_PAIR_LEN_H_TAIL);
+        self.q.push(w);
         Ok(())
     }
 
@@ -851,14 +1094,19 @@ impl Summary for LruPairSummary {
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct SetPairSummary {
-    q: Vec<WordId>,
+    q: InlineVec<
+        WordId,
+        { FAR_SET_PAIR_LEN_H_NO_LRU + FAR_SET_PAIR_LEN_H_TAIL },
+    >,
     lru: Vec<(WordId, WordId)>,
 }
 
 impl Summary for SetPairSummary {
-    fn new() -> Self {
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
         Self {
-            q: Vec::new(),
+            q: InlineVec::new(),
             lru: Vec::new(),
         }
     }
@@ -867,15 +1115,16 @@ impl Summary for SetPairSummary {
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         if self.q.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
 
-        self.q.push(w);
         if self.q.len()
-            <= FAR_SET_PAIR_LEN_H_NO_LRU + FAR_SET_PAIR_LEN_H_TAIL
+            < FAR_SET_PAIR_LEN_H_NO_LRU + FAR_SET_PAIR_LEN_H_TAIL
         {
+            self.q.push(w);
             return Ok(());
         }
 
@@ -892,6 +1141,7 @@ impl Summary for SetPairSummary {
         }
 
         self.q.remove(FAR_SET_PAIR_LEN_H_TAIL);
+        self.q.push(w);
         Ok(())
     }
 
@@ -903,18 +1153,11 @@ impl Summary for SetPairSummary {
     }
 }
 
-const UINT63_MASK: u64 = (1_u64 << 63) - 1;
-
-#[inline]
-const fn uint63_succ(x: u64) -> u64 {
-    x.wrapping_add(1) & UINT63_MASK
-}
-
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RwlModWord {
     w: WordId,
-    n: u64,
-    phase: u64,
+    n: u8,
+    phase: u32,
 }
 
 impl RwlModWord {
@@ -941,60 +1184,37 @@ impl RwlModWord {
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RwlModSummary {
     q: Vec<RwlModWord>,
-    mnc: u64,
-    modulus: u64,
-    len1: usize,
-    len2: usize,
 }
 
 impl RwlModSummary {
-    fn with_profile(
-        mnc: u64,
-        modulus: u64,
-        len1: usize,
-        len2: usize,
-    ) -> Self {
-        assert!(mnc <= UINT63_MASK, "RWL_mod mnc must fit Uint63");
-        assert!(
-            modulus <= UINT63_MASK,
-            "RWL_mod modulus must fit Uint63"
-        );
-        Self {
-            q: Vec::new(),
-            mnc,
-            modulus,
-            len1,
-            len2,
-        }
-    }
-
-    fn limit_length(&mut self) {
-        if self.q.len() <= self.len1 {
+    fn limit_length(&mut self, len1: u8, len2: u8) {
+        if self.q.len() <= usize::from(len1) {
             return;
         }
 
-        let suffix_len = self.q.len() - self.len1;
-        if suffix_len > self.len2 {
-            self.q.remove(self.len1);
+        let len1 = usize::from(len1);
+        let suffix_len = self.q.len() - len1;
+        if suffix_len > usize::from(len2) {
+            self.q.remove(len1);
         }
     }
 }
 
 impl Summary for RwlModSummary {
-    fn new() -> Self {
-        Self::with_profile(
-            FAR_RWL_DEFAULT_MNC,
-            1,
-            FAR_RWL_DEFAULT_LEN1,
-            FAR_RWL_DEFAULT_LEN2,
-        )
+    type Config = (u8, u8, u8, u8);
+
+    fn new(_config: Self::Config) -> Self {
+        Self { q: Vec::new() }
     }
 
     fn push(
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        config: Self::Config,
     ) -> Result<(), SummaryOverflow> {
+        let (mnc, modulus, len1, len2) = config;
+
         // Upstream's distinguished state is the empty list, with a self-loop
         // on an all-zero FAR block.
         if self.q.is_empty() {
@@ -1006,23 +1226,19 @@ impl Summary for RwlModSummary {
 
         if self.q[0].w == w {
             let head = &mut self.q[0];
-            head.n = if head.n < self.mnc {
-                uint63_succ(head.n)
-            } else {
-                self.mnc
-            };
-            let phase = uint63_succ(head.phase);
+            head.n = head.n.saturating_add(1).min(mnc);
+            let phase = head.phase + 1;
             // Rocq's Uint63 remainder returns its dividend on divisor zero.
-            head.phase = if self.modulus == 0 {
+            head.phase = if modulus == 0 {
                 phase
             } else {
-                phase % self.modulus
+                phase % u32::from(modulus)
             };
         } else {
             self.q.insert(0, RwlModWord::new(w));
         }
 
-        self.limit_length();
+        self.limit_length(len1, len2);
         Ok(())
     }
 
@@ -1041,68 +1257,49 @@ impl Summary for RwlModSummary {
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct UpstreamCpsLruSummary {
     x12: Vec<WordId>,
-    x3: Vec<WordId>,
-    len1: usize,
-    len2: usize,
-    len3: usize,
-    lru_n: usize,
+    x3: InlineVec<WordId, 2>,
 }
 
 impl UpstreamCpsLruSummary {
-    const fn with_profile(
-        len1: usize,
-        len2: usize,
-        len3: usize,
-        lru_n: usize,
-    ) -> Self {
-        Self {
-            x12: Vec::new(),
-            x3: Vec::new(),
-            len1,
-            len2,
-            len3,
-            lru_n,
-        }
-    }
-
-    const fn is_initial(&self) -> bool {
+    fn is_initial(&self) -> bool {
         self.x12.is_empty() && self.x3.is_empty()
     }
 
     /// Exact specialization of BusyCoq's
     /// `upd_skipn len1 (upd_LRU len2 LRU_n)` to `WordId`.
-    fn update_x12(&mut self, w: WordId) {
+    fn update_x12(&mut self, w: WordId, len1: u8, len2: u8, lru_n: u8) {
         self.x12.insert(0, w);
 
         // `upd_skipn` preserves a list shorter than the protected prefix.
-        if self.x12.len() <= self.len1 {
+        let len1 = usize::from(len1);
+        let len2 = usize::from(len2);
+        if self.x12.len() <= len1 {
             return;
         }
 
         // `upd_LRU 0 ...` drops the entire suffix after the protected prefix.
-        if self.len2 == 0 {
-            self.x12.truncate(self.len1);
+        if len2 == 0 {
+            self.x12.truncate(len1);
             return;
         }
 
-        let head = self.x12[self.len1];
-        let mut out =
-            Vec::with_capacity(self.len1.saturating_add(self.len2));
-        out.extend_from_slice(&self.x12[..self.len1]);
+        let head = self.x12[len1];
+        let mut out = Vec::with_capacity(len1.saturating_add(len2));
+        out.extend_from_slice(&self.x12[..len1]);
         out.push(head);
 
-        let mut matching_seen = 0_usize;
+        let mut matching_seen = 0_u8;
         let mut removed = false;
-        for &item in &self.x12[self.len1 + 1..] {
+        for &item in &self.x12[len1 + 1..] {
             if !removed && item == head {
-                if matching_seen == self.lru_n {
+                if matching_seen == lru_n {
                     removed = true;
                     continue;
                 }
                 matching_seen += 1;
             }
 
-            if out.len() - self.len1 == self.len2 {
+            if out.len() - len1 == len2 {
                 break;
             }
             out.push(item);
@@ -1113,31 +1310,34 @@ impl UpstreamCpsLruSummary {
 }
 
 impl Summary for UpstreamCpsLruSummary {
-    fn new() -> Self {
-        let &(len1, len2, len3) = FAR_CPS_LRU_EXACT_PROFILES
-            .first()
-            .expect("exact CPS_LRU portfolio must not be empty");
-        let &lru_n = FAR_CPS_LRU_EXACT_LRU_NS
-            .first()
-            .expect("exact CPS_LRU LRU_n portfolio must not be empty");
-        Self::with_profile(len1, len2, len3, lru_n)
+    type Config = (u8, u8, u8, u8);
+
+    fn new(config: Self::Config) -> Self {
+        debug_assert!(usize::from(config.2) <= 2);
+        Self {
+            x12: Vec::new(),
+            x3: InlineVec::new(),
+        }
     }
 
     fn push(
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        config: Self::Config,
     ) -> Result<(), SummaryOverflow> {
+        let (len1, len2, len3, lru_n) = config;
+
         // Match upstream `is_s0`: the empty summary has a self-loop on the
         // canonical all-zero block.
         if self.is_initial() && words.get(w).is_zero() {
             return Ok(());
         }
 
-        if self.x3.len() < self.len3 {
+        if self.x3.len() < usize::from(len3) {
             self.x3.insert(0, w);
         } else {
-            self.update_x12(w);
+            self.update_x12(w, len1, len2, lru_n);
         }
         Ok(())
     }
@@ -1215,7 +1415,9 @@ struct CpsLruSummary {
 }
 
 impl Summary for CpsLruSummary {
-    fn new() -> Self {
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
         Self::default()
     }
 
@@ -1223,6 +1425,7 @@ impl Summary for CpsLruSummary {
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         self.core.push(w, words.get(w).is_zero());
         Ok(())
@@ -1244,7 +1447,9 @@ struct CpsLruSigSummary {
 }
 
 impl Summary for CpsLruSigSummary {
-    fn new() -> Self {
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
         Self {
             core: CpsLruCore::default(),
             sig: [0; FAR_CPS_SIG_REFINEMENTS.len()],
@@ -1255,6 +1460,7 @@ impl Summary for CpsLruSigSummary {
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         let word = words.get(w);
         cps_lru_update_signature(&mut self.sig, word);
@@ -1344,7 +1550,9 @@ struct CpsLruSigColorSummary {
 }
 
 impl Summary for CpsLruSigColorSummary {
-    fn new() -> Self {
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
         Self {
             core: CpsLruCore::default(),
             sig: [0; FAR_CPS_SIG_REFINEMENTS.len()],
@@ -1356,6 +1564,7 @@ impl Summary for CpsLruSigColorSummary {
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         let word = words.get(w);
         cps_lru_update_signature(&mut self.sig, word);
@@ -1381,13 +1590,13 @@ impl Summary for CpsLruSigColorSummary {
 struct RngsModWord {
     /// One upstream n-gram symbol.  This is a sequence of FAR block IDs, not a
     /// concatenation of the raw cells inside those blocks.
-    w: Vec<WordId>,
-    n: u64,
-    phase: u64,
+    w: InlineVec<WordId, FAR_RNGS_INLINE_NG_CAP>,
+    n: u8,
+    phase: u32,
 }
 
 impl RngsModWord {
-    const fn new(w: Vec<WordId>) -> Self {
+    const fn new(w: InlineVec<WordId, FAR_RNGS_INLINE_NG_CAP>) -> Self {
         Self { w, n: 1, phase: 1 }
     }
 }
@@ -1406,41 +1615,12 @@ impl RngsModWord {
 /// cells and had no staging queue or modular phase.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RngsModSummary {
-    x0: Vec<WordId>,
-    x2: Vec<Vec<WordId>>,
+    x0: InlineVec<WordId, FAR_RNGS_INLINE_NG_CAP>,
+    x2: Vec<InlineVec<WordId, FAR_RNGS_INLINE_NG_CAP>>,
     x1: Vec<RngsModWord>,
-    mnc: u64,
-    modulus: u64,
-    ng_n: usize,
-    len_h: usize,
-    bs_n: usize,
 }
 
 impl RngsModSummary {
-    fn with_profile(
-        mnc: u64,
-        modulus: u64,
-        ng_n: usize,
-        len_h: usize,
-        bs_n: usize,
-    ) -> Self {
-        assert!(mnc <= UINT63_MASK, "RNGS_mod mnc must fit Uint63");
-        assert!(
-            modulus <= UINT63_MASK,
-            "RNGS_mod modulus must fit Uint63"
-        );
-        Self {
-            x0: Vec::new(),
-            x2: Vec::new(),
-            x1: Vec::new(),
-            mnc,
-            modulus,
-            ng_n,
-            len_h,
-            bs_n,
-        }
-    }
-
     fn ngram_is_all_zero(
         ngram: &[WordId],
         words: &WordInterner,
@@ -1448,42 +1628,52 @@ impl RngsModSummary {
         ngram.iter().all(|&wid| words.get(wid).is_zero())
     }
 
-    fn promote_ngram(&mut self, w: Vec<WordId>) {
+    fn promote_ngram(
+        &mut self,
+        w: InlineVec<WordId, FAR_RNGS_INLINE_NG_CAP>,
+        mnc: u8,
+        modulus: u8,
+        len_h: u8,
+    ) {
         if let Some(pos) = self
             .x1
             .iter()
             .position(|old| old.w.as_slice() == w.as_slice())
         {
             let mut old = self.x1.remove(pos);
-            old.n = uint63_succ(old.n).min(self.mnc);
-            if self.modulus != 0 {
-                old.phase = uint63_succ(old.phase) % self.modulus;
+            old.n = old.n.saturating_add(1).min(mnc);
+            if modulus != 0 {
+                old.phase = (old.phase + 1) % u32::from(modulus);
             }
             self.x1.insert(0, old);
         } else {
             self.x1.insert(0, RngsModWord::new(w));
         }
 
-        self.x1.truncate(self.len_h);
+        self.x1.truncate(usize::from(len_h));
     }
 }
 
 impl Summary for RngsModSummary {
-    fn new() -> Self {
-        Self::with_profile(
-            FAR_RNGS_DEFAULT_MNC,
-            FAR_RNGS_DEFAULT_MOD,
-            FAR_RNGS_DEFAULT_NG_N,
-            FAR_RNGS_DEFAULT_LEN_H,
-            FAR_RNGS_DEFAULT_BS_N,
-        )
+    type Config = (u8, u8, u8, u8, u8);
+
+    fn new(config: Self::Config) -> Self {
+        debug_assert!(usize::from(config.2) <= FAR_RNGS_INLINE_NG_CAP);
+        Self {
+            x0: InlineVec::new(),
+            x2: Vec::new(),
+            x1: Vec::new(),
+        }
     }
 
     fn push(
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        config: Self::Config,
     ) -> Result<(), SummaryOverflow> {
+        let (mnc, modulus, ng_n, len_h, bs_n) = config;
+
         // Match upstream exactly: the distinguished zero self-loop tests only
         // whether x0 is empty.  In particular NG_n=0 intentionally leaves x0
         // empty forever, so later zero pushes are no-ops even if x1/x2 are live.
@@ -1491,20 +1681,27 @@ impl Summary for RngsModSummary {
             return Ok(());
         }
 
-        self.x0.insert(0, w);
-        self.x0.truncate(self.ng_n);
-        let current_ngram = self.x0.clone();
+        let ng_n = usize::from(ng_n);
+        if ng_n != 0 {
+            if self.x0.len() == ng_n {
+                let _ = self.x0.pop();
+            }
+            self.x0.insert(0, w);
+        } else {
+            self.x0.truncate(0);
+        }
+        let current_ngram = self.x0;
 
-        if self.x2.len() == self.bs_n {
+        if self.x2.len() == usize::from(bs_n) {
             // `removelast (y::x2)` / `last (y::x2) y`: prepend the current
             // n-gram, keep exactly bs_n staging entries, and promote the oldest.
             self.x2.insert(0, current_ngram);
             let promoted = self.x2.pop().expect(
                 "RNGS_mod staging queue must contain current n-gram",
             );
-            self.promote_ngram(promoted);
+            self.promote_ngram(promoted, mnc, modulus, len_h);
         } else {
-            debug_assert!(self.x2.len() < self.bs_n);
+            debug_assert!(self.x2.len() < usize::from(bs_n));
             self.x2.insert(0, current_ngram);
         }
 
@@ -1527,14 +1724,16 @@ impl Summary for RngsModSummary {
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
 struct RsModSummary {
     q: Vec<RepeatWord>,
-    q0: Vec<WordId>,
+    q0: InlineVec<WordId, FAR_RS_NG_N>,
 }
 
 impl Summary for RsModSummary {
-    fn new() -> Self {
+    type Config = ();
+
+    fn new(_config: ()) -> Self {
         Self {
             q: Vec::new(),
-            q0: Vec::new(),
+            q0: InlineVec::new(),
         }
     }
 
@@ -1542,15 +1741,18 @@ impl Summary for RsModSummary {
         &mut self,
         w: WordId,
         words: &mut WordInterner,
+        _config: (),
     ) -> Result<(), SummaryOverflow> {
         if self.q0.is_empty() && words.get(w).is_zero() {
             return Ok(());
         }
 
-        self.q0.push(w);
-        let key = if self.q0.len() > FAR_RS_NG_N {
-            self.q0.remove(0)
+        let key = if self.q0.len() == FAR_RS_NG_N {
+            let key = self.q0.remove(0);
+            self.q0.push(w);
+            key
         } else {
+            self.q0.push(w);
             return Ok(());
         };
 
@@ -1607,72 +1809,239 @@ struct DfaSummaryState<S: Summary> {
     blank_all_zero: bool,
 }
 
+type DfaId = u32;
+
+// H3 is the hottest/widest relation key.  FAR's configured per-run work cap is
+// at most 12_500 * 256 = 3_200_000, so a 24-bit DFA id has ample headroom.
+// WordId remains a full u32.  Packing also preserves the old derived ordering:
+// H2/H2b fit exactly in u32 as (state:8, dfa:24). H3 stores that same
+// suffix below a full u32 WordId. Numeric order therefore preserves the old
+// derived ordering: H2/H2b compare (state, dfa), H3 compares (word, state, dfa),
+// and DfaEdge
+// compares (word, predecessor).
+const FAR_PACKED_DFA_ID_MAX: DfaId = 0x00ff_ffff;
+
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
-struct H2 {
-    s: State,
-    r: usize,
+struct H2(u32);
+
+impl H2 {
+    #[inline]
+    const fn new(s: State, r: DfaId) -> Self {
+        Self(((s as u32) << 24) | r)
+    }
+
+    #[inline]
+    const fn s(self) -> State {
+        (self.0 >> 24) as State
+    }
+
+    #[inline]
+    const fn r(self) -> DfaId {
+        self.0 & FAR_PACKED_DFA_ID_MAX
+    }
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
-struct H2b {
-    s: State,
-    r: usize,
+struct H2b(u32);
+
+impl H2b {
+    #[inline]
+    const fn new(s: State, r: DfaId) -> Self {
+        Self(((s as u32) << 24) | r)
+    }
+
+    #[inline]
+    const fn s(self) -> State {
+        (self.0 >> 24) as State
+    }
+
+    #[inline]
+    const fn r(self) -> DfaId {
+        self.0 & FAR_PACKED_DFA_ID_MAX
+    }
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
-struct H3 {
-    w: WordId,
-    s: State,
-    r: usize,
+struct H3(u64);
+
+impl H3 {
+    #[inline]
+    const fn new(w: WordId, s: State, r: DfaId) -> Self {
+        Self(((w.0 as u64) << 32) | ((s as u64) << 24) | r as u64)
+    }
+
+    #[inline]
+    const fn w(self) -> WordId {
+        WordId((self.0 >> 32) as u32)
+    }
+
+    #[inline]
+    const fn s(self) -> State {
+        ((self.0 >> 24) & 0xff) as State
+    }
+
+    #[inline]
+    #[expect(clippy::cast_possible_truncation)]
+    const fn r(self) -> DfaId {
+        (self.0 & FAR_PACKED_DFA_ID_MAX as u64) as DfaId
+    }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
-struct DfaEdge {
-    w: WordId,
-    prev: usize,
+/// Dense id for an interned H3 node.  H3 itself is eight bytes and appears in
+/// several mutually recursive FAR relations; carrying this four-byte id through
+/// those relations cuts both hash-table width and propagation traffic.
+#[derive(
+    Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Default,
+)]
+struct H3Id(u32);
+
+impl H3Id {
+    #[inline]
+    const fn idx(self) -> usize {
+        self.0 as usize
+    }
 }
 
-/// A set with a LIFO todo stack.
+/// Intern H3 nodes once and retain the historical LIFO todo order.  H3 is
+/// already a packed u64, so its bits are the exact interner key; relation tables
+/// carry only H3Id afterwards.
 #[derive(Clone, Debug)]
-struct TodoSet<K: Eq + Hash + Clone> {
-    st: Set<K>,
-    todo: Vec<K>,
+struct H3Interner {
+    ids: Map<u64, H3Id>,
+    values: Vec<H3>,
+    todo: Vec<H3Id>,
 }
 
-impl<K: Eq + Hash + Clone> TodoSet<K> {
+impl H3Interner {
     fn new() -> Self {
         Self {
-            st: Set::new(),
+            ids: Map::new(),
+            values: Vec::new(),
             todo: Vec::new(),
         }
     }
 
-    fn insert(&mut self, k: K) -> bool {
-        if self.st.insert(k.clone()) {
-            self.todo.push(k);
-            true
-        } else {
-            false
+    fn intern(&mut self, value: H3) -> H3Id {
+        if let Some(&id) = self.ids.get(&value.0) {
+            return id;
         }
+
+        let id = H3Id(
+            u32::try_from(self.values.len())
+                .expect("FAR H3 interner exceeded u32::MAX entries"),
+        );
+        self.values.push(value);
+        self.ids.insert(value.0, id);
+        self.todo.push(id);
+        id
     }
 
-    fn contains(&self, k: &K) -> bool {
-        self.st.contains(k)
+    #[inline]
+    fn get(&self, id: H3Id) -> H3 {
+        self.values[id.idx()]
     }
 
-    fn pop_todo(&mut self) -> Option<K> {
+    fn pop_todo(&mut self) -> Option<H3Id> {
         self.todo.pop()
     }
 }
 
-/// A map K -> set(V) with a todo stack of inserted pairs.
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Hash)]
+struct DfaEdge(u64);
+
+impl DfaEdge {
+    #[inline]
+    const fn new(w: WordId, prev: DfaId) -> Self {
+        Self(((w.0 as u64) << 32) | prev as u64)
+    }
+
+    #[inline]
+    const fn w(self) -> WordId {
+        WordId((self.0 >> 32) as u32)
+    }
+
+    #[inline]
+    #[expect(clippy::cast_possible_truncation)]
+    const fn prev(self) -> DfaId {
+        self.0 as DfaId
+    }
+}
+
+#[inline]
+const fn dfa_push_key(w: WordId, from: DfaId) -> u64 {
+    ((w.0 as u64) << 32) | from as u64
+}
+
+/// Compact sorted fan-out for FAR relations. Most relation keys have only one
+/// target, so keep that first value inline and allocate a Vec only on the second
+/// distinct target. Multi-target values stay sorted, which also removes the
+/// repeated collect+sort work from relation propagation.
 #[derive(Clone, Debug)]
-struct TodoMap<K: Eq + Hash + Clone, V: Eq + Hash + Clone> {
-    mp: Map<K, Set<V>>,
+enum RelationValues<V> {
+    Empty,
+    One(V),
+    Many(Vec<V>),
+}
+
+impl<V: Copy> RelationValues<V> {
+    fn insert_by(
+        &mut self,
+        value: V,
+        mut cmp: impl FnMut(&V, &V) -> Ordering,
+    ) -> bool {
+        match self {
+            Self::Empty => {
+                *self = Self::One(value);
+                true
+            },
+            Self::One(old) => match cmp(&value, old) {
+                Ordering::Equal => false,
+                Ordering::Less => {
+                    let old = *old;
+                    *self = Self::Many(vec![value, old]);
+                    true
+                },
+                Ordering::Greater => {
+                    let old = *old;
+                    *self = Self::Many(vec![old, value]);
+                    true
+                },
+            },
+            Self::Many(values) => {
+                match values.binary_search_by(|old| cmp(old, &value)) {
+                    Ok(_) => false,
+                    Err(pos) => {
+                        values.insert(pos, value);
+                        true
+                    },
+                }
+            },
+        }
+    }
+
+    fn as_slice(&self) -> &[V] {
+        match self {
+            Self::Empty => &[],
+            Self::One(value) => core::slice::from_ref(value),
+            Self::Many(values) => values,
+        }
+    }
+}
+
+impl<V: Ord + Copy> RelationValues<V> {
+    fn insert(&mut self, value: V) -> bool {
+        self.insert_by(value, Ord::cmp)
+    }
+}
+
+/// A map K -> compact sorted set(V) with a todo stack of inserted pairs.
+#[derive(Clone, Debug)]
+struct TodoMap<K: Eq + Hash + Copy, V: Ord + Copy> {
+    mp: Map<K, RelationValues<V>>,
     todo: Vec<(K, V)>,
 }
 
-impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone> TodoMap<K, V> {
+impl<K: Eq + Hash + Copy, V: Ord + Copy> TodoMap<K, V> {
     fn new() -> Self {
         Self {
             mp: Map::new(),
@@ -1681,8 +2050,23 @@ impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone> TodoMap<K, V> {
     }
 
     fn insert(&mut self, k: K, v: V) -> bool {
-        let entry = self.mp.entry(k.clone()).or_default();
-        if entry.insert(v.clone()) {
+        let values = self.mp.entry(k).or_insert(RelationValues::Empty);
+        if values.insert(v) {
+            self.todo.push((k, v));
+            true
+        } else {
+            false
+        }
+    }
+
+    fn insert_by(
+        &mut self,
+        k: K,
+        v: V,
+        cmp: impl FnMut(&V, &V) -> Ordering,
+    ) -> bool {
+        let values = self.mp.entry(k).or_insert(RelationValues::Empty);
+        if values.insert_by(v, cmp) {
             self.todo.push((k, v));
             true
         } else {
@@ -1691,10 +2075,117 @@ impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone> TodoMap<K, V> {
     }
 
     fn values<'a>(&'a self, k: &K) -> impl Iterator<Item = &'a V> {
-        self.mp.get(k).into_iter().flat_map(|s| s.iter())
+        self.mp
+            .get(k)
+            .map(RelationValues::as_slice)
+            .into_iter()
+            .flatten()
     }
 
     fn pop_todo(&mut self) -> Option<(K, V)> {
+        self.todo.pop()
+    }
+}
+
+/// Dense set keyed by H3Id with a LIFO todo stack.  Membership costs one bit per
+/// interned H3 node instead of another H3 hash-table entry.
+#[derive(Clone, Debug)]
+struct DenseH3TodoSet {
+    bits: Vec<u64>,
+    todo: Vec<H3Id>,
+}
+
+impl DenseH3TodoSet {
+    const fn new() -> Self {
+        Self {
+            bits: Vec::new(),
+            todo: Vec::new(),
+        }
+    }
+
+    fn insert(&mut self, id: H3Id) -> bool {
+        let idx = id.idx();
+        let word = idx / u64::BITS as usize;
+        let bit = 1_u64 << (idx % u64::BITS as usize);
+        if self.bits.len() <= word {
+            self.bits.resize(word + 1, 0);
+        }
+        if self.bits[word] & bit != 0 {
+            return false;
+        }
+        self.bits[word] |= bit;
+        self.todo.push(id);
+        true
+    }
+
+    fn contains(&self, id: H3Id) -> bool {
+        let idx = id.idx();
+        let word = idx / u64::BITS as usize;
+        let bit = 1_u64 << (idx % u64::BITS as usize);
+        self.bits.get(word).is_some_and(|&bits| bits & bit != 0)
+    }
+
+    fn pop_todo(&mut self) -> Option<H3Id> {
+        self.todo.pop()
+    }
+}
+
+/// Dense H3-keyed relation.  H3Id gives direct row indexing, so ret3/pre32/pre33
+/// no longer hash the same H3 key on every lookup and insertion.
+#[derive(Clone, Debug)]
+struct DenseH3TodoMap<V: Ord + Copy> {
+    rows: Vec<RelationValues<V>>,
+    todo: Vec<(H3Id, V)>,
+}
+
+impl<V: Ord + Copy> DenseH3TodoMap<V> {
+    const fn new() -> Self {
+        Self {
+            rows: Vec::new(),
+            todo: Vec::new(),
+        }
+    }
+
+    fn ensure(&mut self, id: H3Id) {
+        if self.rows.len() <= id.idx() {
+            self.rows
+                .resize_with(id.idx() + 1, || RelationValues::Empty);
+        }
+    }
+
+    fn insert(&mut self, id: H3Id, value: V) -> bool {
+        self.ensure(id);
+        if self.rows[id.idx()].insert(value) {
+            self.todo.push((id, value));
+            true
+        } else {
+            false
+        }
+    }
+
+    fn insert_by(
+        &mut self,
+        id: H3Id,
+        value: V,
+        cmp: impl FnMut(&V, &V) -> Ordering,
+    ) -> bool {
+        self.ensure(id);
+        if self.rows[id.idx()].insert_by(value, cmp) {
+            self.todo.push((id, value));
+            true
+        } else {
+            false
+        }
+    }
+
+    fn values(&self, id: H3Id) -> &[V] {
+        match self.rows.get(id.idx()) {
+            Some(values) => values.as_slice(),
+            None => &[],
+        }
+    }
+
+    fn pop_todo(&mut self) -> Option<(H3Id, V)> {
         self.todo.pop()
     }
 }
@@ -1721,6 +2212,35 @@ enum StepContext {
 }
 
 impl StepContext {
+    #[inline]
+    const fn packed_code(self) -> u8 {
+        match self {
+            Self::Normal => 0,
+            Self::Blank {
+                context_may_be_all_zero: false,
+            } => 1,
+            Self::Blank {
+                context_may_be_all_zero: true,
+            } => 2,
+            Self::Spinout {
+                back_context_may_be_all_zero: false,
+                forward_context_may_be_all_zero: false,
+            } => 3,
+            Self::Spinout {
+                back_context_may_be_all_zero: false,
+                forward_context_may_be_all_zero: true,
+            } => 4,
+            Self::Spinout {
+                back_context_may_be_all_zero: true,
+                forward_context_may_be_all_zero: false,
+            } => 5,
+            Self::Spinout {
+                back_context_may_be_all_zero: true,
+                forward_context_may_be_all_zero: true,
+            } => 6,
+        }
+    }
+
     const fn blank(context_may_be_all_zero: bool) -> Self {
         Self::Blank {
             context_may_be_all_zero,
@@ -1747,8 +2267,8 @@ struct ReachedParams {
 #[derive(Clone, Copy)]
 struct FarRunParams {
     block_len: usize,
-    max_work: usize,
-    block_step_limit: usize,
+    max_work: u32,
+    block_step_limit: u16,
     goal: Goal,
     mirrored: bool,
     defer_blank_targets: bool,
@@ -1766,12 +2286,195 @@ struct DirectFarParams {
     zero_sink: usize,
 }
 
-#[derive(Clone, Eq, PartialEq, Hash, Debug)]
-struct StepKey {
-    w: WordId,
-    s: State,
-    sgn: i8,
-    ctx: StepContext,
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
+struct StepKey(u64);
+
+impl StepKey {
+    #[inline]
+    #[expect(clippy::similar_names)]
+    fn new(w: WordId, s: State, sgn: i8, ctx: StepContext) -> Self {
+        debug_assert!(sgn == 1 || sgn == -1);
+        let sign = u64::from(sgn < 0);
+        Self(
+            u64::from(w.0)
+                | (u64::from(s) << 32)
+                | (sign << 40)
+                | (u64::from(ctx.packed_code()) << 41),
+        )
+    }
+}
+
+/// Exact machine-state membership per DFA state.  Busy Beaver-sized machines
+/// use a two-byte inline mask per DFA state; unusual state numbers >=16 use a
+/// sparse sorted overflow row without penalizing the common case.
+#[derive(Clone, Debug, Default)]
+struct DfaStateRows {
+    low: Vec<u16>,
+    high: Map<DfaId, Vec<State>>,
+}
+
+impl DfaStateRows {
+    fn ensure(&mut self, r: DfaId) {
+        let r = r as usize;
+        if self.low.len() <= r {
+            self.low.resize(r + 1, 0);
+        }
+    }
+
+    #[expect(clippy::disallowed_names)]
+    fn insert(&mut self, r: DfaId, state: State) -> bool {
+        let state_idx = usize::from(state);
+        if state_idx < FAR_DENSE_MACHINE_STATES {
+            self.ensure(r);
+            let bit = 1_u16 << state_idx;
+            let row = &mut self.low[r as usize];
+            let fresh = *row & bit == 0;
+            *row |= bit;
+            fresh
+        } else {
+            let row = self.high.entry(r).or_default();
+            match row.binary_search(&state) {
+                Ok(_) => false,
+                Err(pos) => {
+                    row.insert(pos, state);
+                    true
+                },
+            }
+        }
+    }
+
+    fn low_bits(&self, r: DfaId) -> u16 {
+        self.low.get(r as usize).copied().unwrap_or(0)
+    }
+
+    #[expect(clippy::map_unwrap_or)]
+    fn high_states(&self, r: DfaId) -> &[State] {
+        self.high.get(&r).map(Vec::as_slice).unwrap_or(&[])
+    }
+}
+
+trait DfaStateKey: Copy + Eq + Hash {
+    fn state(self) -> State;
+    fn dfa(self) -> DfaId;
+}
+
+impl DfaStateKey for H2 {
+    #[inline]
+    fn state(self) -> State {
+        self.s()
+    }
+    #[inline]
+    fn dfa(self) -> DfaId {
+        self.r()
+    }
+}
+impl DfaStateKey for H2b {
+    #[inline]
+    fn state(self) -> State {
+        self.s()
+    }
+    #[inline]
+    fn dfa(self) -> DfaId {
+        self.r()
+    }
+}
+
+const FAR_DENSE_MACHINE_STATES: usize = 16;
+
+/// Dense membership for ordinary Busy Beaver-sized state sets.  Machines with
+/// state numbers >=16 transparently fall back to hashing, preserving the public
+/// generality without paying a 256-bit mask for every DFA state.
+#[derive(Clone, Debug)]
+struct DenseDfaTodoSet<K: DfaStateKey> {
+    st: Vec<u16>,
+    overflow: Set<K>,
+    todo: Vec<K>,
+}
+
+impl<K: DfaStateKey> DenseDfaTodoSet<K> {
+    fn new() -> Self {
+        Self {
+            st: Vec::new(),
+            overflow: Set::new(),
+            todo: Vec::new(),
+        }
+    }
+
+    fn insert(&mut self, key: K) -> bool {
+        let state = usize::from(key.state());
+        let fresh = if state < FAR_DENSE_MACHINE_STATES {
+            let r = key.dfa() as usize;
+            if self.st.len() <= r {
+                self.st.resize(r + 1, 0);
+            }
+            let bit = 1_u16 << state;
+            let fresh = self.st[r] & bit == 0;
+            self.st[r] |= bit;
+            fresh
+        } else {
+            self.overflow.insert(key)
+        };
+        if fresh {
+            self.todo.push(key);
+        }
+        fresh
+    }
+
+    fn contains(&self, key: &K) -> bool {
+        let state = usize::from(key.state());
+        if state < FAR_DENSE_MACHINE_STATES {
+            self.st
+                .get(key.dfa() as usize)
+                .is_some_and(|&bits| bits & (1_u16 << state) != 0)
+        } else {
+            self.overflow.contains(key)
+        }
+    }
+
+    fn pop_todo(&mut self) -> Option<K> {
+        self.todo.pop()
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct DenseH2Set {
+    st: Vec<u16>,
+    overflow: Set<H2>,
+}
+
+impl DenseH2Set {
+    fn insert(&mut self, key: H2) -> bool {
+        let state = usize::from(key.s());
+        if state < FAR_DENSE_MACHINE_STATES {
+            let r = key.r() as usize;
+            if self.st.len() <= r {
+                self.st.resize(r + 1, 0);
+            }
+            let bit = 1_u16 << state;
+            let fresh = self.st[r] & bit == 0;
+            self.st[r] |= bit;
+            fresh
+        } else {
+            self.overflow.insert(key)
+        }
+    }
+
+    fn any(&self, mut f: impl FnMut(H2) -> bool) -> bool {
+        for (r, &bits) in self.st.iter().enumerate() {
+            let mut bits = bits;
+            while bits != 0 {
+                let state = u8::try_from(bits.trailing_zeros())
+                    .expect("dense FAR state bit must fit State");
+                let r = u32::try_from(r)
+                    .expect("packed DFA id must fit u32");
+                if f(H2::new(state, r)) {
+                    return true;
+                }
+                bits &= bits - 1;
+            }
+        }
+        self.overflow.iter().copied().any(f)
+    }
 }
 
 /// FAR decider with a pluggable DFA history summary.
@@ -1780,16 +2483,18 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
     goal: Goal,
     mirrored: bool,
     defer_blank_targets: bool,
-    block_len: usize,
-    max_work: usize,
-    block_step_limit: usize,
+    max_work: u32,
+    block_step_limit: u16,
+    summary_config: S::Config,
 
     // Interned FAR block words.  Relation keys, DFA edges, push cache keys,
     // and step-cache keys carry compact WordId values instead of cloning Vecs.
     words: WordInterner,
+    // Canonical all-zero FAR block, interned once per run.
+    blank_word: WordId,
 
     // work counter
-    work: usize,
+    work: u32,
 
     // Cache exact block simulations by local FAR context.
     step_cache: Map<StepKey, WordUpdateOutcome>,
@@ -1800,25 +2505,27 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
 
     // DFA.  Blank uses the product of the configured history summary with an
     // exact two-state all-semantically-blank automaton; other goals keep the
-    // product bit false.
-    id: Map<DfaSummaryState<S>, usize>,
+    // product bit false.  Full states live only in `idr`: the hash table stores
+    // compact fingerprints plus ids, with exact collision checks against `idr`.
+    id: Map<u64, DfaId>,
+    id_collisions: Map<u64, Vec<DfaId>>,
     idr: Vec<DfaSummaryState<S>>,
 
     pop: Vec<Vec<DfaEdge>>,
-    push: Map<(WordId, usize), usize>,
-    new_pops: Vec<(usize, DfaEdge)>,
+    push: Map<u64, DfaId>,
+    new_pops: Vec<(DfaId, DfaEdge)>,
 
     // relations
     ret2: TodoMap<H2, H2b>,
-    ret3: TodoMap<H3, H2b>,
-    pre23: TodoMap<H2, H3>,
-    pre32: TodoMap<H3, H2>,
-    pre33: TodoMap<H3, H3>,
+    ret3: DenseH3TodoMap<H2b>,
+    pre23: TodoMap<H2, H3Id>,
+    pre32: DenseH3TodoMap<H2>,
+    pre33: DenseH3TodoMap<H3Id>,
 
-    pre3l: TodoSet<H3>,
-    retl: TodoSet<H2b>,
-    h3s: TodoSet<H3>,
-    h2s: TodoSet<H2>,
+    pre3l: DenseH3TodoSet,
+    retl: DenseDfaTodoSet<H2b>,
+    h3s: H3Interner,
+    h2s: DenseDfaTodoSet<H2>,
 
     // Conditional Blank outcomes.
     // B2(a): a computation from H2 `a` can blank provided the whole tape to
@@ -1826,23 +2533,23 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
     // B3(c): a computation from H3 `c` can blank provided the tape strictly
     // left of c.w is blank. pre32/pre33 transport this condition across blocks
     // that the subcomputation may modify or erase.
-    blank2: TodoSet<H2>,
-    blank3: TodoSet<H3>,
+    blank2: DenseDfaTodoSet<H2>,
+    blank3: DenseH3TodoSet,
 
     // Spinout witnesses found in h2_pop that depend on the tape side
     // forgotten by the H3 -> H2 projection. They are validated only after
     // relation saturation against the H3 generators recorded in `pre23`.
-    pending_h2_spinout_targets: Set<H2>,
+    pending_h2_spinout_targets: DenseH2Set,
 
     // For each DFA state r, which machine states have H2(s,r).
-    r_s: Vec<Set<State>>,
+    r_s: DfaStateRows,
 
     // Legacy exact existential canonical-zero reachability used by Spinout.
     // Blank does not use this side table: its semantic-zero provenance is part
     // of `DfaSummaryState` itself, so it cannot be recombined across a lossy
     // summary merge.
     zero_context: Vec<bool>,
-    zero_push: Vec<Vec<usize>>,
+    zero_push: Vec<Vec<DfaId>>,
 
     // Reusable buffers for relation propagation. These avoid allocating short
     // temporary Vecs just to break immutable borrows before mutating self.
@@ -1850,7 +2557,7 @@ struct FarDecider<'a, P: GetInstr, S: Summary> {
     scratch_edges: Vec<DfaEdge>,
     scratch_h2: Vec<H2>,
     scratch_h2b: Vec<H2b>,
-    scratch_h3: Vec<H3>,
+    scratch_h3: Vec<H3Id>,
 }
 
 impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
@@ -1867,8 +2574,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
             self.mark_zero_context(id0);
         }
 
-        let blank = Word::zero(self.block_len);
-        let id1 = self.dfa_push(blank, id0)?;
+        let id1 = self.dfa_push_id(self.blank_word, id0)?;
         debug_assert_eq!(id1, id0);
 
         Ok(self)
@@ -1882,30 +2588,29 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         Ok(())
     }
 
-    fn ensure_dfa_capacity(&mut self, id: usize) {
-        if self.pop.len() <= id {
-            self.pop.resize_with(id + 1, Vec::new);
+    fn ensure_dfa_capacity(&mut self, id: DfaId) {
+        let idx = id as usize;
+        if self.pop.len() <= idx {
+            self.pop.resize_with(idx + 1, Vec::new);
         }
-        if self.r_s.len() <= id {
-            self.r_s.resize_with(id + 1, Set::new);
+        self.r_s.ensure(id);
+        if self.zero_context.len() <= idx {
+            self.zero_context.resize(idx + 1, false);
         }
-        if self.zero_context.len() <= id {
-            self.zero_context.resize(id + 1, false);
-        }
-        if self.zero_push.len() <= id {
-            self.zero_push.resize_with(id + 1, Vec::new);
+        if self.zero_push.len() <= idx {
+            self.zero_push.resize_with(idx + 1, Vec::new);
         }
     }
 
-    fn mark_zero_context(&mut self, start: usize) {
+    fn mark_zero_context(&mut self, start: DfaId) {
         let mut todo = vec![start];
         while let Some(r) = todo.pop() {
             self.ensure_dfa_capacity(r);
-            if self.zero_context[r] {
+            if self.zero_context[r as usize] {
                 continue;
             }
-            self.zero_context[r] = true;
-            todo.extend(self.zero_push[r].iter().copied());
+            self.zero_context[r as usize] = true;
+            todo.extend(self.zero_push[r as usize].iter().copied());
         }
     }
 
@@ -1923,36 +2628,60 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
-    fn get_id(&mut self, summary: S, blank_all_zero: bool) -> usize {
+    fn get_id(&mut self, summary: S, blank_all_zero: bool) -> DfaId {
         let st = DfaSummaryState {
             summary,
             blank_all_zero: self.goal.is_blank() && blank_all_zero,
         };
-        if let Some(&id) = self.id.get(&st) {
+        // Reuse this map's persistent aHash seed when fingerprinting the full
+        // state.  The resulting u64 is only an index: exact equality against
+        // `idr` below remains authoritative.
+        let fingerprint = { self.id.hasher().hash_one(&st) };
+
+        if let Some(&id) = self.id.get(&fingerprint) {
+            if self.idr[id as usize] == st {
+                return id;
+            }
+            if let Some(collisions) =
+                self.id_collisions.get(&fingerprint)
+            {
+                for &candidate in collisions {
+                    if self.idr[candidate as usize] == st {
+                        return candidate;
+                    }
+                }
+            }
+
+            let id = u32::try_from(self.idr.len())
+                .expect("FAR DFA exceeded u32::MAX states");
+            assert!(
+                id <= FAR_PACKED_DFA_ID_MAX,
+                "FAR DFA exceeded packed 24-bit relation-key range",
+            );
+            self.idr.push(st);
+            self.id_collisions.entry(fingerprint).or_default().push(id);
+            self.ensure_dfa_capacity(id);
             return id;
         }
-        let id = self.idr.len();
-        self.id.insert(st.clone(), id);
+
+        let id = u32::try_from(self.idr.len())
+            .expect("FAR DFA exceeded u32::MAX states");
+        assert!(
+            id <= FAR_PACKED_DFA_ID_MAX,
+            "FAR DFA exceeded packed 24-bit relation-key range",
+        );
         self.idr.push(st);
+        self.id.insert(fingerprint, id);
         self.ensure_dfa_capacity(id);
         id
-    }
-
-    fn dfa_push(
-        &mut self,
-        w: Word,
-        ls: usize,
-    ) -> Result<usize, StopReason> {
-        let wid = self.words.intern(w);
-        self.dfa_push_id(wid, ls)
     }
 
     fn dfa_push_id(
         &mut self,
         wid: WordId,
-        ls: usize,
-    ) -> Result<usize, StopReason> {
-        let key = (wid, ls);
+        ls: DfaId,
+    ) -> Result<DfaId, StopReason> {
+        let key = dfa_push_key(wid, ls);
         if let Some(&to) = self.push.get(&key) {
             return Ok(to);
         }
@@ -1962,25 +2691,25 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         // of the pushed block travel through the same transition as the history
         // summary, so an LRU merge cannot detach one from the other.
         let blank_all_zero = self.goal.is_blank()
-            && self.idr[ls].blank_all_zero
+            && self.idr[ls as usize].blank_all_zero
             && self.word_is_zero_context(wid);
 
-        let mut summary = self.idr[ls].summary.clone();
+        let mut summary = self.idr[ls as usize].summary.clone();
         summary
-            .push(wid, &mut self.words)
+            .push(wid, &mut self.words, self.summary_config)
             .map_err(|_| StopReason::SummaryOverflow)?;
         let to = self.get_id(summary, blank_all_zero);
         self.push.insert(key, to);
-        self.new_pops.push((to, DfaEdge { w: wid, prev: ls }));
+        self.new_pops.push((to, DfaEdge::new(wid, ls)));
 
         // Spinout still uses canonical-zero existential reachability.  Blank's
         // semantic-zero property is already exact in the product DFA state.
         if !self.goal.is_blank() && self.word_is_zero_context(wid) {
             self.ensure_dfa_capacity(ls.max(to));
-            if !self.zero_push[ls].contains(&to) {
-                self.zero_push[ls].push(to);
+            if !self.zero_push[ls as usize].contains(&to) {
+                self.zero_push[ls as usize].push(to);
             }
-            if self.zero_context[ls] {
+            if self.zero_context[ls as usize] {
                 self.mark_zero_context(to);
             }
         }
@@ -1988,21 +2717,25 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         Ok(to)
     }
 
-    fn summary_may_be_all_zero_context(&self, r: usize) -> bool {
+    fn summary_may_be_all_zero_context(&self, r: DfaId) -> bool {
         if self.goal.is_blank() {
-            return self.idr.get(r).is_some_and(|st| st.blank_all_zero);
+            return self
+                .idr
+                .get(r as usize)
+                .is_some_and(|st| st.blank_all_zero);
         }
 
-        let exact = self.zero_context.get(r).copied().unwrap_or(false);
+        let exact =
+            self.zero_context.get(r as usize).copied().unwrap_or(false);
         if exact {
-            debug_assert!(self.idr.get(r).is_some_and(|st| {
+            debug_assert!(self.idr.get(r as usize).is_some_and(|st| {
                 st.summary.may_be_all_zero_context(&self.words)
             }));
         }
         exact
     }
 
-    fn h2_pop_step_context(&self, r0: usize) -> StepContext {
+    fn h2_pop_step_context(&self, r0: DfaId) -> StepContext {
         match self.goal {
             Goal::Halt => StepContext::Normal,
             Goal::Blank => StepContext::blank(
@@ -2020,22 +2753,22 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
             Goal::Halt => StepContext::Normal,
             Goal::Blank => {
                 let c_context_zero =
-                    self.summary_may_be_all_zero_context(c.r);
+                    self.summary_may_be_all_zero_context(c.r());
                 let b_context_zero =
-                    self.summary_may_be_all_zero_context(b.r);
+                    self.summary_may_be_all_zero_context(b.r());
                 StepContext::blank(c_context_zero && b_context_zero)
             },
             Goal::Spinout => {
                 let c_context_zero =
-                    self.summary_may_be_all_zero_context(c.r);
+                    self.summary_may_be_all_zero_context(c.r());
                 let b_context_zero =
-                    self.summary_may_be_all_zero_context(b.r);
+                    self.summary_may_be_all_zero_context(b.r());
                 StepContext::spinout(b_context_zero, c_context_zero)
             },
         }
     }
 
-    fn retl_step_context(&self, r0: usize) -> StepContext {
+    fn retl_step_context(&self, r0: DfaId) -> StepContext {
         match self.goal {
             Goal::Halt => StepContext::Normal,
             Goal::Blank => StepContext::blank(
@@ -2048,9 +2781,8 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
-    fn insert_h3(&mut self, c: H3) -> H3 {
-        self.h3s.insert(c);
-        c
+    fn insert_h3(&mut self, c: H3) -> H3Id {
+        self.h3s.intern(c)
     }
 
     fn insert_h2(&mut self, a: H2) -> H2 {
@@ -2058,7 +2790,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         a
     }
 
-    fn insert_pre3l(&mut self, c: H3) -> H3 {
+    fn insert_pre3l(&mut self, c: H3Id) -> H3Id {
         self.pre3l.insert(c);
         c
     }
@@ -2072,7 +2804,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         self.ret2.insert(a, b);
     }
 
-    fn insert_ret3(&mut self, a: H3, b: H2b) {
+    fn insert_ret3(&mut self, a: H3Id, b: H2b) {
         self.ret3.insert(a, b);
     }
 
@@ -2082,7 +2814,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
-    fn insert_blank3(&mut self, c: H3) {
+    fn insert_blank3(&mut self, c: H3Id) {
         if self.defer_blank_targets {
             self.blank3.insert(c);
         }
@@ -2120,7 +2852,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
     ) -> Result<WordUpdateOutcome, StopReason> {
         self.bump()?;
 
-        let key = StepKey { w, s, sgn, ctx };
+        let key = StepKey::new(w, s, sgn, ctx);
         let cached = match target_mode {
             BlockTargetMode::Immediate(_) => {
                 self.step_cache.get(&key).copied()
@@ -2135,12 +2867,12 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
 
         let raw = far_raw_word_update_lemma(
             self.prog,
-            self.words.clone_word(key.w),
-            key.s,
-            key.sgn,
+            self.words.clone_word(w),
+            s,
+            sgn,
             self.block_step_limit,
             target_mode,
-            key.ctx,
+            ctx,
             self.mirrored,
         );
         let outcome = self.intern_raw_word_update_outcome(raw);
@@ -2238,8 +2970,8 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         b: &DfaEdge,
     ) -> Result<(), StopReason> {
         let a = *a;
-        let H2 { s, .. } = a;
-        let r0 = b.prev;
+        let s = a.s();
+        let r0 = b.prev();
 
         let res = if self.defer_blank_targets && self.goal.is_blank() {
             // Inside an H2 subcomputation the right remainder `r0` is explicit,
@@ -2250,14 +2982,14 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
                 self.summary_may_be_all_zero_context(r0),
             );
             let (step, hit_blank) =
-                self.tm_step_deferred_blank(b.w, s, 1, ctx)?;
+                self.tm_step_deferred_blank(b.w(), s, 1, ctx)?;
             if hit_blank {
                 self.insert_blank2(a);
             }
             step
         } else {
             let ctx = self.h2_pop_step_context(r0);
-            let first = self.tm_step(b.w, s, 1, ctx);
+            let first = self.tm_step(b.w(), s, 1, ctx);
 
             // H2 is the projection of an H3 node and therefore forgets the H3
             // block on one side of the head. For Spinout only, the ordinary H2
@@ -2273,7 +3005,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
                     let forward_zero =
                         self.summary_may_be_all_zero_context(r0);
                     match self.tm_step(
-                        b.w,
+                        b.w(),
                         s,
                         1,
                         StepContext::spinout(false, forward_zero),
@@ -2299,13 +3031,9 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
 
         if res.is_back {
             let rr = self.dfa_push_id(res.w1, r0)?;
-            self.insert_ret2(a, H2b { s: s1, r: rr });
+            self.insert_ret2(a, H2b::new(s1, rr));
         } else {
-            let c = self.insert_h3(H3 {
-                w: res.w1,
-                s: s1,
-                r: r0,
-            });
+            let c = self.insert_h3(H3::new(res.w1, s1, r0));
             self.pre32.insert(c, a);
         }
 
@@ -2314,12 +3042,13 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
 
     fn on_h3_back(
         &mut self,
-        c: &H3,
+        c_id: H3Id,
         b: &H2b,
     ) -> Result<(), StopReason> {
-        let c = *c;
+        let c = self.h3s.get(c_id);
         let b = *b;
-        let H2b { s: s0, r: r0 } = b;
+        let s0 = b.s();
+        let r0 = b.r();
 
         let res = if self.defer_blank_targets && self.goal.is_blank() {
             // `b.r` is the current right-hand stack after the H2 return. The
@@ -2327,17 +3056,17 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
             // do not require the original c.r to have been zero: the intervening
             // subcomputation may have modified or erased that old context.
             let ctx = StepContext::blank(
-                self.summary_may_be_all_zero_context(b.r),
+                self.summary_may_be_all_zero_context(b.r()),
             );
             let (step, hit_blank) =
-                self.tm_step_deferred_blank(c.w, s0, -1, ctx)?;
+                self.tm_step_deferred_blank(c.w(), s0, -1, ctx)?;
             if hit_blank {
-                self.insert_blank3(c);
+                self.insert_blank3(c_id);
             }
             step
         } else {
             self.tm_step(
-                c.w,
+                c.w(),
                 s0,
                 -1,
                 self.h3_back_step_context(&c, &b),
@@ -2350,15 +3079,14 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         let s1 = res.s1.unwrap();
 
         if res.is_back {
-            let c0 = self.insert_h3(H3 {
-                w: res.w1,
-                s: s1,
-                r: r0,
+            let c0 = self.insert_h3(H3::new(res.w1, s1, r0));
+            let h3s = &self.h3s;
+            self.pre33.insert_by(c0, c_id, |a, b| {
+                h3s.get(*a).cmp(&h3s.get(*b))
             });
-            self.pre33.insert(c0, c);
         } else {
             let rr = self.dfa_push_id(res.w1, r0)?;
-            self.insert_ret3(c, H2b { s: s1, r: rr });
+            self.insert_ret3(c_id, H2b::new(s1, rr));
         }
 
         Ok(())
@@ -2366,9 +3094,10 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
 
     fn on_retl(&mut self, b: &H2b) -> Result<(), StopReason> {
         let b = *b;
-        let H2b { s: s0, r: r0 } = b;
+        let s0 = b.s();
+        let r0 = b.r();
 
-        let blank = self.words.intern(Word::zero(self.block_len));
+        let blank = self.blank_word;
         let res = if self.defer_blank_targets && self.goal.is_blank() {
             // At the left frontier the missing outer context is the concrete
             // infinite blank ray, so a conditional local event is fully
@@ -2392,15 +3121,11 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         let s1 = res.s1.unwrap();
 
         if res.is_back {
-            let c0 = self.insert_h3(H3 {
-                w: res.w1,
-                s: s1,
-                r: r0,
-            });
+            let c0 = self.insert_h3(H3::new(res.w1, s1, r0));
             self.insert_pre3l(c0);
         } else {
             let rr = self.dfa_push_id(res.w1, r0)?;
-            self.insert_retl(H2b { s: s1, r: rr });
+            self.insert_retl(H2b::new(s1, rr));
         }
 
         Ok(())
@@ -2408,18 +3133,33 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
 
     fn on_dfa_edge(
         &mut self,
-        r: usize,
+        r: DfaId,
         e: &DfaEdge,
     ) -> Result<(), StopReason> {
         self.bump()?;
         self.ensure_dfa_capacity(r);
-        self.pop[r].push(*e);
+        #[expect(clippy::disallowed_names)]
+        let row = &mut self.pop[r as usize];
+        let pos = row.binary_search(e).unwrap_or_else(|pos| pos);
+        row.insert(pos, *e);
 
+        // Preserve descending machine-state order.  High state numbers are rare
+        // and copied only on the sparse fallback path.
         self.scratch_states.clear();
-        self.scratch_states.extend(self.r_s[r].iter().copied());
-        self.scratch_states.sort_unstable();
+        self.scratch_states
+            .extend_from_slice(self.r_s.high_states(r));
         while let Some(s) = self.scratch_states.pop() {
-            self.on_h2_pop(&H2 { s, r }, e)?;
+            self.on_h2_pop(&H2::new(s, r), e)?;
+        }
+
+        let mut states = self.r_s.low_bits(r);
+        while states != 0 {
+            let bit = u16::BITS - 1 - states.leading_zeros();
+            #[expect(clippy::unwrap_in_result)]
+            let s = u8::try_from(bit)
+                .expect("low FAR state bit must fit State");
+            states &= !(1_u16 << bit);
+            self.on_h2_pop(&H2::new(s, r), e)?;
         }
 
         Ok(())
@@ -2427,15 +3167,16 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
 
     fn on_h2(&mut self, a: &H2) -> Result<(), StopReason> {
         let a = *a;
-        let H2 { s, r } = a;
+        let s = a.s();
+        let r = a.r();
 
         self.bump()?;
         self.ensure_dfa_capacity(r);
-        self.r_s[r].insert(s);
+        self.r_s.insert(r, s);
 
         self.scratch_edges.clear();
-        self.scratch_edges.extend(self.pop[r].iter().copied());
-        self.scratch_edges.sort_unstable();
+        self.scratch_edges
+            .extend(self.pop[r as usize].iter().copied());
         while let Some(e) = self.scratch_edges.pop() {
             self.on_h2_pop(&a, &e)?;
         }
@@ -2443,32 +3184,32 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         Ok(())
     }
 
-    fn on_h3(&mut self, a: H3) {
-        let a0 = self.insert_h2(H2 { s: a.s, r: a.r });
-        self.pre23.insert(a0, a);
+    fn on_h3(&mut self, a_id: H3Id) {
+        let a = self.h3s.get(a_id);
+        let a0 = self.insert_h2(H2::new(a.s(), a.r()));
+        let h3s = &self.h3s;
+        self.pre23
+            .insert_by(a0, a_id, |x, y| h3s.get(*x).cmp(&h3s.get(*y)));
     }
 
     fn on_ret2(&mut self, a: &H2, b: &H2b) -> Result<(), StopReason> {
         self.scratch_h3.clear();
         self.scratch_h3.extend(self.pre23.values(a).copied());
-        self.scratch_h3.sort_unstable();
-        while let Some(c) = self.scratch_h3.pop() {
-            self.on_h3_back(&c, b)?;
+        while let Some(c_id) = self.scratch_h3.pop() {
+            self.on_h3_back(c_id, b)?;
         }
         Ok(())
     }
 
-    fn on_ret3(&mut self, a: &H3, b: &H2b) {
+    fn on_ret3(&mut self, a: H3Id, b: &H2b) {
         self.scratch_h2.clear();
-        self.scratch_h2.extend(self.pre32.values(a).copied());
-        self.scratch_h2.sort_unstable();
+        self.scratch_h2.extend(self.pre32.values(a).iter().copied());
         while let Some(a0) = self.scratch_h2.pop() {
             self.insert_ret2(a0, *b);
         }
 
         self.scratch_h3.clear();
-        self.scratch_h3.extend(self.pre33.values(a).copied());
-        self.scratch_h3.sort_unstable();
+        self.scratch_h3.extend(self.pre33.values(a).iter().copied());
         while let Some(a1) = self.scratch_h3.pop() {
             self.insert_ret3(a1, *b);
         }
@@ -2481,18 +3222,18 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
     fn on_blank2(&mut self, a: &H2) {
         self.scratch_h3.clear();
         self.scratch_h3.extend(self.pre23.values(a).copied());
-        self.scratch_h3.sort_unstable();
-        while let Some(c) = self.scratch_h3.pop() {
+        while let Some(c_id) = self.scratch_h3.pop() {
             // B2 requires the whole left side of the H2 boundary to be blank.
             // In H3 that side is c.w plus the still-conditional farther-left
             // context, so an already blank c.w converts B2(a) into B3(c).
-            if self.word_is_zero_context(c.w) {
-                self.insert_blank3(c);
+            let c = self.h3s.get(c_id);
+            if self.word_is_zero_context(c.w()) {
+                self.insert_blank3(c_id);
             }
         }
     }
 
-    fn on_blank3(&mut self, c: &H3) -> Result<(), StopReason> {
+    fn on_blank3(&mut self, c: H3Id) -> Result<(), StopReason> {
         // pre3l means the context strictly left of c.w is the concrete initial
         // blank ray, so B3(c)'s remaining condition is discharged.
         if self.pre3l.contains(c) {
@@ -2500,8 +3241,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
 
         self.scratch_h2.clear();
-        self.scratch_h2.extend(self.pre32.values(c).copied());
-        self.scratch_h2.sort_unstable();
+        self.scratch_h2.extend(self.pre32.values(c).iter().copied());
         while let Some(a0) = self.scratch_h2.pop() {
             // Crossing a block forward turns the old H2 left context into the
             // farther-left context of the resulting H3. The condition is
@@ -2510,8 +3250,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
 
         self.scratch_h3.clear();
-        self.scratch_h3.extend(self.pre33.values(c).copied());
-        self.scratch_h3.sort_unstable();
+        self.scratch_h3.extend(self.pre33.values(c).iter().copied());
         while let Some(c0) = self.scratch_h3.pop() {
             // pre33 represents an excursion that may modify c.w and return to
             // the same boundary. Only the farther-left context is unchanged,
@@ -2522,27 +3261,30 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         Ok(())
     }
 
-    fn on_pre23(&mut self, a: &H2, c: &H3) -> Result<(), StopReason> {
+    fn on_pre23(
+        &mut self,
+        a: &H2,
+        c_id: H3Id,
+    ) -> Result<(), StopReason> {
         self.scratch_h2b.clear();
         self.scratch_h2b.extend(self.ret2.values(a).copied());
-        self.scratch_h2b.sort_unstable();
         while let Some(b) = self.scratch_h2b.pop() {
-            self.on_h3_back(c, &b)?;
+            self.on_h3_back(c_id, &b)?;
         }
 
+        let c = self.h3s.get(c_id);
         if self.defer_blank_targets
             && self.blank2.contains(a)
-            && self.word_is_zero_context(c.w)
+            && self.word_is_zero_context(c.w())
         {
-            self.insert_blank3(*c);
+            self.insert_blank3(c_id);
         }
         Ok(())
     }
 
-    fn on_pre32(&mut self, a: &H3, a0: &H2) {
+    fn on_pre32(&mut self, a: H3Id, a0: &H2) {
         self.scratch_h2b.clear();
-        self.scratch_h2b.extend(self.ret3.values(a).copied());
-        self.scratch_h2b.sort_unstable();
+        self.scratch_h2b.extend(self.ret3.values(a).iter().copied());
         while let Some(b) = self.scratch_h2b.pop() {
             self.insert_ret2(*a0, b);
         }
@@ -2552,23 +3294,21 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
-    fn on_pre33(&mut self, a: &H3, a0: &H3) {
+    fn on_pre33(&mut self, a: H3Id, a0: H3Id) {
         self.scratch_h2b.clear();
-        self.scratch_h2b.extend(self.ret3.values(a).copied());
-        self.scratch_h2b.sort_unstable();
+        self.scratch_h2b.extend(self.ret3.values(a).iter().copied());
         while let Some(b) = self.scratch_h2b.pop() {
-            self.insert_ret3(*a0, b);
+            self.insert_ret3(a0, b);
         }
 
         if self.defer_blank_targets && self.blank3.contains(a) {
-            self.insert_blank3(*a0);
+            self.insert_blank3(a0);
         }
     }
 
-    fn on_pre3l(&mut self, a: &H3) -> Result<(), StopReason> {
+    fn on_pre3l(&mut self, a: H3Id) -> Result<(), StopReason> {
         self.scratch_h2b.clear();
-        self.scratch_h2b.extend(self.ret3.values(a).copied());
-        self.scratch_h2b.sort_unstable();
+        self.scratch_h2b.extend(self.ret3.values(a).iter().copied());
         while let Some(b) = self.scratch_h2b.pop() {
             self.insert_retl(b);
         }
@@ -2589,21 +3329,18 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
     /// set of H3 generators for that H2 fact. The check is delayed until the
     /// relation fixed point because more generators may be discovered later.
     fn pending_h2_spinout_target_still_possible(&self) -> bool {
-        self.pending_h2_spinout_targets.iter().any(|a| {
-            self.pre23.values(a).any(|c| {
-                self.words.get(c.w).is_zero()
-                    && self.summary_may_be_all_zero_context(c.r)
+        self.pending_h2_spinout_targets.any(|a| {
+            self.pre23.values(&a).any(|&c_id| {
+                let c = self.h3s.get(c_id);
+                self.words.get(c.w()).is_zero()
+                    && self.summary_may_be_all_zero_context(c.r())
             })
         })
     }
 
     fn run(mut self) -> Result<(), StopReason> {
-        let blank = self.words.intern(Word::zero(self.block_len));
-        let c0 = H3 {
-            w: blank,
-            s: 0,
-            r: 1,
-        };
+        let blank = self.blank_word;
+        let c0 = H3::new(blank, 0, 1);
         let c0 = self.insert_h3(c0);
         self.insert_pre3l(c0);
 
@@ -2625,7 +3362,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
                 continue;
             }
             if let Some(a) = self.pre3l.pop_todo() {
-                self.on_pre3l(&a)?;
+                self.on_pre3l(a)?;
                 continue;
             }
             if let Some(a) = self.blank2.pop_todo() {
@@ -2633,7 +3370,7 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
                 continue;
             }
             if let Some(c) = self.blank3.pop_todo() {
-                self.on_blank3(&c)?;
+                self.on_blank3(c)?;
                 continue;
             }
             if let Some((a, b)) = self.ret2.pop_todo() {
@@ -2641,19 +3378,19 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
                 continue;
             }
             if let Some((a, b)) = self.ret3.pop_todo() {
-                self.on_ret3(&a, &b);
+                self.on_ret3(a, &b);
                 continue;
             }
             if let Some((a, c)) = self.pre23.pop_todo() {
-                self.on_pre23(&a, &c)?;
+                self.on_pre23(&a, c)?;
                 continue;
             }
             if let Some((a, a0)) = self.pre32.pop_todo() {
-                self.on_pre32(&a, &a0);
+                self.on_pre32(a, &a0);
                 continue;
             }
             if let Some((a, a0)) = self.pre33.pop_todo() {
-                self.on_pre33(&a, &a0);
+                self.on_pre33(a, a0);
                 continue;
             }
             break;
@@ -2678,17 +3415,13 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
 /// A macro instruction lookup may fail with `Err`; as in standalone CPS this
 /// makes the proof attempt inconclusive rather than turning the macro error into
 /// a halting transition.
-#[expect(
-    clippy::cast_possible_truncation,
-    clippy::cast_possible_wrap,
-    clippy::cast_sign_loss
-)]
+#[expect(clippy::cast_sign_loss)]
 fn far_raw_word_update_lemma<P: GetInstr>(
     prog: &P,
     w: Word,
     s: State,
     sgn: i8,
-    max_steps: usize,
+    max_steps: u16,
     target_mode: BlockTargetMode,
     ctx: StepContext,
     mirrored: bool,
@@ -2706,7 +3439,8 @@ fn far_raw_word_update_lemma<P: GetInstr>(
         _ => false,
     };
 
-    let len = w.len() as i32;
+    let len = i16::try_from(w.len())
+        .expect("FAR block length must fit in i16");
     let mut w1 = w;
     let mut nonblank_count = match goal {
         Goal::Blank => w1
@@ -2719,17 +3453,24 @@ fn far_raw_word_update_lemma<P: GetInstr>(
         },
     };
     let mut s1 = s;
-    let mut pos: i32 = 0;
+    let mut pos: i16 = 0;
     let mut hit_blank = false;
 
     let mut local_words = Map::new();
-    local_words.insert(w1.clone(), 0_usize);
-    let mut local_word_id = 0_usize;
+    local_words.insert(w1.clone(), 0_u16);
+    let mut local_word_id = 0_u16;
     let mut seen = Set::new();
-    let mut steps = 0_usize;
+    let mut steps = 0_u16;
 
     loop {
-        if !seen.insert((local_word_id, s1, pos)) {
+        // This is the hottest exact-simulation set key.  The local word id is
+        // bounded by max_steps <= 51_200, State is u8, and a live in-block
+        // position is 0..=255, so the full configuration fits in one u32.
+        debug_assert!((0..=i16::from(u8::MAX)).contains(&pos));
+        let seen_key = u32::from(local_word_id)
+            | (u32::from(s1) << 16)
+            | ((pos as u32) << 24);
+        if !seen.insert(seen_key) {
             return RawWordUpdateOutcome::LocalLoop { hit_blank };
         }
         if steps == max_steps {
@@ -2751,9 +3492,9 @@ fn far_raw_word_update_lemma<P: GetInstr>(
                 Ok(Some(instr)) => instr,
             };
 
-        let dir: i32 = if shift_right { 1 } else { -1 };
+        let dir: i16 = if shift_right { 1 } else { -1 };
         let dir = if mirrored { -dir } else { dir };
-        let block_dir = dir * i32::from(sgn);
+        let block_dir = dir * i16::from(sgn);
 
         // Spinout is specifically a same-state transition while scanning the
         // canonical macro zero, with a canonical-zero ray ahead. Deferred mode
@@ -2811,7 +3552,9 @@ fn far_raw_word_update_lemma<P: GetInstr>(
             local_word_id = if let Some(&id) = local_words.get(&w1) {
                 id
             } else {
-                let id = local_words.len();
+                let id = u16::try_from(local_words.len()).expect(
+                    "FAR local word table exceeded u16::MAX entries",
+                );
                 local_words.insert(w1.clone(), id);
                 id
             };
@@ -2855,8 +3598,9 @@ fn far_raw_word_update_lemma<P: GetInstr>(
 fn far_decider_for_with_summary<P: GetInstr, S: Summary>(
     prog: &P,
     params: FarRunParams,
-    initial_summary: S,
+    summary_config: S::Config,
 ) -> Result<FarDecider<'_, P, S>, StopReason> {
+    let initial_summary = S::new(summary_config);
     // Index 0 remains the historical unused sentinel.  It deliberately carries
     // `blank_all_zero = false`; the real initial product state is interned by
     // `with_init_dfa` at index 1.
@@ -2864,36 +3608,40 @@ fn far_decider_for_with_summary<P: GetInstr, S: Summary>(
         summary: initial_summary.clone(),
         blank_all_zero: false,
     }];
+    let mut words = WordInterner::new();
+    let blank_word = words.intern(Word::zero(params.block_len));
     let decider = FarDecider {
         prog,
         goal: params.goal,
         mirrored: params.mirrored,
         defer_blank_targets: params.defer_blank_targets,
-        block_len: params.block_len,
         max_work: params.max_work,
         block_step_limit: params.block_step_limit,
-        words: WordInterner::new(),
+        summary_config,
+        words,
+        blank_word,
         work: 0,
         step_cache: Map::new(),
         deferred_blank_step_cache: Map::new(),
         id: Map::new(),
+        id_collisions: Map::new(),
         idr,
         pop: Vec::new(),
         push: Map::new(),
         new_pops: Vec::new(),
         ret2: TodoMap::new(),
-        ret3: TodoMap::new(),
+        ret3: DenseH3TodoMap::new(),
         pre23: TodoMap::new(),
-        pre32: TodoMap::new(),
-        pre33: TodoMap::new(),
-        pre3l: TodoSet::new(),
-        retl: TodoSet::new(),
-        h3s: TodoSet::new(),
-        h2s: TodoSet::new(),
-        blank2: TodoSet::new(),
-        blank3: TodoSet::new(),
-        pending_h2_spinout_targets: Set::new(),
-        r_s: Vec::new(),
+        pre32: DenseH3TodoMap::new(),
+        pre33: DenseH3TodoMap::new(),
+        pre3l: DenseH3TodoSet::new(),
+        retl: DenseDfaTodoSet::new(),
+        h3s: H3Interner::new(),
+        h2s: DenseDfaTodoSet::new(),
+        blank2: DenseDfaTodoSet::new(),
+        blank3: DenseH3TodoSet::new(),
+        pending_h2_spinout_targets: DenseH2Set::default(),
+        r_s: DfaStateRows::default(),
         zero_context: Vec::new(),
         zero_push: Vec::new(),
         scratch_states: Vec::new(),
@@ -2905,34 +3653,34 @@ fn far_decider_for_with_summary<P: GetInstr, S: Summary>(
     decider.with_init_dfa(initial_summary)
 }
 
-fn far_decide_with_initial<P: GetInstr, S: Summary>(
+fn far_decide_with_config<P: GetInstr, S: Summary>(
     prog: &P,
     params: FarRunParams,
-    initial: S,
+    summary_config: S::Config,
 ) -> bool {
-    let Ok(decider) =
-        far_decider_for_with_summary(prog, params, initial)
-    else {
+    let Ok(decider) = far_decider_for_with_summary::<P, S>(
+        prog,
+        params,
+        summary_config,
+    ) else {
         return false;
     };
     decider.run().is_ok()
 }
 
-fn far_decide_with_for<P: GetInstr, S: Summary>(
+fn far_decide_with_for<P: GetInstr, S: Summary<Config = ()>>(
     prog: &P,
     params: FarRunParams,
 ) -> bool {
-    far_decide_with_initial(prog, params, S::new())
+    far_decide_with_config::<P, S>(prog, params, ())
 }
 
 fn far_decide_rwl_mod_profile<P: GetInstr>(
     prog: &P,
     params: FarRunParams,
-    profile: (u64, u64, usize, usize),
+    profile: (u8, u8, u8, u8),
 ) -> bool {
-    let (mnc, modulus, len1, len2) = profile;
-    let initial = RwlModSummary::with_profile(mnc, modulus, len1, len2);
-    far_decide_with_initial(prog, params, initial)
+    far_decide_with_config::<P, RwlModSummary>(prog, params, profile)
 }
 
 /// Cheap RWL_mod profiles retained in the hot raw-summary portfolio.  These are
@@ -2948,7 +3696,7 @@ fn far_decide_rwl_mod_default_portfolio<P: GetInstr>(
             params,
             (
                 FAR_RWL_DEFAULT_MNC,
-                modulus as u64,
+                modulus,
                 FAR_RWL_DEFAULT_LEN1,
                 FAR_RWL_DEFAULT_LEN2,
             ),
@@ -2959,24 +3707,40 @@ fn far_decide_rwl_mod_default_portfolio<P: GetInstr>(
 fn far_decide_rngs_mod_profile<P: GetInstr>(
     prog: &P,
     params: FarRunParams,
-    profile: (u64, u64, usize, usize, usize),
+    profile: (u8, u8, u8, u8, u8),
 ) -> bool {
-    let (mnc, modulus, ng_n, len_h, bs_n) = profile;
-    let initial =
-        RngsModSummary::with_profile(mnc, modulus, ng_n, len_h, bs_n);
-    far_decide_with_initial(prog, params, initial)
+    far_decide_with_config::<P, RngsModSummary>(prog, params, profile)
+}
+
+fn far_decide_rngs_mod_default<P: GetInstr>(
+    prog: &P,
+    params: FarRunParams,
+) -> bool {
+    far_decide_rngs_mod_profile(
+        prog,
+        params,
+        (
+            FAR_RNGS_DEFAULT_MNC,
+            FAR_RNGS_DEFAULT_MOD,
+            FAR_RNGS_DEFAULT_NG_N,
+            FAR_RNGS_DEFAULT_LEN_H,
+            FAR_RNGS_DEFAULT_BS_N,
+        ),
+    )
 }
 
 fn far_decide_upstream_cps_lru(
     prog: &impl GetInstr,
     params: FarRunParams,
-    profile: (usize, usize, usize),
-    lru_n: usize,
+    profile: (u8, u8, u8),
+    lru_n: u8,
 ) -> bool {
     let (len1, len2, len3) = profile;
-    let initial =
-        UpstreamCpsLruSummary::with_profile(len1, len2, len3, lru_n);
-    far_decide_with_initial(prog, params, initial)
+    far_decide_with_config::<_, UpstreamCpsLruSummary>(
+        prog,
+        params,
+        (len1, len2, len3, lru_n),
+    )
 }
 
 /// Full raw summary portfolio. The extra CPS experiments that produced no new
@@ -3002,7 +3766,7 @@ fn far_decide_summary_portfolio<P: GetInstr>(
         || far_decide_with_for::<_, NgSetSummary>(prog, params)
         || far_decide_with_for::<_, LruPairSummary>(prog, params)
         || far_decide_with_for::<_, SetPairSummary>(prog, params)
-        || far_decide_with_for::<_, RngsModSummary>(prog, params)
+        || far_decide_rngs_mod_default(prog, params)
         || far_decide_with_for::<_, RsModSummary>(prog, params)
 }
 
@@ -3049,8 +3813,12 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         for block_len in 1..=block {
             let params_base = FarRunParams {
                 block_len,
-                max_work: FAR_WORK_PER_LEN * block_len,
-                block_step_limit: FAR_STEP_PER_LEN * block_len,
+                max_work: u32::try_from(FAR_WORK_PER_LEN * block_len)
+                    .expect("FAR work budget must fit u32"),
+                block_step_limit: u16::try_from(
+                    FAR_STEP_PER_LEN * block_len,
+                )
+                .expect("FAR block-step budget must fit u16"),
                 goal,
                 mirrored: false,
                 defer_blank_targets,
@@ -3083,7 +3851,7 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                         // affect a suffix of capacity len2.  All later LRU_n
                         // values are equivalent; keep one representative at 0
                         // when len2 itself is zero.
-                        let distinct_lru_ns = len2
+                        let distinct_lru_ns = usize::from(len2)
                             .max(1)
                             .min(FAR_CPS_LRU_EXACT_LRU_NS.len());
                         if lru_idx >= distinct_lru_ns {
@@ -3987,11 +4755,19 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
                 if seen.contains(&cfg) {
                     continue;
                 }
-                if cfg.left == MITM_DEAD {
-                    return Some((MitmSide::Left, cur.left, write));
+                if cfg.left == mitm_id(MITM_DEAD) {
+                    return Some((
+                        MitmSide::Left,
+                        mitm_idx(cur.left),
+                        write,
+                    ));
                 }
-                if cfg.right == MITM_DEAD {
-                    return Some((MitmSide::Right, cur.right, write));
+                if cfg.right == mitm_id(MITM_DEAD) {
+                    return Some((
+                        MitmSide::Right,
+                        mitm_idx(cur.right),
+                        write,
+                    ));
                 }
                 seen.insert(cfg);
                 todo.push(cfg);
@@ -4027,37 +4803,40 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
 
             let write = write as usize;
             if shift {
-                useful_left[cur.left][write] = true;
-                let (new_left, _) = left.trans[cur.left][write];
-                for edge in &right_rev[cur.right] {
-                    useful_right[edge.from][edge.symbol as usize] =
-                        true;
+                useful_left[mitm_idx(cur.left)][write] = true;
+                let (new_left, _) =
+                    left.trans[mitm_idx(cur.left)][write];
+                for edge in &right_rev[mitm_idx(cur.right)] {
+                    useful_right[mitm_idx(edge.from)]
+                        [edge.symbol as usize] = true;
                     let next = MitmConfig {
                         st: next_st,
                         co: edge.symbol,
-                        left: new_left,
+                        left: mitm_id(new_left),
                         right: edge.from,
                     };
-                    if next.left != MITM_DEAD
-                        && next.right != MITM_DEAD
+                    if next.left != mitm_id(MITM_DEAD)
+                        && next.right != mitm_id(MITM_DEAD)
                         && seen.insert(next)
                     {
                         todo.push(next);
                     }
                 }
             } else {
-                useful_right[cur.right][write] = true;
-                let (new_right, _) = right.trans[cur.right][write];
-                for edge in &left_rev[cur.left] {
-                    useful_left[edge.from][edge.symbol as usize] = true;
+                useful_right[mitm_idx(cur.right)][write] = true;
+                let (new_right, _) =
+                    right.trans[mitm_idx(cur.right)][write];
+                for edge in &left_rev[mitm_idx(cur.left)] {
+                    useful_left[mitm_idx(edge.from)]
+                        [edge.symbol as usize] = true;
                     let next = MitmConfig {
                         st: next_st,
                         co: edge.symbol,
                         left: edge.from,
-                        right: new_right,
+                        right: mitm_id(new_right),
                     };
-                    if next.left != MITM_DEAD
-                        && next.right != MITM_DEAD
+                    if next.left != mitm_id(MITM_DEAD)
+                        && next.right != mitm_id(MITM_DEAD)
                         && seen.insert(next)
                     {
                         todo.push(next);
@@ -4390,16 +5169,22 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
             let written = usize::from(write);
             let scanned = usize::from(cfg.co);
             let delta = if shift {
-                let (to, pushed) = left.trans[cur.left][written];
-                let (back, popped) = right.trans[cfg.right][scanned];
-                if to != cfg.left || back != cur.right {
+                let (to, pushed) =
+                    left.trans[mitm_idx(cur.left)][written];
+                let (back, popped) =
+                    right.trans[mitm_idx(cfg.right)][scanned];
+                if mitm_id(to) != cfg.left || mitm_id(back) != cur.right
+                {
                     return false;
                 }
                 pushed - popped
             } else {
-                let (to, pushed) = right.trans[cur.right][written];
-                let (back, popped) = left.trans[cfg.left][scanned];
-                if to != cfg.right || back != cur.left {
+                let (to, pushed) =
+                    right.trans[mitm_idx(cur.right)][written];
+                let (back, popped) =
+                    left.trans[mitm_idx(cfg.left)][scanned];
+                if mitm_id(to) != cfg.right || mitm_id(back) != cur.left
+                {
                     return false;
                 }
                 pushed - popped
@@ -4534,13 +5319,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         if shift {
             // Move right: the written symbol joins the left half; the old right
             // predecessor supplies the next scanned symbol.
-            let (new_left, left_weight) = left.trans[old.left][write];
-            for edge in &right_rev[old.right] {
+            let (new_left, left_weight) =
+                left.trans[mitm_idx(old.left)][write];
+            for edge in &right_rev[mitm_idx(old.right)] {
                 out.push(MitmNext {
                     config: MitmConfig {
                         st: next_st,
                         co: edge.symbol,
-                        left: new_left,
+                        left: mitm_id(new_left),
                         right: edge.from,
                     },
                     weight: left_weight - edge.weight,
@@ -4552,14 +5338,14 @@ impl<const STATES: usize, const COLORS: usize> Prog<STATES, COLORS> {
         } else {
             // Move left: symmetric case.
             let (new_right, right_weight) =
-                right.trans[old.right][write];
-            for edge in &left_rev[old.left] {
+                right.trans[mitm_idx(old.right)][write];
+            for edge in &left_rev[mitm_idx(old.left)] {
                 out.push(MitmNext {
                     config: MitmConfig {
                         st: next_st,
                         co: edge.symbol,
                         left: edge.from,
-                        right: new_right,
+                        right: mitm_id(new_right),
                     },
                     weight: right_weight - edge.weight,
                     erased_nonzero: goal.is_blank()
@@ -4586,7 +5372,7 @@ struct MitmWfa {
 
 #[derive(Clone, Copy)]
 struct MitmRevEdge {
-    from: usize,
+    from: u32,
     symbol: Color,
     weight: i32,
 }
@@ -4597,8 +5383,18 @@ type MitmRev = Vec<Vec<MitmRevEdge>>;
 struct MitmConfig {
     st: State,
     co: Color,
-    left: usize,
-    right: usize,
+    left: u32,
+    right: u32,
+}
+
+#[inline]
+const fn mitm_idx(state: u32) -> usize {
+    state as usize
+}
+
+#[inline]
+fn mitm_id(state: usize) -> u32 {
+    u32::try_from(state).expect("MITM state id exceeded u32::MAX")
 }
 
 impl MitmConfig {
@@ -4693,14 +5489,14 @@ fn mitm_step_bounds(
     let mut lo = bounds.lo.map(|x| x + next.weight);
     let mut hi = bounds.hi.map(|x| x + next.weight);
 
-    let hard_lo = left_special.nonneg[cfg.left]
-        && right_special.nonneg[cfg.right];
+    let hard_lo = left_special.nonneg[mitm_idx(cfg.left)]
+        && right_special.nonneg[mitm_idx(cfg.right)];
     if hard_lo && lo.is_none_or(|x| x < 0) {
         lo = Some(0);
     }
 
-    let hard_hi = left_special.nonpos[cfg.left]
-        && right_special.nonpos[cfg.right];
+    let hard_hi = left_special.nonpos[mitm_idx(cfg.left)]
+        && right_special.nonpos[mitm_idx(cfg.right)];
     if hard_hi && hi.is_none_or(|x| x > 0) {
         hi = Some(0);
     }
@@ -4801,7 +5597,7 @@ impl MitmWfa {
                 let (to, weight) = self.trans[from][symbol];
                 #[expect(clippy::cast_possible_truncation)]
                 rev[to].push(MitmRevEdge {
-                    from,
+                    from: mitm_id(from),
                     symbol: symbol as Color,
                     weight,
                 });
