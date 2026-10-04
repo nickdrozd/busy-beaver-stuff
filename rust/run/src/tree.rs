@@ -1,6 +1,9 @@
 #![expect(clippy::trivially_copy_pass_by_ref)]
 
-use core::cmp::{max, min};
+use core::{
+    cell::Cell,
+    cmp::{max, min},
+};
 use std::{borrow::Cow, collections::HashMap as Dict};
 
 use rayon::prelude::*;
@@ -160,6 +163,10 @@ trait AvailInstrs<'h, const states: usize, const colors: usize> {
 
     fn avail_instrs(&self, slot: &Slot) -> &'h [Instr];
 
+    fn allows(&self, _: &Slot, _: &Instr) -> bool {
+        true
+    }
+
     fn on_insert(&mut self, _: &Slot, _: &Instr) {}
     fn on_remove(&mut self) {}
 }
@@ -198,49 +205,210 @@ impl<'h, const states: usize, const colors: usize>
     }
 }
 
-struct AvailBlanks(AvailStack<Option<Slots>>);
+#[derive(Clone, Copy)]
+struct BlankUndo {
+    erase_remaining: Option<Slots>,
+    read: Color,
+    remaining: Slots,
+    prints: u128,
+    can_erase: u128,
+    last_base: Option<(usize, u128)>,
+}
 
-impl AvailBlanks {
-    fn init(states: usize, colors: usize) -> Self {
-        let init_blanks = states * (colors - 1);
+struct AvailBlanks<const colors: usize> {
+    // Existing pruning: if no direct erase instruction has been seen yet,
+    // this is the number of nonzero-read slots that could still supply one.
+    erase_remaining: Option<Slots>,
 
-        Self(AvailStack::new(Some(init_blanks)))
+    // Number of undefined slots for each nonzero read color.
+    remaining: [Slots; colors],
+
+    // prints[c] is a bitset of colors printed by already-defined
+    // instructions whose read color is c.
+    prints: [u128; colors],
+
+    // Conservative color -> ... -> 0 reachability. An undefined read-color
+    // slot counts as a possible future direct erase.
+    can_erase: u128,
+
+    // DFS rollback: only one read color changes per inserted instruction, so
+    // don't copy the whole graph state at every tree edge.
+    history: Vec<BlankUndo>,
+
+    // When assigning the final undefined slot for one read color, all
+    // candidates share the same closure with that last wildcard removed.
+    last_base: Cell<Option<(usize, u128)>>,
+}
+
+impl<const colors: usize> AvailBlanks<colors> {
+    fn init(states: usize) -> Self {
+        assert!(
+            colors <= 128,
+            "erase graph supports at most 128 colors"
+        );
+
+        let mut remaining = [states; colors];
+        remaining[0] = 0;
+
+        let can_erase = if colors == 128 {
+            u128::MAX
+        } else {
+            (1_u128 << colors) - 1
+        };
+
+        Self {
+            erase_remaining: Some(states * (colors - 1)),
+            remaining,
+            prints: [0; colors],
+            can_erase,
+            history: Vec::with_capacity(states * colors),
+            last_base: Cell::new(None),
+        }
     }
 
-    fn must_erase(&self, print: Color) -> bool {
-        print != 0 && self.0.top() == Some(1)
+    const fn bit(color: usize) -> u128 {
+        1_u128 << color
+    }
+
+    fn must_erase(&self, read: Color) -> bool {
+        read != 0 && self.erase_remaining == Some(1)
+    }
+
+    fn close(&self, mut can: u128) -> u128 {
+        loop {
+            let old = can;
+
+            for color in 1..colors {
+                if self.prints[color] & can != 0 {
+                    can |= Self::bit(color);
+                }
+            }
+
+            if can == old {
+                return can;
+            }
+        }
+    }
+
+    fn base_without_last(&self, read: usize) -> u128 {
+        if let Some((cached_read, can)) = self.last_base.get()
+            && cached_read == read
+        {
+            return can;
+        }
+
+        debug_assert_eq!(self.remaining[read], 1);
+
+        let mut can = Self::bit(0);
+
+        for color in 1..colors {
+            if color != read && self.remaining[color] != 0 {
+                can |= Self::bit(color);
+            }
+        }
+
+        let can = self.close(can);
+        self.last_base.set(Some((read, can)));
+        can
+    }
+
+    fn allows(
+        &self,
+        &(_, read): &Slot,
+        &(print, _, _): &Instr,
+    ) -> bool {
+        if print == 0 {
+            return true;
+        }
+
+        let print = usize::from(print);
+        let read = usize::from(read);
+
+        let can = if read != 0 && self.remaining[read] == 1 {
+            // This candidate consumes the final undefined transition reading
+            // `read`. Remove that wildcard once for the entire candidate set.
+            self.base_without_last(read)
+        } else {
+            self.can_erase
+        };
+
+        // The candidate immediately writes `print` onto the tape. If that
+        // color has no possible rewrite path to 0, this branch can never blank.
+        can & Self::bit(print) != 0
+    }
+
+    fn on_insert(&mut self, &(_, read): &Slot, &(print, _, _): &Instr) {
+        let read_index = usize::from(read);
+        let last_base = (read != 0 && self.remaining[read_index] == 1)
+            .then(|| self.base_without_last(read_index));
+
+        self.history.push(BlankUndo {
+            erase_remaining: self.erase_remaining,
+            read,
+            remaining: self.remaining[read_index],
+            prints: self.prints[read_index],
+            can_erase: self.can_erase,
+            last_base: self.last_base.get(),
+        });
+
+        self.erase_remaining = if print == 0 && read != 0 {
+            None
+        } else {
+            self.erase_remaining
+                .map(|rem| if read != 0 { rem - 1 } else { rem })
+        };
+
+        if read != 0 {
+            let print = usize::from(print);
+
+            debug_assert!(0 < self.remaining[read_index]);
+            self.remaining[read_index] -= 1;
+            self.prints[read_index] |= Self::bit(print);
+
+            if let Some(base) = last_base {
+                // `allows` guarantees that this executed candidate writes an
+                // erasable color. The now-complete read color therefore has a
+                // rewrite path to 0; close backwards to update predecessors.
+                debug_assert_eq!(self.remaining[read_index], 0);
+                debug_assert!(
+                    print == 0 || base & Self::bit(print) != 0
+                );
+
+                self.can_erase =
+                    self.close(base | Self::bit(read_index));
+            }
+        }
+
+        self.last_base.set(None);
     }
 
     fn on_remove(&mut self) {
-        self.0.pop();
-    }
+        let undo = self.history.pop().unwrap();
+        let read = usize::from(undo.read);
 
-    fn on_insert(&mut self, &(_, sc): &Slot, &(pr, _, _): &Instr) {
-        let next = if pr == 0 && sc != 0 {
-            None
-        } else {
-            self.0.top().map(|rem| if sc != 0 { rem - 1 } else { rem })
-        };
-
-        self.0.push(next);
+        self.erase_remaining = undo.erase_remaining;
+        self.remaining[read] = undo.remaining;
+        self.prints[read] = undo.prints;
+        self.can_erase = undo.can_erase;
+        self.last_base.set(undo.last_base);
     }
 }
 
-struct BlankInstrs<'h> {
+struct BlankInstrs<'h, const colors: usize> {
     instr_table: &'h InstrTable,
     avail_params: AvailParams,
-    avail_blanks: AvailBlanks,
+    avail_blanks: AvailBlanks<colors>,
 }
 
 impl<'h, const states: usize, const colors: usize>
-    AvailInstrs<'h, states, colors> for BlankInstrs<'h>
+    AvailInstrs<'h, states, colors> for BlankInstrs<'h, colors>
 {
     type Table = InstrTable;
 
     fn new(instr_table: &'h Self::Table) -> Self {
         let avail_params = AvailStack::init(states, colors);
 
-        let avail_blanks = AvailBlanks::init(states, colors);
+        let avail_blanks = AvailBlanks::<colors>::init(states);
 
         Self {
             instr_table,
@@ -259,6 +427,10 @@ impl<'h, const states: usize, const colors: usize>
         } else {
             all
         }
+    }
+
+    fn allows(&self, slot: &Slot, instr: &Instr) -> bool {
+        self.avail_blanks.allows(slot, instr)
     }
 
     fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -377,7 +549,7 @@ impl<'h, const states: usize, const colors: usize>
 struct BlankInstrsSmall<'h, const states: usize, const colors: usize> {
     instrs_all: &'h [Instr],
     instrs_erase: &'h [Instr],
-    avail_blanks: AvailBlanks,
+    avail_blanks: AvailBlanks<colors>,
 }
 
 impl<'h, const states: usize, const colors: usize>
@@ -390,7 +562,7 @@ impl<'h, const states: usize, const colors: usize>
         let instrs_all = &instr_table[states][colors];
         let instrs_erase = &instrs_all[..2 * states];
 
-        let avail_blanks = AvailBlanks::init(states, colors);
+        let avail_blanks = AvailBlanks::<colors>::init(states);
 
         Self {
             instrs_all,
@@ -405,6 +577,10 @@ impl<'h, const states: usize, const colors: usize>
         } else {
             self.instrs_all
         }
+    }
+
+    fn allows(&self, slot: &Slot, instr: &Instr) -> bool {
+        self.avail_blanks.allows(slot, instr)
     }
 
     fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -494,7 +670,12 @@ impl<
             avail_instrs.retain(|&(pr, _, _)| pr != 0);
         }
 
-        let (last_instr, instrs) = avail_instrs.split_last().unwrap();
+        avail_instrs.retain(|instr| self.instrs.allows(&slot, instr));
+
+        let Some((last_instr, instrs)) = avail_instrs.split_last()
+        else {
+            return;
+        };
 
         if self.final_slot() {
             for next_instr in instrs {
@@ -583,7 +764,7 @@ type BasicTreeSmall<'i, const s: usize, const c: usize, H> =
     Tree<s, c, BasicInstrsSmall<'i, s, c>, H>;
 
 type BlankTree<'i, const s: usize, const c: usize, H> =
-    Tree<s, c, BlankInstrs<'i>, H>;
+    Tree<s, c, BlankInstrs<'i, c>, H>;
 
 type BlankTreeSmall<'i, const s: usize, const c: usize, H> =
     Tree<s, c, BlankInstrsSmall<'i, s, c>, H>;
