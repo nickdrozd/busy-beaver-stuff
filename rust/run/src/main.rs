@@ -492,62 +492,6 @@ fn test_bkw() {
 
 /**************************************/
 
-fn qh_2_2(prog: &Prog<2, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(3)
-}
-
-fn qh_3_2(prog: &Prog<3, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(3)
-}
-
-fn qh_2_3(prog: &Prog<2, 3>, _: &mut PassConfig<'_>) -> bool {
-    prog.cps_cant_quasihalt(3)
-}
-
-fn qh_4_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
-    let config = config.to_mut();
-
-    prog.term_or_rec(LIN_MOR, config).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_quasihalt(18)
-        || prog.term_or_rec(LIN_MAX, config).is_settled()
-        || prog.prover_settled(INF_MOR)
-}
-
-fn qh_2_4(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
-    let config = config.to_mut();
-
-    prog.term_or_rec(LIN_MOR, config).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_quasihalt(18)
-        || prog.term_or_rec(LIN_MAX, config).is_settled()
-        || prog.prover_settled(INF_MOR)
-}
-
-fn test_quasihalt() {
-    println!("quasihalt");
-
-    assert_holdouts![
-        (2, 2) => [
-            4 => (qh_2_2, 4, (0, 81)),
-        ],
-        (3, 2) => [
-            4 => (qh_3_2, 13, (0, 11_754)),
-        ],
-        (2, 3) => [
-            4 => (qh_2_3, 20, (0, 8_766)),
-        ],
-        (2, 4) => [
-            4 => (qh_2_4, TREE_LIM, (_2_4_q_, 1_698_850)),
-        ],
-        (4, 2) => [
-            4 => (qh_4_2, 99, (63, 2_134_923)),
-        ],
-    ];
-}
-
-/**************************************/
-
 const BKW_8: usize = 1000;
 const CPS_8: usize = 21;
 const FAR_8: usize = 6;
@@ -776,7 +720,7 @@ fn test_enum_p() {
 
 /**************************************/
 
-const FAST: &[fn()] = &[test_bkw, test_deciders, test_quasihalt];
+const FAST: &[fn()] = &[test_bkw, test_deciders];
 
 const SLOW: &[fn()] = &[test_enum_p, test_enum_9];
 

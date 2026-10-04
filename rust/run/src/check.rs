@@ -186,12 +186,6 @@ fn test_cps() {
         _8_2_ho.as_slice(),
         |prog| prog.cps_cant_blank(20),
     );
-    check_holdout_decider(
-        &mut failures,
-        "2-4 quasihalt",
-        _2_4_q_ho.as_slice(),
-        |prog| prog.cps_cant_quasihalt(18),
-    );
 
     assert_no_holdout_failures("cps", &failures);
 }

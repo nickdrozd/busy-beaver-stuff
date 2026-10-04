@@ -193,11 +193,6 @@ pub fn cps_cant_spinout(prog: &str, rad: Radius) -> bool {
     p.cps_cant_spinout(rad)
 }
 
-#[pyfunction]
-pub fn cps_cant_quasihalt(prog: &str, rad: Radius) -> bool {
-    Prog::from(prog).cps_cant_quasihalt(rad)
-}
-
 /***************************************/
 
 #[pyfunction]
@@ -441,9 +436,9 @@ mod rust_stuff {
         BackwardResult, MachineResult, PastConfigPy, TermRes,
         bkw_cant_blank, bkw_cant_halt, bkw_cant_spinout,
         bkw_cant_twostep, bkw_cant_zloop, check_inf, cps_cant_blank,
-        cps_cant_halt, cps_cant_quasihalt, cps_cant_spinout,
-        far_cant_blank, far_cant_halt, far_cant_spinout, opt_block,
-        read_instr, run_quick_machine, run_transcript, show_comp,
-        show_instr, show_slot, show_state, tcompile, term_or_rec,
+        cps_cant_halt, cps_cant_spinout, far_cant_blank, far_cant_halt,
+        far_cant_spinout, opt_block, read_instr, run_quick_machine,
+        run_transcript, show_comp, show_instr, show_slot, show_state,
+        tcompile, term_or_rec,
     };
 }

@@ -46,8 +46,6 @@ holdouts!(_8_0_ch, _8_0_ho, _8_0_, "halt");
 holdouts!(&[], _8_1_ho, _8_1_, "spinout");
 holdouts!(&[], _8_2_ho, _8_2_, "blank");
 
-holdouts!(&[], _2_4_q_ho, _2_4_q_, "quasihalt");
-
 /**************************************/
 
 #[cfg(test)]

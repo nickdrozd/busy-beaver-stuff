@@ -12,7 +12,6 @@ from tm.rust_stuff import (
     bkw_cant_zloop,
     cps_cant_blank,
     cps_cant_halt,
-    cps_cant_quasihalt,
     cps_cant_spinout,
     far_cant_blank,
     far_cant_halt,
@@ -49,7 +48,6 @@ def get_holdouts(path: str) -> set[str]:
 HALT_HOLDOUTS = get_holdouts('halt')
 BLANK_HOLDOUTS = get_holdouts('blank')
 SPINOUT_HOLDOUTS = get_holdouts('spinout')
-QUASIHALT_HOLDOUTS = get_holdouts('quasihalt')
 
 ########################################
 
@@ -252,23 +250,6 @@ class Cps(DeciderTest):
         self.assertTrue(
             cps_cant_spinout(prog, CPS_LIMIT), prog)
 
-    def assert_could_quasihalt_cps(self, prog: str):
-        self.assertFalse(
-            cps_cant_quasihalt(prog, CPS_LIMIT),
-            f'cps quasihalt false positive: "{prog}"')
-
-    def assert_cant_quasihalt_cps(self, prog: str):
-        if prog in self.false_negatives['quasihalt']:
-            self.assertFalse(
-                cps_cant_quasihalt(prog, CPS_LIMIT),
-                f'unexpected cps quasihalt positive: "{prog}"')
-
-            return
-
-        self.assertTrue(
-            cps_cant_quasihalt(prog, CPS_LIMIT),
-            f'cps quasihalt false negative: "{prog}"')
-
     def test_true_positives(self):
         for prog in NONHALTERS:
             self.assert_cant_halt_cps(prog)
@@ -288,19 +269,6 @@ class Cps(DeciderTest):
 
         for prog in SPINNERS:
             self.assert_could_spinout_cps(prog)
-
-    def test_quasihalt(self):
-        for prog in QUASIHALT_HOLDOUTS:
-            self.assert_could_quasihalt_cps(prog)
-
-        for prog in (RECURS | INFRUL) - QUASIHALT - RECUR_FAST:
-            self.assert_cant_quasihalt_cps(prog)
-
-        for prog in QUASIHALT:
-            try:
-                self.assert_could_quasihalt_cps(prog)
-            except AssertionError:
-                assert 'A' not in prog
 
     def test_holdouts(self):
         for prog in BLANK_HOLDOUTS:
