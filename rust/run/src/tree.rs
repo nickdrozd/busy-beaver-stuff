@@ -18,6 +18,8 @@ pub type PassConfig<'c> = Cow<'c, Config>;
 pub type TreeResult<Harv> = Dict<Instr, Harv>;
 
 type Slots = usize;
+type Mask = u16;
+type Count = u8;
 
 type Params = (usize, usize);
 
@@ -207,29 +209,29 @@ impl<'h, const states: usize, const colors: usize>
 
 #[derive(Clone, Copy)]
 struct BlankUndo {
-    erase_remaining: Option<Slots>,
+    erase_remaining: Option<Count>,
     read: Color,
-    remaining: Slots,
-    prints: u128,
-    can_erase: u128,
-    last_base: Option<(usize, u128)>,
+    remaining: Count,
+    prints: Mask,
+    can_erase: Mask,
+    last_base: Option<(Color, Mask)>,
 }
 
 struct AvailBlanks<const colors: usize> {
     // Existing pruning: if no direct erase instruction has been seen yet,
     // this is the number of nonzero-read slots that could still supply one.
-    erase_remaining: Option<Slots>,
+    erase_remaining: Option<Count>,
 
     // Number of undefined slots for each nonzero read color.
-    remaining: [Slots; colors],
+    remaining: [Count; colors],
 
     // prints[c] is a bitset of colors printed by already-defined
     // instructions whose read color is c.
-    prints: [u128; colors],
+    prints: [Mask; colors],
 
     // Conservative color -> ... -> 0 reachability. An undefined read-color
     // slot counts as a possible future direct erase.
-    can_erase: u128,
+    can_erase: Mask,
 
     // DFS rollback: only one read color changes per inserted instruction, so
     // don't copy the whole graph state at every tree edge.
@@ -237,44 +239,42 @@ struct AvailBlanks<const colors: usize> {
 
     // When assigning the final undefined slot for one read color, all
     // candidates share the same closure with that last wildcard removed.
-    last_base: Cell<Option<(usize, u128)>>,
+    last_base: Cell<Option<(Color, Mask)>>,
 }
 
 impl<const colors: usize> AvailBlanks<colors> {
     fn init(states: usize) -> Self {
-        assert!(
-            colors <= 128,
-            "erase graph supports at most 128 colors"
-        );
+        assert!(states <= 16 && colors <= 16);
 
-        let mut remaining = [states; colors];
+        let state_count = Count::try_from(states).unwrap();
+        let mut remaining = [state_count; colors];
         remaining[0] = 0;
 
-        let can_erase = if colors == 128 {
-            u128::MAX
-        } else {
-            (1_u128 << colors) - 1
-        };
-
         Self {
-            erase_remaining: Some(states * (colors - 1)),
+            erase_remaining: Some(
+                Count::try_from(states * (colors - 1)).unwrap(),
+            ),
             remaining,
             prints: [0; colors],
-            can_erase,
+            can_erase: Self::low_bits(colors),
             history: Vec::with_capacity(states * colors),
             last_base: Cell::new(None),
         }
     }
 
-    const fn bit(color: usize) -> u128 {
-        1_u128 << color
+    const fn bit(color: usize) -> Mask {
+        1_u16 << color
+    }
+
+    const fn low_bits(n: usize) -> Mask {
+        if n == 16 { Mask::MAX } else { (1_u16 << n) - 1 }
     }
 
     fn must_erase(&self, read: Color) -> bool {
         read != 0 && self.erase_remaining == Some(1)
     }
 
-    fn close(&self, mut can: u128) -> u128 {
+    fn close(&self, mut can: Mask) -> Mask {
         loop {
             let old = can;
 
@@ -290,19 +290,20 @@ impl<const colors: usize> AvailBlanks<colors> {
         }
     }
 
-    fn base_without_last(&self, read: usize) -> u128 {
+    fn base_without_last(&self, read: Color) -> Mask {
         if let Some((cached_read, can)) = self.last_base.get()
             && cached_read == read
         {
             return can;
         }
 
-        debug_assert_eq!(self.remaining[read], 1);
+        let read_index = usize::from(read);
+        debug_assert_eq!(self.remaining[read_index], 1);
 
         let mut can = Self::bit(0);
 
         for color in 1..colors {
-            if color != read && self.remaining[color] != 0 {
+            if color != read_index && self.remaining[color] != 0 {
                 can |= Self::bit(color);
             }
         }
@@ -317,14 +318,14 @@ impl<const colors: usize> AvailBlanks<colors> {
         &(_, read): &Slot,
         &(print, _, _): &Instr,
     ) -> bool {
-        if print == 0 {
+        // With one nonblank color the graph cannot prove anything beyond the
+        // existing direct-erase obligation, so remove all graph hot-path work.
+        if colors <= 2 || print == 0 {
             return true;
         }
 
-        let print = usize::from(print);
-        let read = usize::from(read);
-
-        let can = if read != 0 && self.remaining[read] == 1 {
+        let read_index = usize::from(read);
+        let can = if read != 0 && self.remaining[read_index] == 1 {
             // This candidate consumes the final undefined transition reading
             // `read`. Remove that wildcard once for the entire candidate set.
             self.base_without_last(read)
@@ -334,13 +335,15 @@ impl<const colors: usize> AvailBlanks<colors> {
 
         // The candidate immediately writes `print` onto the tape. If that
         // color has no possible rewrite path to 0, this branch can never blank.
-        can & Self::bit(print) != 0
+        can & Self::bit(usize::from(print)) != 0
     }
 
     fn on_insert(&mut self, &(_, read): &Slot, &(print, _, _): &Instr) {
         let read_index = usize::from(read);
-        let last_base = (read != 0 && self.remaining[read_index] == 1)
-            .then(|| self.base_without_last(read_index));
+        let last_base = (colors > 2
+            && read != 0
+            && self.remaining[read_index] == 1)
+            .then(|| self.base_without_last(read));
 
         self.history.push(BlankUndo {
             erase_remaining: self.erase_remaining,
@@ -358,7 +361,9 @@ impl<const colors: usize> AvailBlanks<colors> {
                 .map(|rem| if read != 0 { rem - 1 } else { rem })
         };
 
-        if read != 0 {
+        // Binary-color blank enumeration only needs the old direct-erase
+        // counter. Avoid maintaining the color graph entirely.
+        if colors > 2 && read != 0 {
             let print = usize::from(print);
 
             debug_assert!(0 < self.remaining[read_index]);
@@ -457,47 +462,44 @@ struct SpinUndo {
 }
 
 struct AvailSpinouts<const states: usize> {
-    // All slots except normalized A0 start undefined.
-    undefined: Slots,
+    // All slots except normalized A0 start undefined. Once the spinout
+    // obligation is settled, descendants stop touching the masks/counter and
+    // only increment settled_depth until rollback reaches the settling edge.
+    undefined: Count,
+    settled_depth: Count,
 
     // State bit is set while that state's blank-read slot is undefined.
-    blank_undefined: u128,
+    blank_undefined: Mask,
 
     // Defined blank self-transitions, split by spin direction.
-    spin_r: u128,
-    spin_l: u128,
+    spin_r: Mask,
+    spin_l: Mask,
 
     // States having a distinct defined ingress compatible with a right/left
     // spin. Same-direction ingress is always compatible; opposite-direction
     // ingress is compatible when it prints 0 and therefore leaves the future
     // spin lane blank.
-    ingress_r: u128,
-    ingress_l: u128,
+    ingress_r: Mask,
+    ingress_l: Mask,
 
     history: Vec<SpinUndo>,
 }
 
 impl<const states: usize> AvailSpinouts<states> {
     fn init(colors: usize) -> Self {
-        assert!(
-            states <= 128,
-            "spinout ingress supports at most 128 states"
-        );
+        assert!(states <= 16 && colors <= 16);
 
-        let all_states = if states == 128 {
-            u128::MAX
-        } else {
-            (1_u128 << states) - 1
-        };
+        let all_states = Self::low_bits(states);
 
         // A0 is normalized to 1RB: it is already defined, so only states
         // B.. remain possible blank self-transition slots. It is also a
         // right-compatible ingress into B.
         let blank_undefined = all_states & !1;
-        let ingress_r = if states > 1 { 1_u128 << 1 } else { 0 };
+        let ingress_r = if states > 1 { 1_u16 << 1 } else { 0 };
 
         Self {
-            undefined: states * colors - 1,
+            undefined: Count::try_from(states * colors - 1).unwrap(),
+            settled_depth: 0,
             blank_undefined,
             spin_r: 0,
             spin_l: 0,
@@ -507,12 +509,21 @@ impl<const states: usize> AvailSpinouts<states> {
         }
     }
 
-    fn bit(state: State) -> u128 {
-        1_u128 << usize::from(state)
+    const fn bit(state: State) -> Mask {
+        1_u16 << state
+    }
+
+    const fn low_bits(n: usize) -> Mask {
+        if n == 16 { Mask::MAX } else { (1_u16 << n) - 1 }
     }
 
     const fn has_spin(&self) -> bool {
         self.spin_r | self.spin_l != 0
+    }
+
+    const fn settled(&self) -> bool {
+        self.spin_r & self.ingress_r != 0
+            || self.spin_l & self.ingress_l != 0
     }
 
     const fn must_spin(&self, read_color: Color) -> bool {
@@ -522,12 +533,12 @@ impl<const states: usize> AvailSpinouts<states> {
     }
 
     const fn viable(
-        undefined: Slots,
-        blank_undefined: u128,
-        spin_r: u128,
-        spin_l: u128,
-        ingress_r: u128,
-        ingress_l: u128,
+        undefined: Count,
+        blank_undefined: Mask,
+        spin_r: Mask,
+        spin_l: Mask,
+        ingress_r: Mask,
+        ingress_l: Mask,
     ) -> bool {
         // A complete witness already exists.
         if spin_r & ingress_r != 0 || spin_l & ingress_l != 0 {
@@ -560,7 +571,22 @@ impl<const states: usize> AvailSpinouts<states> {
         &(read_state, read_color): &Slot,
         &(print, shift, target): &Instr,
     ) -> bool {
-        debug_assert!(self.undefined != 0);
+        debug_assert!(self.undefined != 0 || self.settled());
+
+        // These conditions guarantee that consuming one candidate cannot
+        // exhaust the remaining spin+ingress possibilities. They avoid all
+        // temporary mask work for almost all upper-tree candidates.
+        if self.settled() {
+            return true;
+        }
+
+        if self.has_spin() && self.undefined > 1 {
+            return true;
+        }
+
+        if self.undefined > 2 && self.blank_undefined.count_ones() > 1 {
+            return true;
+        }
 
         let mut blank_undefined = self.blank_undefined;
         let mut spin_r = self.spin_r;
@@ -607,6 +633,15 @@ impl<const states: usize> AvailSpinouts<states> {
         &(read_state, read_color): &Slot,
         &(print, shift, target): &Instr,
     ) {
+        // Once a complete witness exists it can never be invalidated by a
+        // descendant definition. Skip all mask/history work until rollback
+        // reaches the edge that first settled the obligation.
+        if self.settled() {
+            self.settled_depth += 1;
+            return;
+        }
+
+        debug_assert_eq!(self.settled_depth, 0);
         debug_assert!(self.undefined != 0);
 
         let spin =
@@ -653,6 +688,11 @@ impl<const states: usize> AvailSpinouts<states> {
     }
 
     fn on_remove(&mut self) {
+        if self.settled_depth != 0 {
+            self.settled_depth -= 1;
+            return;
+        }
+
         let undo = self.history.pop().unwrap();
 
         self.undefined += 1;
