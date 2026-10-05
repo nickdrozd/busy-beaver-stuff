@@ -206,11 +206,16 @@ macro_rules! assert_holdouts {
                 result,
             );
 
-            assert_eq!(
-                visited, $visited,
-                "(({}, {}), {}, {visited:?})",
-                $states, $colors, $goal,
-            );
+            if visited != $visited {
+                panic!(
+                    "(({}, {}), {}) visited mismatch:\n  old: {}\n  new: {}",
+                    $states,
+                    $colors,
+                    $goal,
+                    show_num($visited),
+                    show_num(visited),
+                );
+            }
         });
     }};
 
@@ -225,12 +230,18 @@ macro_rules! assert_holdouts {
                 }),
             );
 
-            assert_eq!(
-                result,
-                ($leaves, $visited),
-                "(({}, {}), {}, {result:?})",
-                $states, $colors, $goal,
-            );
+            if result != ($leaves, $visited) {
+                panic!(
+                    "(({}, {}), {}) result mismatch:\n  old: ({}, {})\n  new: ({}, {})",
+                    $states,
+                    $colors,
+                    $goal,
+                    show_num($leaves),
+                    show_num($visited),
+                    show_num(result.0),
+                    show_num(result.1),
+                );
+            }
         });
     }};
 
@@ -249,7 +260,14 @@ macro_rules! assert_holdouts {
                 { [$(stringify!($case)),*].len() },
             >::run_instrs::<$instrs>($steps, $harvester);
 
-            assert_eq!(visited, $visited, "({}, {visited:?})", $instrs);
+            if visited != $visited {
+                panic!(
+                    "{} visited mismatch:\n  old: {}\n  new: {}",
+                    $instrs,
+                    show_num($visited),
+                    show_num(visited),
+                );
+            }
 
             let mut results = result.into_iter();
             let mut failed = false;
@@ -274,18 +292,20 @@ macro_rules! assert_holdouts {
     }};
 
     (@expected $instrs:literal, $goal:tt, $result:ident, $leaves:literal) => {{
-        assert_eq!(
-            $result.len(),
-            $leaves,
-            "{}:{}{}",
-            $instrs,
-            $goal,
-            if $result.len() < 50 {
-                format!(", {result:?}", result = $result)
-            } else {
-                String::new()
-            },
-        );
+        if $result.len() != $leaves {
+            panic!(
+                "{}:{} count mismatch:\n  old: {}\n  new: {}{}",
+                $instrs,
+                $goal,
+                show_num($leaves),
+                show_num($result.len() as u64),
+                if $result.len() < 50 {
+                    format!(", {result:?}", result = $result)
+                } else {
+                    String::new()
+                },
+            );
+        }
     }};
 
     (@expected $instrs:literal, $goal:tt, $result:ident, $holdouts:ident) => {{
