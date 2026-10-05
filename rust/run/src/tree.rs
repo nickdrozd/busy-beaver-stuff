@@ -446,51 +446,256 @@ impl<'h, const states: usize, const colors: usize>
     }
 }
 
-struct AvailSpinouts(AvailStack<Option<Slots>>);
+#[derive(Clone, Copy)]
+struct SpinUndo {
+    read_state: State,
+    read_color: Color,
+    spin: Option<Shift>,
+    ingress_r: bool,
+    ingress_l: bool,
+    target: State,
+}
 
-impl AvailSpinouts {
-    fn init(states: usize, _: usize) -> Self {
-        let init_spins = states - 1;
+struct AvailSpinouts<const states: usize> {
+    // All slots except normalized A0 start undefined.
+    undefined: Slots,
 
-        Self(AvailStack::new(Some(init_spins)))
+    // State bit is set while that state's blank-read slot is undefined.
+    blank_undefined: u128,
+
+    // Defined blank self-transitions, split by spin direction.
+    spin_r: u128,
+    spin_l: u128,
+
+    // States having a distinct defined ingress compatible with a right/left
+    // spin. Same-direction ingress is always compatible; opposite-direction
+    // ingress is compatible when it prints 0 and therefore leaves the future
+    // spin lane blank.
+    ingress_r: u128,
+    ingress_l: u128,
+
+    history: Vec<SpinUndo>,
+}
+
+impl<const states: usize> AvailSpinouts<states> {
+    fn init(colors: usize) -> Self {
+        assert!(
+            states <= 128,
+            "spinout ingress supports at most 128 states"
+        );
+
+        let all_states = if states == 128 {
+            u128::MAX
+        } else {
+            (1_u128 << states) - 1
+        };
+
+        // A0 is normalized to 1RB: it is already defined, so only states
+        // B.. remain possible blank self-transition slots. It is also a
+        // right-compatible ingress into B.
+        let blank_undefined = all_states & !1;
+        let ingress_r = if states > 1 { 1_u128 << 1 } else { 0 };
+
+        Self {
+            undefined: states * colors - 1,
+            blank_undefined,
+            spin_r: 0,
+            spin_l: 0,
+            ingress_r,
+            ingress_l: 0,
+            history: Vec::with_capacity(states * colors),
+        }
     }
 
-    fn must_spin(&self, read_color: Color) -> bool {
-        read_color == 0 && self.0.top() == Some(1)
+    fn bit(state: State) -> u128 {
+        1_u128 << usize::from(state)
+    }
+
+    const fn has_spin(&self) -> bool {
+        self.spin_r | self.spin_l != 0
+    }
+
+    const fn must_spin(&self, read_color: Color) -> bool {
+        read_color == 0
+            && !self.has_spin()
+            && self.blank_undefined.is_power_of_two()
+    }
+
+    const fn viable(
+        undefined: Slots,
+        blank_undefined: u128,
+        spin_r: u128,
+        spin_l: u128,
+        ingress_r: u128,
+        ingress_l: u128,
+    ) -> bool {
+        // A complete witness already exists.
+        if spin_r & ingress_r != 0 || spin_l & ingress_l != 0 {
+            return true;
+        }
+
+        // A spin transition exists but lacks ingress. Any still-undefined
+        // *other* slot can become a compatible ingress.
+        if undefined != 0 && spin_r | spin_l != 0 {
+            return true;
+        }
+
+        if blank_undefined == 0 {
+            return false;
+        }
+
+        // A future blank self-transition can use an ingress that already
+        // exists; choose its direction to match that ingress.
+        if blank_undefined & (ingress_r | ingress_l) != 0 {
+            return true;
+        }
+
+        // Otherwise one undefined slot is needed for the future spin
+        // transition and a distinct second slot for its ingress.
+        undefined > 1
+    }
+
+    fn allows(
+        &self,
+        &(read_state, read_color): &Slot,
+        &(print, shift, target): &Instr,
+    ) -> bool {
+        debug_assert!(self.undefined != 0);
+
+        let mut blank_undefined = self.blank_undefined;
+        let mut spin_r = self.spin_r;
+        let mut spin_l = self.spin_l;
+        let mut ingress_r = self.ingress_r;
+        let mut ingress_l = self.ingress_l;
+
+        let spin = read_color == 0 && read_state == target;
+
+        if read_color == 0 {
+            blank_undefined &= !Self::bit(read_state);
+        }
+
+        if spin {
+            if shift {
+                spin_r |= Self::bit(read_state);
+            } else {
+                spin_l |= Self::bit(read_state);
+            }
+        } else {
+            let target = Self::bit(target);
+
+            if shift || print == 0 {
+                ingress_r |= target;
+            }
+
+            if !shift || print == 0 {
+                ingress_l |= target;
+            }
+        }
+
+        Self::viable(
+            self.undefined - 1,
+            blank_undefined,
+            spin_r,
+            spin_l,
+            ingress_r,
+            ingress_l,
+        )
+    }
+
+    fn on_insert(
+        &mut self,
+        &(read_state, read_color): &Slot,
+        &(print, shift, target): &Instr,
+    ) {
+        debug_assert!(self.undefined != 0);
+
+        let spin =
+            (read_color == 0 && read_state == target).then_some(shift);
+        let target_bit = Self::bit(target);
+
+        let add_r = spin.is_none()
+            && (shift || print == 0)
+            && self.ingress_r & target_bit == 0;
+        let add_l = spin.is_none()
+            && (!shift || print == 0)
+            && self.ingress_l & target_bit == 0;
+
+        self.history.push(SpinUndo {
+            read_state,
+            read_color,
+            spin,
+            ingress_r: add_r,
+            ingress_l: add_l,
+            target,
+        });
+
+        self.undefined -= 1;
+
+        if read_color == 0 {
+            self.blank_undefined &= !Self::bit(read_state);
+        }
+
+        if let Some(shift) = spin {
+            if shift {
+                self.spin_r |= Self::bit(read_state);
+            } else {
+                self.spin_l |= Self::bit(read_state);
+            }
+        } else {
+            if add_r {
+                self.ingress_r |= target_bit;
+            }
+
+            if add_l {
+                self.ingress_l |= target_bit;
+            }
+        }
     }
 
     fn on_remove(&mut self) {
-        self.0.pop();
-    }
+        let undo = self.history.pop().unwrap();
 
-    fn on_insert(&mut self, &(st, co): &Slot, &(_, _, tr): &Instr) {
-        let next = if co != 0 {
-            self.0.top()
-        } else if st == tr {
-            None
-        } else {
-            self.0.top().map(|rem| rem - 1)
-        };
+        self.undefined += 1;
 
-        self.0.push(next);
+        if undo.read_color == 0 {
+            self.blank_undefined |= Self::bit(undo.read_state);
+        }
+
+        if let Some(shift) = undo.spin {
+            if shift {
+                self.spin_r &= !Self::bit(undo.read_state);
+            } else {
+                self.spin_l &= !Self::bit(undo.read_state);
+            }
+        }
+
+        let target = Self::bit(undo.target);
+
+        if undo.ingress_r {
+            self.ingress_r &= !target;
+        }
+
+        if undo.ingress_l {
+            self.ingress_l &= !target;
+        }
     }
 }
 
-struct SpinoutInstrs<'h> {
+struct SpinoutInstrs<'h, const states: usize> {
     instr_table: &'h SpinoutInstrTable,
     avail_params: AvailParams,
-    avail_spinouts: AvailSpinouts,
+    avail_spinouts: AvailSpinouts<states>,
 }
 
 impl<'h, const states: usize, const colors: usize>
-    AvailInstrs<'h, states, colors> for SpinoutInstrs<'h>
+    AvailInstrs<'h, states, colors> for SpinoutInstrs<'h, states>
 {
     type Table = SpinoutInstrTable;
 
     fn new(instr_table: &'h Self::Table) -> Self {
         let avail_params = AvailStack::init(states, colors);
 
-        let avail_spinouts = AvailSpinouts::init(states, colors);
+        let avail_spinouts = AvailSpinouts::<states>::init(colors);
 
         Self {
             instr_table,
@@ -510,6 +715,10 @@ impl<'h, const states: usize, const colors: usize>
         } else {
             &self.instr_table[0][st]
         })[co]
+    }
+
+    fn allows(&self, slot: &Slot, instr: &Instr) -> bool {
+        self.avail_spinouts.allows(slot, instr)
     }
 
     fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -770,7 +979,7 @@ type BlankTreeSmall<'i, const s: usize, const c: usize, H> =
     Tree<s, c, BlankInstrsSmall<'i, s, c>, H>;
 
 type SpinoutTree<'i, const s: usize, const c: usize, H> =
-    Tree<s, c, SpinoutInstrs<'i>, H>;
+    Tree<s, c, SpinoutInstrs<'i, s>, H>;
 
 /**************************************/
 
@@ -869,31 +1078,35 @@ pub trait Harvester<const states: usize, const colors: usize>:
         let (init_instrs, instr_table) =
             make_spinout_table::<states, colors>();
 
-        let (init_spins, init_other) =
-            init_instrs.into_iter().partition(|&(_, _, tr)| tr == 1);
+        // A right-moving B0 self-transition already has a compatible
+        // distinct ingress from normalized A0 = 1RB, so those roots need no
+        // further spinout-specific structural tracking.
+        let (init_done, mut init_need): (Instrs, Instrs) = init_instrs
+            .into_iter()
+            .partition(|&(_, shift, target)| shift && target == 1);
 
-        let mut spins_result = BasicTree::run_branch(
-            &init_spins,
+        let mut result = BasicTree::run_branch(
+            &init_done,
             0,
             sim_lim,
             &instr_table[0],
             harvester,
         );
 
+        // With two states B0 is the only remaining blank-read slot, so a
+        // non-self-target root can never acquire a spin witness later.
         if states == 2 {
-            return spins_result;
+            init_need.retain(|&(_, _, target)| target == 1);
         }
 
-        let other_result = SpinoutTree::run_branch(
-            &init_other,
+        result.extend(SpinoutTree::run_branch(
+            &init_need,
             0,
             sim_lim,
             &instr_table,
             harvester,
-        );
+        ));
 
-        spins_result.extend(other_result);
-
-        spins_result
+        result
     }
 }
