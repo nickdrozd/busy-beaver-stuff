@@ -843,11 +843,28 @@ impl<'h, const states: usize, const colors: usize>
 
 /**************************************/
 
+#[derive(Clone, Copy)]
+struct TreeUndo {
+    used_states: Count,
+    used_colors: Count,
+    defined_reads: Mask,
+    targets: Mask,
+    complete: Mask,
+    terminal: Mask,
+}
+
 struct Tree<const states: usize, const colors: usize, AvIn, Harv> {
     prog: Prog<states, colors>,
     instrs: AvIn,
     sim_lim: Steps,
     remaining_slots: Slots,
+    defined: Count,
+    used_states: Count,
+    used_colors: Count,
+    defined_reads: [Mask; states],
+    targets: [Mask; states],
+    complete: Mask,
+    terminal: Mask,
     harvester: Harv,
 }
 
@@ -869,17 +886,200 @@ impl<
 
         let remaining_slots = (states * colors) - halt - 2;
 
+        let mut defined_reads = [0; states];
+        defined_reads[0] = 1;
+
+        let mut targets = [0; states];
+        targets[0] = 1_u16 << 1;
+
         Self {
             prog,
             instrs,
             sim_lim,
             remaining_slots,
+            // Normalized A0 = 1RB is the one initial definition and already
+            // introduces states A/B and colors 0/1.
+            defined: 1,
+            used_states: 2,
+            used_colors: 2,
+            defined_reads,
+            targets,
+            complete: 0,
+            terminal: 0,
             harvester,
         }
     }
 
     const fn final_slot(&self) -> bool {
         self.remaining_slots == 0
+    }
+
+    #[expect(clippy::cast_possible_truncation)]
+    fn shape_after(
+        &self,
+        slot: &Slot,
+        instr: &Instr,
+    ) -> (Count, Count) {
+        let used_states = max(
+            usize::from(self.used_states),
+            1 + usize::from(max(slot.0, instr.2)),
+        );
+        let used_colors = max(
+            usize::from(self.used_colors),
+            1 + usize::from(max(slot.1, instr.0)),
+        );
+
+        (used_states as Count, used_colors as Count)
+    }
+
+    const fn low_bits(n: usize) -> Mask {
+        if n == 16 { Mask::MAX } else { (1_u16 << n) - 1 }
+    }
+
+    fn compute_complete_states(&self) -> Mask {
+        let used_reads = Self::low_bits(usize::from(self.used_colors));
+        let mut complete = 0;
+
+        for state in 0..usize::from(self.used_states) {
+            if self.defined_reads[state] == used_reads {
+                complete |= 1_u16 << state;
+            }
+        }
+
+        complete
+    }
+
+    const fn terminal_states(
+        &self,
+        mut complete: Mask,
+        source_override: Option<(usize, Mask)>,
+    ) -> Mask {
+        loop {
+            let old = complete;
+            let mut pending = complete;
+
+            while pending != 0 {
+                let state = pending.trailing_zeros() as usize;
+                let bit = 1_u16 << state;
+                pending &= !bit;
+
+                let targets = match source_override {
+                    Some((source, targets)) if source == state => {
+                        targets
+                    },
+                    _ => self.targets[state],
+                };
+
+                if targets & !complete != 0 {
+                    complete &= !bit;
+                }
+            }
+
+            if complete == old {
+                return complete;
+            }
+        }
+    }
+
+    fn blank_ray_targets(
+        &self,
+        source: State,
+        source_blank: bool,
+        shift: Shift,
+    ) -> Mask {
+        let mut dead = 0;
+
+        for start in 0..usize::from(self.used_states) {
+            let start_bit = 1_u16 << start;
+            let mut seen = 0;
+            #[expect(clippy::cast_possible_truncation)]
+            let mut state = start as State;
+
+            loop {
+                let state_bit = 1_u16 << state;
+
+                // If the currently undefined slot is source0, the candidate
+                // supplies this edge. Reaching source therefore closes an
+                // outward blank-ray cycle when the candidate points to start.
+                if source_blank && state == source {
+                    dead |= start_bit;
+                    break;
+                }
+
+                if seen & state_bit != 0 {
+                    dead |= start_bit;
+                    break;
+                }
+                seen |= state_bit;
+
+                let Some(&(_, next_shift, next_state)) =
+                    self.prog.get(&(state, 0))
+                else {
+                    break;
+                };
+
+                if next_shift != shift {
+                    break;
+                }
+
+                state = next_state;
+            }
+        }
+
+        dead
+    }
+
+    fn on_shape_insert(
+        &mut self,
+        slot: &Slot,
+        instr: &Instr,
+    ) -> TreeUndo {
+        let state = usize::from(slot.0);
+        let previous = TreeUndo {
+            used_states: self.used_states,
+            used_colors: self.used_colors,
+            defined_reads: self.defined_reads[state],
+            targets: self.targets[state],
+            complete: self.complete,
+            terminal: self.terminal,
+        };
+
+        (self.used_states, self.used_colors) =
+            self.shape_after(slot, instr);
+        self.defined += 1;
+
+        self.defined_reads[state] |= 1_u16 << slot.1;
+        self.targets[state] |= 1_u16 << instr.2;
+
+        #[expect(clippy::if_not_else)]
+        if self.used_colors != previous.used_colors {
+            self.complete = self.compute_complete_states();
+            self.terminal = self.terminal_states(self.complete, None);
+        } else {
+            let used_reads =
+                Self::low_bits(usize::from(self.used_colors));
+            let state_bit = 1_u16 << slot.0;
+
+            if self.defined_reads[state] == used_reads {
+                self.complete |= state_bit;
+                self.terminal =
+                    self.terminal_states(self.complete, None);
+            }
+        }
+
+        previous
+    }
+
+    fn on_shape_remove(&mut self, previous: TreeUndo, slot: &Slot) {
+        self.defined -= 1;
+        self.used_states = previous.used_states;
+        self.used_colors = previous.used_colors;
+
+        let state = usize::from(slot.0);
+        self.defined_reads[state] = previous.defined_reads;
+        self.targets[state] = previous.targets;
+        self.complete = previous.complete;
+        self.terminal = previous.terminal;
     }
 
     fn run(&self, config: &mut Config) -> RunResult {
@@ -910,13 +1110,105 @@ impl<
         let mut avail_instrs: Vec<_> =
             self.instrs.avail_instrs(&slot).into();
 
-        if config.tape.scan == 0 {
-            avail_instrs.retain(|&(_, shift, state)| {
-                !(config.state == state && config.tape.at_edge(shift))
+        // If a candidate moves off a tape edge onto fresh blank cells, follow
+        // the already-defined blank-read transitions in that same direction.
+        // Reaching a state cycle means the head drifts outward forever and can
+        // never encounter another undefined slot. When the current slot is S0,
+        // also treat reaching S as closing the cycle through this candidate.
+        let source_blank = slot.1 == 0;
+        let ray_l = if config.tape.at_edge(false) {
+            self.blank_ray_targets(slot_state, source_blank, false)
+        } else {
+            0
+        };
+        let ray_r = if config.tape.at_edge(true) {
+            self.blank_ray_targets(slot_state, source_blank, true)
+        } else {
+            0
+        };
+
+        if ray_l | ray_r != 0 {
+            avail_instrs.retain(|&(_, shift, target)| {
+                let dead = if shift { ray_r } else { ray_l };
+                dead & (1_u16 << target) == 0
             });
-        } else if config.tape.lspan.blank() && config.tape.rspan.blank()
+        }
+
+        if config.tape.scan != 0
+            && config.tape.lspan.blank()
+            && config.tape.rspan.blank()
         {
             avail_instrs.retain(|&(pr, _, _)| pr != 0);
+        }
+
+        if !self.final_slot() {
+            // Rectangle pruning can only fire when the current slot is the
+            // final undefined slot in the currently introduced state×color
+            // rectangle. Compute that once for the whole candidate set.
+            let must_expand = usize::from(self.defined) + 1
+                == usize::from(self.used_states)
+                    * usize::from(self.used_colors);
+
+            let used_states = usize::from(self.used_states);
+            let used_colors = usize::from(self.used_colors);
+
+            if must_expand {
+                avail_instrs.retain(|&(print, _, target)| {
+                    usize::from(target) >= used_states
+                        || usize::from(print) >= used_colors
+                });
+            } else {
+                // A complete state set is terminal when every transition from
+                // every state in the set stays inside the set. Entering such a
+                // set cannot reach another undefined slot. If this candidate
+                // completes the current state's row, precompute which target
+                // states would create a new terminal set. A newly introduced
+                // color opens another slot in every row, so it is exempt.
+                let used_reads = Self::low_bits(used_colors);
+                let source = usize::from(slot_state);
+                let source_bit = 1_u16 << slot_state;
+                let closes_row = self.defined_reads[source]
+                    | (1_u16 << slot.1)
+                    == used_reads;
+                let mut dead_targets = self.terminal;
+
+                if closes_row {
+                    let complete_after = self.complete | source_bit;
+
+                    for target in 0..used_states {
+                        let target_bit = 1_u16 << target;
+
+                        if dead_targets & target_bit != 0 {
+                            continue;
+                        }
+
+                        let source_targets =
+                            self.targets[source] | target_bit;
+
+                        // If the completed source row can leave the complete
+                        // region, it cannot participate in a terminal set.
+                        if source_targets & !complete_after != 0 {
+                            continue;
+                        }
+
+                        let terminal_after = self.terminal_states(
+                            complete_after,
+                            Some((source, source_targets)),
+                        );
+
+                        if terminal_after & target_bit != 0 {
+                            dead_targets |= target_bit;
+                        }
+                    }
+                }
+
+                if dead_targets != 0 {
+                    avail_instrs.retain(|&(print, _, target)| {
+                        usize::from(print) >= used_colors
+                            || dead_targets & (1_u16 << target) == 0
+                    });
+                }
+            }
         }
 
         avail_instrs.retain(|instr| self.instrs.allows(&slot, instr));
@@ -953,21 +1245,25 @@ impl<
         for next_instr in instrs {
             self.prog.insert(&slot, next_instr);
 
+            let shape = self.on_shape_insert(&slot, next_instr);
             self.instrs.on_insert(&slot, next_instr);
 
             self.branch(config.clone());
 
             self.instrs.on_remove();
+            self.on_shape_remove(shape, &slot);
         }
 
         {
             self.prog.insert(&slot, last_instr);
 
+            let shape = self.on_shape_insert(&slot, last_instr);
             self.instrs.on_insert(&slot, last_instr);
 
             self.branch(config);
 
             self.instrs.on_remove();
+            self.on_shape_remove(shape, &slot);
         }
 
         self.prog.remove(&slot);
@@ -994,6 +1290,7 @@ impl<
 
                 tree.remaining_slots -= 1;
                 tree.prog.insert(&INIT_SLOT, instr);
+                tree.on_shape_insert(&INIT_SLOT, instr);
                 tree.instrs.on_insert(&INIT_SLOT, instr);
 
                 tree.branch(Config::init_stepped());
