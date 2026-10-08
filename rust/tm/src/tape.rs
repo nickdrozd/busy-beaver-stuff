@@ -575,6 +575,83 @@ impl<B: Block> IndexTape<B::Count> for Tape<B> {
 
 pub type Pos = isize;
 
+#[expect(clippy::partial_pub_fields)]
+#[derive(Clone, Copy)]
+pub struct StepPreview {
+    pub scan: Color,
+    pub blank: bool,
+    left_edge: bool,
+    right_edge: bool,
+}
+
+impl StepPreview {
+    pub const fn at_edge(&self, shift: Shift) -> bool {
+        if shift {
+            self.right_edge
+        } else {
+            self.left_edge
+        }
+    }
+}
+
+#[expect(clippy::multiple_inherent_impl)]
+impl<B: Block> Tape<B> {
+    /// Preview exactly one `Tape::step` without modifying the tape.
+    ///
+    /// Only the resulting scan color and whether the resulting tape is blank
+    /// are computed, since those are the only facts needed by the tree's
+    /// one-step final-candidate precheck.
+    #[inline]
+    pub fn preview_step(
+        &self,
+        shift: Shift,
+        color: Color,
+        skip: bool,
+    ) -> StepPreview {
+        let (pull, push) = if shift {
+            (&self.rspan, &self.lspan)
+        } else {
+            (&self.lspan, &self.rspan)
+        };
+
+        let (scan, pull_blank) = match pull.first() {
+            None => (0, true),
+            Some(first) if skip && first.get_color() == self.scan => {
+                if pull.len() == 1 {
+                    (0, true)
+                } else {
+                    let next = &pull[1];
+                    (
+                        next.get_color(),
+                        pull.len() == 2 && next.is_single(),
+                    )
+                }
+            },
+            Some(first) => (
+                first.get_color(),
+                pull.len() == 1 && first.is_single(),
+            ),
+        };
+
+        let push_blank = push.blank() && color == 0;
+        let (left_blank, right_blank) = if shift {
+            (push_blank, pull_blank)
+        } else {
+            (pull_blank, push_blank)
+        };
+        let scan_blank = scan == 0;
+
+        StepPreview {
+            scan,
+            blank: scan_blank && pull_blank && push_blank,
+            left_edge: scan_blank && left_blank,
+            right_edge: scan_blank && right_blank,
+        }
+    }
+}
+
+/**************************************/
+
 pub struct HeadTape<'t, B: Block> {
     head: Pos,
     tape: &'t Tape<B>,
@@ -2124,6 +2201,50 @@ fn test_init() {
     tape.tstep(0, 0, 1);
 
     tape.assert(0, "[0]", "[0]");
+}
+
+#[test]
+fn test_preview_step() {
+    // Including blank interior blocks, singletons, long runs, and a
+    // self-transition that skips an entire adjacent run.
+    for repr in [
+        "[0]",
+        "1 [0]",
+        "1^3 [0]",
+        "[0] 0",
+        "[0] 1",
+        "0 1 [0] 0^3 1",
+        "2 0^4 [1] 1^3 0^2 2",
+        "1^2 0 [1] 0 1^2",
+    ] {
+        let tape = AlgTape::from(repr);
+        for shift in [false, true] {
+            for color in 0..=2 {
+                for skip in [false, true] {
+                    let preview = tape.preview_step(shift, color, skip);
+                    let mut stepped = tape.clone();
+                    stepped.step(shift, color, skip);
+
+                    assert_eq!(preview.scan, stepped.scan, "{repr}");
+                    assert_eq!(
+                        preview.blank,
+                        stepped.blank(),
+                        "{repr}"
+                    );
+                    assert_eq!(
+                        preview.at_edge(false),
+                        stepped.at_edge(false),
+                        "{repr}",
+                    );
+                    assert_eq!(
+                        preview.at_edge(true),
+                        stepped.at_edge(true),
+                        "{repr}",
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[test]

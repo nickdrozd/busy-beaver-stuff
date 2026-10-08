@@ -1086,7 +1086,7 @@ impl<
         self.prog.run_basic(self.sim_lim, config)
     }
 
-    fn is_nontrivial(&self, config: &mut Config) -> bool {
+    fn not_term_soon(&self, config: &mut Config) -> bool {
         matches!(self.run(config), StepLimit)
     }
 
@@ -1222,13 +1222,15 @@ impl<
             for next_instr in instrs {
                 self.prog.insert(&slot, next_instr);
 
-                self.harvest(&mut PassConfig::Borrowed(&config));
+                if !self.prog.term_immediate(&config, *next_instr) {
+                    self.harvest(&mut PassConfig::Borrowed(&config));
+                }
             }
 
             {
                 self.prog.insert(&slot, last_instr);
 
-                if self.is_nontrivial(&mut config) {
+                if self.not_term_soon(&mut config) {
                     self.harvest(&mut PassConfig::Owned(config));
                 }
             }

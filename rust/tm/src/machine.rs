@@ -1,7 +1,7 @@
 use num_traits::ToPrimitive as _;
 
 use crate::{
-    Prog, Slot, State, Steps,
+    Instr, Prog, Slot, State, Steps,
     config::{BigConfig, Config, MedConfig},
     macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
@@ -161,6 +161,36 @@ impl<T: GetInstr> RunProver for T {}
 const MED_LIMIT: Steps = 1 << 16;
 
 impl<const s: usize, const c: usize> Prog<s, c> {
+    /// Returns true if the current step blanks/spins out, or the next step
+    /// halts/spins out, without modifying the configuration.
+    #[inline]
+    pub fn term_immediate(
+        &self,
+        config: &MedConfig,
+        (color, shift, state): Instr,
+    ) -> bool {
+        let same = config.state == state;
+
+        if same && config.tape.at_edge(shift) {
+            return true;
+        }
+
+        let next_tape = config.tape.preview_step(shift, color, same);
+
+        if next_tape.blank {
+            return true;
+        }
+
+        let next_slot = (state, next_tape.scan);
+
+        let Some(&(_, next_shift, next_state)) = self.get(&next_slot)
+        else {
+            return true;
+        };
+
+        next_state == state && next_tape.at_edge(next_shift)
+    }
+
     pub fn run_basic(
         &self,
         sim_lim: Steps,
@@ -508,6 +538,62 @@ fn test_transcript_config() {
 }
 
 /**************************************/
+
+#[test]
+fn test_term_immediate() {
+    fn immediate<const S: usize, const C: usize>(
+        prog: &Prog<S, C>,
+        config: &MedConfig,
+    ) -> bool {
+        let instr = *prog.get(&config.slot()).unwrap();
+        prog.term_immediate(config, instr)
+    }
+
+    let config = MedConfig::init_stepped();
+    let before = config.to_string();
+
+    // B0 executes once, then C0 is undefined.
+    let undef = Prog::<3, 2>::from("1RB ...  0RC ...  ... ...");
+    assert!(immediate(&undef, &config));
+
+    // The same immediate halt is visible even though B0 changes the tape.
+    let touch_then_undef =
+        Prog::<3, 2>::from("1RB ...  1RC ...  ... ...");
+    assert!(immediate(&touch_then_undef, &config));
+
+    // Current transition itself spins at the fresh right edge.
+    let spin = Prog::<2, 2>::from("1RB ...  0RB ...");
+    assert!(immediate(&spin, &config));
+
+    // B0 -> C0, then C0 would spin at the blank right edge.
+    let next_spin = Prog::<3, 2>::from("1RB ...  1RC ...  0RC ...");
+    assert!(immediate(&next_spin, &config));
+    assert!(matches!(
+        next_spin.run_basic(2, &mut config.clone()),
+        Spinout
+    ));
+
+    // Same first step, but C0 heads left toward the tape, not off its edge.
+    let next_not_spin = Prog::<3, 2>::from("1RB ...  1RC ...  0LC ...");
+    assert!(!immediate(&next_not_spin, &config));
+    assert!(matches!(
+        next_not_spin.run_basic(2, &mut config.clone()),
+        StepLimit
+    ));
+
+    // B0 -> C1 is defined and not an immediate spinout: inconclusive.
+    let continue_run = Prog::<3, 2>::from("1RB ...  0LC ...  ... 1RB");
+    assert!(!immediate(&continue_run, &config));
+
+    // Put the sole mark under the head; erasing it while moving onto blank
+    // immediately blanks the tape.
+    let mut blank_config = config.clone();
+    blank_config.tape.step(false, 0, false);
+    let blank = Prog::<3, 2>::from("1RB ...  ... 0RC  ... ...");
+    assert!(immediate(&blank, &blank_config));
+
+    assert_eq!(config.to_string(), before);
+}
 
 #[test]
 fn test_mult_rule() {
