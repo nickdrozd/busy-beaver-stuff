@@ -981,6 +981,70 @@ impl<
         }
     }
 
+    // Overapproximate the states and tape colors reachable after executing a
+    // candidate. If every state/color pair in that closure is defined, no
+    // future execution can encounter an undefined slot. The caller only uses
+    // this when both tape spans are blank, so initially the tape can contain
+    // only 0 and the candidate's printed color.
+    #[expect(clippy::cast_possible_truncation)]
+    fn restricted_terminal(&self, slot: &Slot, instr: &Instr) -> bool {
+        let mut reachable_states = 1_u16 << instr.2;
+        let mut reachable_colors = 1_u16 | (1_u16 << instr.0);
+        let mut processed = [0_u16; states];
+
+        loop {
+            let mut pending_states = reachable_states;
+            let mut progressed = false;
+
+            while pending_states != 0 {
+                let state = pending_states.trailing_zeros() as usize;
+                pending_states &= pending_states - 1;
+
+                let mut reads = reachable_colors & !processed[state];
+                if reads == 0 {
+                    continue;
+                }
+
+                let defined = self.defined_reads[state]
+                    | if state == usize::from(slot.0) {
+                        1_u16 << slot.1
+                    } else {
+                        0
+                    };
+                if reads & !defined != 0 {
+                    return false;
+                }
+
+                processed[state] |= reads;
+                progressed = true;
+
+                while reads != 0 {
+                    let color = reads.trailing_zeros() as usize;
+                    reads &= reads - 1;
+
+                    let (print, _, target) = if state
+                        == usize::from(slot.0)
+                        && color == usize::from(slot.1)
+                    {
+                        *instr
+                    } else {
+                        *self
+                            .prog
+                            .get(&(state as State, color as Color))
+                            .unwrap()
+                    };
+
+                    reachable_colors |= 1_u16 << print;
+                    reachable_states |= 1_u16 << target;
+                }
+            }
+
+            if !progressed {
+                return true;
+            }
+        }
+    }
+
     fn blank_ray_targets(
         &self,
         source: State,
@@ -1212,6 +1276,42 @@ impl<
         }
 
         avail_instrs.retain(|instr| self.instrs.allows(&slot, instr));
+
+        // When the rest of the tape is blank, the candidate leaves only its
+        // printed color and 0 on the tape. Reject it if these colors cannot
+        // lead to any undefined transition, even when rows for other colors
+        // remain incomplete. Only try this after the cheaper pruning checks.
+        if colors > 2
+            && !self.final_slot()
+            && config.tape.lspan.blank()
+            && config.tape.rspan.blank()
+        {
+            // Direction does not affect this overapproximation, so reuse the
+            // result for both shifts of the same (print, target) pair.
+            let mut checked = [0_u16; colors];
+            let mut terminal = [0_u16; colors];
+
+            avail_instrs.retain(|instr @ &(print, _, target)| {
+                let print_index = usize::from(print);
+                if print_index >= usize::from(self.used_colors)
+                    || usize::from(target)
+                        >= usize::from(self.used_states)
+                {
+                    // A newly introduced color or state has undefined slots.
+                    return true;
+                }
+
+                let target_bit = 1_u16 << target;
+                if checked[print_index] & target_bit == 0 {
+                    checked[print_index] |= target_bit;
+                    if self.restricted_terminal(&slot, instr) {
+                        terminal[print_index] |= target_bit;
+                    }
+                }
+
+                terminal[print_index] & target_bit == 0
+            });
+        }
 
         let Some((last_instr, instrs)) = avail_instrs.split_last()
         else {
