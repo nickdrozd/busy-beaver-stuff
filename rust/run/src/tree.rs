@@ -865,6 +865,9 @@ struct Tree<const states: usize, const colors: usize, AvIn, Harv> {
     targets: [Mask; states],
     complete: Mask,
     terminal: Mask,
+    // Cached outward blank-ray results, keyed by direction, whether the
+    // undefined slot reads blank, and its state (unused for nonblank reads).
+    ray_cache: [[[Option<Mask>; states]; 2]; 2],
     harvester: Harv,
 }
 
@@ -906,6 +909,7 @@ impl<
             targets,
             complete: 0,
             terminal: 0,
+            ray_cache: [[[None; states]; 2]; 2],
             harvester,
         }
     }
@@ -1046,51 +1050,204 @@ impl<
     }
 
     fn blank_ray_targets(
+        &mut self,
+        source: State,
+        source_blank: bool,
+        shift: Shift,
+    ) -> Mask {
+        let direction = usize::from(shift);
+        let blank = usize::from(source_blank);
+        let source_key =
+            if source_blank { usize::from(source) } else { 0 };
+
+        if let Some(dead) = self.ray_cache[direction][blank][source_key]
+        {
+            return dead;
+        }
+
+        let dead =
+            self.compute_blank_ray_targets(source, source_blank, shift);
+        self.ray_cache[direction][blank][source_key] = Some(dead);
+        dead
+    }
+
+    fn compute_blank_ray_targets(
         &self,
         source: State,
         source_blank: bool,
         shift: Shift,
     ) -> Mask {
-        let mut dead = 0;
+        // An undefined source0 closes an outward ray through the candidate.
+        let dead = if source_blank { 1_u16 << source } else { 0 };
+        self.extend_blank_ray_targets(dead, shift)
+    }
+
+    // Also used to find states that move monotonically outward until they
+    // enter a short outward-drifting cycle.
+    fn extend_blank_ray_targets(
+        &self,
+        mut dead: Mask,
+        shift: Shift,
+    ) -> Mask {
+        let mut live = 0;
 
         for start in 0..usize::from(self.used_states) {
             let start_bit = 1_u16 << start;
+            if (dead | live) & start_bit != 0 {
+                continue;
+            }
+
             let mut seen = 0;
             #[expect(clippy::cast_possible_truncation)]
             let mut state = start as State;
 
-            loop {
+            let reaches_dead = loop {
                 let state_bit = 1_u16 << state;
 
-                // If the currently undefined slot is source0, the candidate
-                // supplies this edge. Reaching source therefore closes an
-                // outward blank-ray cycle when the candidate points to start.
-                if source_blank && state == source {
-                    dead |= start_bit;
-                    break;
+                if dead & state_bit != 0 {
+                    break true;
                 }
-
+                if live & state_bit != 0 {
+                    break false;
+                }
                 if seen & state_bit != 0 {
-                    dead |= start_bit;
-                    break;
+                    break true;
                 }
                 seen |= state_bit;
 
                 let Some(&(_, next_shift, next_state)) =
                     self.prog.get(&(state, 0))
                 else {
-                    break;
+                    break false;
                 };
 
                 if next_shift != shift {
-                    break;
+                    break false;
                 }
 
                 state = next_state;
+            };
+
+            if reaches_dead {
+                dead |= seen;
+            } else {
+                live |= seen;
             }
         }
 
         dead
+    }
+
+    // On a fresh blank ray, recognize three-step (out/in/out) and
+    // four-step (out/in/out/out or out/out/in/out) drifting cycles.
+    // All finish in the starting state on a fresh blank cell, without
+    // crossing behind the original head position. In the out/out/in/out
+    // case, the third step must leave its cell blank because that cell
+    // becomes the starting position of the next cycle.
+    // `get` may include the candidate as a slot override.
+    #[inline]
+    fn short_ray(
+        start: State,
+        (first_print, outward, second_state): Instr,
+        mut get: impl FnMut(State, Color) -> Option<Instr>,
+    ) -> bool {
+        let Some((second_print, second_shift, third_state)) =
+            get(second_state, 0)
+        else {
+            return false;
+        };
+
+        if second_shift == outward {
+            // Out/out/in/out: the third step visits a second fresh blank
+            // cell, and must leave it blank for the next cycle to begin.
+            let Some((third_print, third_shift, fourth_state)) =
+                get(third_state, 0)
+            else {
+                return false;
+            };
+            return third_print == 0
+                && third_shift != outward
+                && matches!(
+                    get(fourth_state, second_print),
+                    Some((_, fourth_shift, final_state))
+                        if fourth_shift == outward && final_state == start
+                );
+        }
+
+        // Out/in/out: the third step returns to the original cell and
+        // therefore reads the color written by the first step.
+        let Some((_, third_shift, fourth_state)) =
+            get(third_state, first_print)
+        else {
+            return false;
+        };
+        if third_shift != outward {
+            return false;
+        }
+
+        // After three steps the head is one cell outward. It must still be
+        // blank, and the machine must be back in its starting state.
+        if second_print == 0 && fourth_state == start {
+            return true;
+        }
+
+        // Otherwise check a fourth outward step, which lands on another
+        // fresh blank cell in the starting state.
+        matches!(
+            get(fourth_state, second_print),
+            Some((_, fourth_shift, final_state))
+                if fourth_shift == outward && final_state == start
+        )
+    }
+
+    // Unlike the simple blank-ray cache, this proof depends on nonblank
+    // instructions, so calculate it only for the current branch.
+    #[expect(clippy::cast_possible_truncation)]
+    fn short_ray_targets(&self, blank_sides: [bool; 2]) -> [Mask; 2] {
+        let mut cycles = [0; 2];
+
+        for start in 0..usize::from(self.used_states) {
+            let start = start as State;
+
+            let Some(&first) = self.prog.get(&(start, 0)) else {
+                continue;
+            };
+            let direction = usize::from(first.1);
+            if !blank_sides[direction] {
+                continue;
+            }
+
+            if Self::short_ray(start, first, |state, color| {
+                self.prog.get(&(state, color)).copied()
+            }) {
+                cycles[direction] |= 1_u16 << start;
+            }
+        }
+
+        // An all-outward blank-read prefix may lead into either cycle.
+        for (direction, starts) in cycles.iter_mut().enumerate() {
+            if *starts != 0 {
+                *starts = self
+                    .extend_blank_ray_targets(*starts, direction != 0);
+            }
+        }
+        cycles
+    }
+
+    // The current undefined blank-read instruction may begin the same cycle.
+    // Successor lookups include that candidate if the path revisits its slot.
+    fn candidate_short_ray(&self, slot: &Slot, instr: &Instr) -> bool {
+        if slot.1 != 0 {
+            return false;
+        }
+
+        Self::short_ray(slot.0, *instr, |state, color| {
+            if (state, color) == *slot {
+                Some(*instr)
+            } else {
+                self.prog.get(&(state, color)).copied()
+            }
+        })
     }
 
     fn on_shape_insert(
@@ -1098,6 +1255,10 @@ impl<
         slot: &Slot,
         instr: &Instr,
     ) -> TreeUndo {
+        if slot.1 == 0 {
+            self.ray_cache = [[[None; states]; 2]; 2];
+        }
+
         let state = usize::from(slot.0);
         let previous = TreeUndo {
             used_states: self.used_states,
@@ -1135,6 +1296,10 @@ impl<
     }
 
     fn on_shape_remove(&mut self, previous: TreeUndo, slot: &Slot) {
+        if slot.1 == 0 {
+            self.ray_cache = [[[None; states]; 2]; 2];
+        }
+
         self.defined -= 1;
         self.used_states = previous.used_states;
         self.used_colors = previous.used_colors;
@@ -1158,6 +1323,7 @@ impl<
         self.harvester.harvest(&self.prog, config);
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     fn branch(&mut self, mut config: Config) {
         let slot @ (slot_state, _) = match self.run(&mut config) {
             Undefined(slot) => slot,
@@ -1174,18 +1340,19 @@ impl<
         let mut avail_instrs: Vec<_> =
             self.instrs.avail_instrs(&slot).into();
 
-        // If a candidate moves off a tape edge onto fresh blank cells, follow
-        // the already-defined blank-read transitions in that same direction.
+        // If a candidate moves into a blank span, follow the already-defined
+        // blank-read transitions in that same direction. The scanned cell
+        // itself need not be blank.
         // Reaching a state cycle means the head drifts outward forever and can
         // never encounter another undefined slot. When the current slot is S0,
         // also treat reaching S as closing the cycle through this candidate.
         let source_blank = slot.1 == 0;
-        let ray_l = if config.tape.at_edge(false) {
+        let ray_l = if config.tape.lspan.blank() {
             self.blank_ray_targets(slot_state, source_blank, false)
         } else {
             0
         };
-        let ray_r = if config.tape.at_edge(true) {
+        let ray_r = if config.tape.rspan.blank() {
             self.blank_ray_targets(slot_state, source_blank, true)
         } else {
             0
@@ -1224,47 +1391,27 @@ impl<
             } else {
                 // A complete state set is terminal when every transition from
                 // every state in the set stays inside the set. Entering such a
-                // set cannot reach another undefined slot. If this candidate
-                // completes the current state's row, precompute which target
-                // states would create a new terminal set. A newly introduced
-                // color opens another slot in every row, so it is exempt.
+                // set cannot reach another undefined slot. If the candidate
+                // completes the source row, find the terminal set *before*
+                // adding its target edge. Adding an edge into that set cannot
+                // change it; adding an edge outside it cannot make that target
+                // terminal. Thus one closure handles every candidate target.
+                // A newly introduced color opens a slot in every row, so it
+                // remains exempt from this pruning.
                 let used_reads = Self::low_bits(used_colors);
                 let source = usize::from(slot_state);
                 let source_bit = 1_u16 << slot_state;
                 let closes_row = self.defined_reads[source]
                     | (1_u16 << slot.1)
                     == used_reads;
-                let mut dead_targets = self.terminal;
-
-                if closes_row {
-                    let complete_after = self.complete | source_bit;
-
-                    for target in 0..used_states {
-                        let target_bit = 1_u16 << target;
-
-                        if dead_targets & target_bit != 0 {
-                            continue;
-                        }
-
-                        let source_targets =
-                            self.targets[source] | target_bit;
-
-                        // If the completed source row can leave the complete
-                        // region, it cannot participate in a terminal set.
-                        if source_targets & !complete_after != 0 {
-                            continue;
-                        }
-
-                        let terminal_after = self.terminal_states(
-                            complete_after,
-                            Some((source, source_targets)),
-                        );
-
-                        if terminal_after & target_bit != 0 {
-                            dead_targets |= target_bit;
-                        }
-                    }
-                }
+                let dead_targets = if closes_row {
+                    self.terminal_states(
+                        self.complete | source_bit,
+                        Some((source, self.targets[source])),
+                    )
+                } else {
+                    self.terminal
+                };
 
                 if dead_targets != 0 {
                     avail_instrs.retain(|&(print, _, target)| {
@@ -1311,6 +1458,187 @@ impl<
 
                 terminal[print_index] & target_bit == 0
             });
+        }
+
+        // Reject exact two-step stationary loops. For each existing target
+        // state, precompute which candidate directions would return to the
+        // original state and tape without changing either visited cell.
+        // Only a candidate that prints the scanned color can close the loop.
+        if !avail_instrs.is_empty() {
+            let adjacent = [
+                config
+                    .tape
+                    .lspan
+                    .first()
+                    .map_or(0, |block| block.color),
+                config
+                    .tape
+                    .rspan
+                    .first()
+                    .map_or(0, |block| block.color),
+            ];
+            let same_adjacent = adjacent[0] == adjacent[1];
+            let mut dead = [0_u16; 2];
+            let source_bit = 1_u16 << slot_state;
+
+            for target in 0..usize::from(self.used_states) {
+                // The second step must return to the original state.
+                // Ignore states with no defined transition targeting it.
+                if self.targets[target] & source_bit == 0 {
+                    continue;
+                }
+
+                let target_state = target as State;
+                let target_bit = 1_u16 << target;
+
+                // First lookup handles candidates moving left. If both
+                // adjacent colors match, it handles rightward candidates too.
+                if let Some(&(print, back, state)) =
+                    self.prog.get(&(target_state, adjacent[0]))
+                    && print == adjacent[0]
+                    && state == slot_state
+                {
+                    if back {
+                        dead[0] |= target_bit;
+                    } else if same_adjacent {
+                        dead[1] |= target_bit;
+                    }
+                }
+
+                // Different adjacent colors require a second lookup.
+                if !same_adjacent
+                    && matches!(
+                        self.prog.get(&(target_state, adjacent[1])),
+                        Some(&(print, false, state))
+                            if print == adjacent[1] && state == slot_state
+                    )
+                {
+                    dead[1] |= target_bit;
+                }
+            }
+
+            if dead[0] | dead[1] != 0 {
+                avail_instrs.retain(|&(print, shift, target)| {
+                    print != slot.1
+                        || dead[usize::from(shift)] & (1_u16 << target)
+                            == 0
+                });
+            }
+        }
+
+        // A candidate can enter a proven blank ray by crossing exactly one
+        // adjacent cell. Remember those sides for the short-ray check below;
+        // the intervening defined instruction may also enter a drifting ray.
+        // Only use rays proved without the current candidate, since an
+        // intervening nonblank cell could invalidate a candidate-based proof.
+        let mut single_cells = [None; 2];
+        if !avail_instrs.is_empty() {
+            let spans = [&config.tape.lspan, &config.tape.rspan];
+            let mut passage = [0_u16; 2];
+
+            for (direction, span) in spans.into_iter().enumerate() {
+                if span.len() != 1 {
+                    continue;
+                }
+                let block = span.first().unwrap();
+                if block.count != 1 {
+                    continue;
+                }
+                single_cells[direction] = Some(block.color);
+
+                let outward = direction != 0;
+                let ray =
+                    self.blank_ray_targets(slot_state, false, outward);
+                if ray == 0 {
+                    continue;
+                }
+
+                for target in 0..usize::from(self.used_states) {
+                    if let Some(&(_, shift, next_state)) =
+                        self.prog.get(&(target as State, block.color))
+                        && shift == outward
+                        && ray & (1_u16 << next_state) != 0
+                    {
+                        passage[direction] |= 1_u16 << target;
+                    }
+                }
+            }
+
+            if passage[0] | passage[1] != 0 {
+                avail_instrs.retain(|&(_, shift, target)| {
+                    passage[usize::from(shift)] & (1_u16 << target) == 0
+                });
+            }
+        }
+
+        // Short outward-drifting cycles may reverse over fresh blank cells.
+        // Reuse their defined-only target masks for a direct blank entry or a
+        // one-cell passage. Compute both directions in a single graph scan.
+        if !avail_instrs.is_empty() {
+            let blank_sides =
+                [config.tape.lspan.blank(), config.tape.rspan.blank()];
+            let ray_sides = [
+                blank_sides[0] || single_cells[0].is_some(),
+                blank_sides[1] || single_cells[1].is_some(),
+            ];
+            if ray_sides[0] || ray_sides[1] {
+                let rays = self.short_ray_targets(ray_sides);
+                let mut dead = [0_u16; 2];
+
+                for direction in 0..2 {
+                    let ray = rays[direction];
+                    if ray == 0 {
+                        continue;
+                    }
+
+                    // Direct entry into a drifting cycle on fresh blank tape.
+                    if blank_sides[direction] {
+                        dead[direction] = ray;
+                        continue;
+                    }
+
+                    // The candidate moves over one cell, then a defined
+                    // instruction moves outward into the proven short ray.
+                    let Some(color) = single_cells[direction] else {
+                        continue;
+                    };
+                    let outward = direction != 0;
+
+                    for target in 0..usize::from(self.used_states) {
+                        // Any valid second transition must target the ray.
+                        if self.targets[target] & ray == 0 {
+                            continue;
+                        }
+
+                        if let Some(&(_, shift, next_state)) =
+                            self.prog.get(&(target as State, color))
+                            && shift == outward
+                            && ray & (1_u16 << next_state) != 0
+                        {
+                            dead[direction] |= 1_u16 << target;
+                        }
+                    }
+                }
+
+                if dead[0] | dead[1] != 0 {
+                    avail_instrs.retain(|&(_, shift, target)| {
+                        dead[usize::from(shift)] & (1_u16 << target)
+                            == 0
+                    });
+                }
+
+                // The defined-only mask excludes cycles completed by the
+                // candidate. Check those separately, only on blank spans.
+                if source_blank
+                    && !avail_instrs.is_empty()
+                    && (blank_sides[0] || blank_sides[1])
+                {
+                    avail_instrs.retain(|instr @ &(_, shift, _)| {
+                        !blank_sides[usize::from(shift)]
+                            || !self.candidate_short_ray(&slot, instr)
+                    });
+                }
+            }
         }
 
         let Some((last_instr, instrs)) = avail_instrs.split_last()
