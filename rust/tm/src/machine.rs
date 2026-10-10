@@ -222,7 +222,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     }
 
     pub fn prover_settled(&self, steps: Steps) -> bool {
-        self.run_prover(steps).is_settled()
+        let result = self.run_prover(steps);
+        if result.is_mult() {
+            self.print();
+        }
+        result.is_settled()
     }
 
     pub fn check_inf(&self, steps: Steps) -> bool {

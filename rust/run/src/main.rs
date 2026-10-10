@@ -5,8 +5,6 @@
     clippy::wildcard_imports
 )]
 #![expect(clippy::used_underscore_items, clippy::needless_for_each)]
-use rayon::prelude::*;
-
 use tm::{Goal, Instr, Prog, Steps, instrs::Parse as _};
 
 pub mod check;
@@ -14,7 +12,7 @@ pub mod harvesters;
 pub mod holdouts;
 pub mod tree;
 
-use check::{assert_holdouts_match, test_holdouts};
+use check::assert_holdouts_match;
 use harvesters::{Collector, HoldoutVisited, MultiCollector, Visited};
 use holdouts::*;
 use tree::{Harvester as _, PassConfig};
@@ -158,32 +156,6 @@ macro_rules! assert_holdouts {
                         |prog, config| {
                             prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
                         },
-                        [ $( |prog| match $goal {
-                            0 => prog.bkw_cant_halt(BKW_8).is_refuted(),
-                            1 => prog.bkw_cant_spinout(BKW_8).is_refuted(),
-                            2 => prog.bkw_cant_blank(BKW_8).is_refuted(),
-                            _ => unreachable!(),
-                        } ),* ],
-                        |prog, config| {
-                            prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-                                || prog.prover_settled(INF_MIN)
-                        },
-                        [ $( |prog| match $goal {
-                            0 => prog.cps_cant_halt(CPS_8),
-                            1 => prog.cps_cant_spinout(CPS_8),
-                            2 => prog.cps_cant_blank(CPS_8),
-                            _ => unreachable!(),
-                        } ),* ],
-                        |prog, config| {
-                            prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
-                                || prog.prover_settled(INF_MOR)
-                        },
-                        [ $( |prog| match $goal {
-                            0 => prog.far_cant_halt(FAR_8),
-                            1 => prog.far_cant_spinout(FAR_8),
-                            2 => prog.far_cant_blank(FAR_8),
-                            _ => unreachable!(),
-                        } ),* ],
                     ),
                     [ $( $goal => $case ),* ]
                 );
@@ -347,16 +319,6 @@ macro_rules! assert_bkw {
                         |prog, config| {
                             prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
                         },
-                        [
-                            |prog| prog.bkw_cant_halt(BKW).is_refuted(),
-                            |prog| prog.bkw_cant_spinout(BKW).is_refuted(),
-                            |prog| prog.bkw_cant_blank(BKW).is_refuted(),
-                            |prog| prog.bkw_cant_twostep(BKW).is_refuted(),
-                        ],
-                        |_, _| false,
-                        [|_| false, |_| false, |_| false, |_| false],
-                        |_, _| false,
-                        [|_| false, |_| false, |_| false, |_| false],
                     ),
                     [
                         0 => $halt,
@@ -528,6 +490,60 @@ fn test_pipeline_8() {
             ],
         ],
     ];
+}
+
+// Run the same three-goal pipeline as test_pipeline_8, but only for one
+// normalized B0 instruction. There are no precomputed 9-instruction
+// holdout sets to compare against, so print the sorted holdouts.
+fn test_pipeline_9(second: &str) {
+    println!("pipeline 9 instrs, B0 = {second}");
+
+    let (results, visited) =
+        MultiCollector::<9, 9, 3>::run_instrs_second::<9>(
+            second,
+            1_000,
+            &|| {
+                MultiCollector::new(|prog, config| {
+                    prog.term_or_rec(10_000, config.to_mut())
+                        .is_settled()
+                        || prog.prover_settled(1_000)
+                })
+            },
+        );
+
+    println!("visited: {}", show_num(visited));
+
+    // MultiCollector returns [halt, spinout, blank]; print in key order.
+    let mut results = results.into_iter();
+    let halt = results.next().unwrap();
+    let spinout = results.next().unwrap();
+    let blank = results.next().unwrap();
+    assert!(results.next().is_none());
+
+    println!("    {second:?}: {{");
+    for (goal, result) in
+        [("blank", blank), ("halt", halt), ("spinout", spinout)]
+    {
+        let mut holdouts: Vec<_> = result
+            .into_iter()
+            .map(|prog| format!("{prog:?}"))
+            .collect();
+        // Sort by instruction-slot count, then alphabetically.
+        // Each whitespace-separated item is an instruction or "...".
+        holdouts.sort_unstable_by(|a, b| {
+            a.split_whitespace()
+                .count()
+                .cmp(&b.split_whitespace().count())
+                .then_with(|| a.cmp(b))
+        });
+
+        println!("        {goal:?}: {{");
+        for prog in holdouts {
+            println!("            {prog},");
+        }
+        println!("        }},");
+    }
+    println!("    }},");
 }
 
 fn test_enum_8() {
@@ -738,18 +754,19 @@ fn test_enum_p() {
 
 /**************************************/
 
-const FAST: &[fn()] = &[test_bkw, test_deciders, test_enum_8];
-
-const SLOW: &[fn()] = &[test_enum_p, test_enum_9, test_pipeline_8];
+// "0LB" //
+// "0LA" //
+// "1LB" //
+// "1LA" //
+// "0RC" //
+// "0LC" //
+// "2LB" //
+// "1RC" //
+// "1LC" //
+// "2LA" --
+// "2RC" --
+// "2LC"
 
 fn main() {
-    FAST.par_iter().for_each(|f| f());
-
-    if !std::env::args().any(|x| x == "--all") {
-        return;
-    }
-
-    test_holdouts();
-
-    SLOW.par_iter().for_each(|f| f());
+    test_pipeline_9("2LC");
 }

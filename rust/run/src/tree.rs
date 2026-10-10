@@ -10,7 +10,8 @@ use rayon::prelude::*;
 
 use tm::{
     Color, Goal, Instr, Prog, Shift, Slot, State, Steps,
-    config::MedConfig as Config, machine::RunResult,
+    config::MedConfig as Config, instrs::Parse as _,
+    machine::RunResult,
 };
 
 pub type PassConfig<'c> = Cow<'c, Config>;
@@ -1323,8 +1324,21 @@ impl<
         self.harvester.harvest(&self.prog, config);
     }
 
-    #[expect(clippy::cast_possible_truncation)]
-    fn branch(&mut self, mut config: Config) {
+    fn branch(&mut self, config: Config) {
+        self.branch_limited::<false>(config, None);
+    }
+
+    // The const flag keeps the regular DFS free of candidate-selection work.
+    // Only the parallel third-instruction roots use the selected variant.
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cognitive_complexity
+    )]
+    fn branch_limited<const SELECTED: bool>(
+        &mut self,
+        mut config: Config,
+        only: Option<Instr>,
+    ) {
         let slot @ (slot_state, _) = match self.run(&mut config) {
             Undefined(slot) => slot,
             Blank | Spinout => return,
@@ -1641,6 +1655,12 @@ impl<
             }
         }
 
+        if SELECTED {
+            let instr =
+                only.expect("selected branch requires an instruction");
+            avail_instrs.retain(|candidate| *candidate == instr);
+        }
+
         let Some((last_instr, instrs)) = avail_instrs.split_last()
         else {
             return;
@@ -1702,7 +1722,7 @@ impl<
     }
 
     fn run_branch(
-        init_instrs: &Instrs,
+        init_instrs: &[Instr],
         halt: Slots,
         sim_lim: Steps,
         instr_table: &'i AvIn::Table,
@@ -1726,6 +1746,68 @@ impl<
                 tree.branch(Config::init_stepped());
 
                 (*instr, tree.harvester)
+            })
+            .collect()
+    }
+
+    // Run the selected B0 subtree in parallel at its next undefined slot.
+    // Each third-instruction candidate receives independent Tree and Harvester
+    // state, while all descendants continue through the normal sequential DFS.
+    #[expect(clippy::iter_on_single_items, clippy::manual_let_else)]
+    fn run_branch_second(
+        second: Instr,
+        halt: Slots,
+        sim_lim: Steps,
+        instr_table: &'i AvIn::Table,
+        harvester: impl Send + Sync + Fn() -> Harv,
+    ) -> TreeResult<Harv> {
+        let mut probe = Self::init(
+            halt,
+            sim_lim,
+            harvester(),
+            AvIn::new(instr_table),
+        );
+        probe.remaining_slots -= 1;
+        probe.prog.insert(&INIT_SLOT, &second);
+        probe.on_shape_insert(&INIT_SLOT, &second);
+        probe.instrs.on_insert(&INIT_SLOT, &second);
+
+        // Normally B0 leads to another undefined slot. Handle roots that
+        // instead terminate or reach the simulation limit without splitting.
+        let mut config = Config::init_stepped();
+        let slot = if let Undefined(slot) = probe.run(&mut config) {
+            slot
+        } else {
+            probe.branch(Config::init_stepped());
+            return [(second, probe.harvester)].into_iter().collect();
+        };
+
+        // Capture the normalized candidates after B0 changes the available
+        // states/colors. branch_limited applies the full regular pruning to
+        // each candidate before descending.
+        let thirds = probe.instrs.avail_instrs(&slot).to_vec();
+        drop(probe);
+
+        thirds
+            .par_iter()
+            .map(|&third| {
+                let mut tree = Self::init(
+                    halt,
+                    sim_lim,
+                    harvester(),
+                    AvIn::new(instr_table),
+                );
+                tree.remaining_slots -= 1;
+                tree.prog.insert(&INIT_SLOT, &second);
+                tree.on_shape_insert(&INIT_SLOT, &second);
+                tree.instrs.on_insert(&INIT_SLOT, &second);
+
+                tree.branch_limited::<true>(
+                    Config::init_stepped(),
+                    Some(third),
+                );
+
+                (third, tree.harvester)
             })
             .collect()
     }
@@ -1793,6 +1875,44 @@ pub trait Harvester<const states: usize, const colors: usize>:
         let results = Self::run_all(
             (instrs * instrs) - instrs,
             sim_lim,
+            harvester,
+        );
+
+        Self::combine(&results)
+    }
+
+    // Enumerate a single normalized subtree. A0 is fixed at 1RB, so
+    // `second` is the instruction assigned to B0 (the first free slot).
+    fn run_instrs_second<const instrs: usize>(
+        second: &str,
+        sim_lim: Steps,
+        harvester: &(impl Send + Sync + Fn() -> Self),
+    ) -> Self::Output {
+        assert_eq!(states, instrs);
+        assert_eq!(colors, instrs);
+
+        let second = Instr::read(second);
+        let (init_instrs, instr_table) =
+            make_instr_table::<states, colors>();
+        assert!(
+            init_instrs.contains(&second),
+            "invalid normalized B0 instruction: {}",
+            second.show(),
+        );
+
+        let basic_runner = if states <= 3 && colors <= 3 {
+            BasicTreeSmall::run_branch_second
+        } else {
+            BasicTree::run_branch_second
+        };
+
+        // Parallel tasks are the candidate instructions at the next undefined
+        // slot (third instruction), rather than the already fixed B0.
+        let results = basic_runner(
+            second,
+            (instrs * instrs) - instrs,
+            sim_lim,
+            &instr_table,
             harvester,
         );
 

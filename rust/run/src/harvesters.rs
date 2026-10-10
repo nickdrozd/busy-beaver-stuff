@@ -101,33 +101,16 @@ pub struct MultiCollector<
     visited: u64,
 
     initial: Pipeline<s, c>,
-    bkw: [Decider<s, c>; n],
-    rec_prover_short: Pipeline<s, c>,
-    cps: [Decider<s, c>; n],
-    rec_prover_long: Pipeline<s, c>,
-    far: [Decider<s, c>; n],
 }
 
 impl<const s: usize, const c: usize, const n: usize>
     MultiCollector<s, c, n>
 {
-    pub fn new(
-        initial: Pipeline<s, c>,
-        bkw: [Decider<s, c>; n],
-        rec_prover_short: Pipeline<s, c>,
-        cps: [Decider<s, c>; n],
-        rec_prover_long: Pipeline<s, c>,
-        far: [Decider<s, c>; n],
-    ) -> Self {
+    pub fn new(initial: Pipeline<s, c>) -> Self {
         Self {
             progs: core::array::from_fn(|_| Vec::new()),
             visited: 0,
             initial,
-            bkw,
-            rec_prover_short,
-            cps,
-            rec_prover_long,
-            far,
         }
     }
 
@@ -157,40 +140,8 @@ impl<const s: usize, const c: usize, const n: usize> Harvester<s, c>
         self.visited += 1;
 
         if (self.initial)(prog, config) {
-            return;
+            // return;
         }
-
-        let mut alive = [true; n];
-
-        Self::run_deciders(&mut alive, &self.bkw, prog);
-
-        if !alive.iter().any(|&alive| alive) {
-            return;
-        }
-
-        if (self.rec_prover_short)(prog, config) {
-            return;
-        }
-
-        Self::run_deciders(&mut alive, &self.cps, prog);
-
-        if !alive.iter().any(|&alive| alive) {
-            return;
-        }
-
-        if (self.rec_prover_long)(prog, config) {
-            return;
-        }
-
-        Self::run_deciders(&mut alive, &self.far, prog);
-
-        alive.into_iter().zip(self.progs.iter_mut()).for_each(
-            |(alive, progs)| {
-                if alive {
-                    progs.push(prog.to_string());
-                }
-            },
-        );
     }
 
     type Output = ([Vec<String>; n], u64);
