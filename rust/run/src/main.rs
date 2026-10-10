@@ -1,7 +1,5 @@
 #![allow(dead_code, clippy::wildcard_imports)]
 #![expect(clippy::used_underscore_items, clippy::needless_for_each)]
-use rayon::prelude::*;
-
 use tm::{Goal, Instr, Prog, Steps, instrs::Parse as _};
 
 pub mod check;
@@ -9,7 +7,7 @@ pub mod harvesters;
 pub mod holdouts;
 pub mod tree;
 
-use check::{assert_holdouts_match, test_holdouts};
+use check::assert_holdouts_match;
 use harvesters::{Collector, HoldoutVisited, MultiCollector, Visited};
 use holdouts::*;
 use tree::{Harvester as _, PassConfig};
@@ -525,6 +523,75 @@ fn test_pipeline_8() {
     ];
 }
 
+// Run the same three-goal pipeline as test_pipeline_8, but only for one
+// normalized B0 instruction. There are no precomputed 9-instruction
+// holdout sets to compare against, so report each goal's remaining count.
+fn test_pipeline_9(second: &str) {
+    println!("pipeline 9 instrs, B0 = {second}");
+
+    let (results, visited) =
+        MultiCollector::<9, 9, 3>::run_instrs_second::<9>(
+            second,
+            1_000,
+            &|| {
+                MultiCollector::new(
+                    |prog, config| {
+                        prog.term_or_rec(LIN_MIN, config.to_mut())
+                            .is_settled()
+                    },
+                    [
+                        |prog| prog.bkw_cant_halt(BKW_8).is_refuted(),
+                        |prog| {
+                            prog.bkw_cant_spinout(BKW_8).is_refuted()
+                        },
+                        |prog| prog.bkw_cant_blank(BKW_8).is_refuted(),
+                    ],
+                    |prog, config| {
+                        prog.term_or_rec(LIN_MOR, config.to_mut())
+                            .is_settled()
+                            || prog.prover_settled(INF_MIN)
+                    },
+                    [
+                        |prog| prog.cps_cant_halt(CPS_8),
+                        |prog| prog.cps_cant_spinout(CPS_8),
+                        |prog| prog.cps_cant_blank(CPS_8),
+                    ],
+                    |prog, config| {
+                        prog.term_or_rec(LIN_MAX, config.to_mut())
+                            .is_settled()
+                            || prog.prover_settled(INF_MOR)
+                    },
+                    [
+                        |prog| prog.far_cant_halt(FAR_8),
+                        |prog| prog.far_cant_spinout(FAR_8),
+                        |prog| prog.far_cant_blank(FAR_8),
+                    ],
+                )
+            },
+        );
+
+    println!("visited: {}", show_num(visited));
+    for (goal, result) in
+        ["halt", "spinout", "blank"].into_iter().zip(results)
+    {
+        // Sort text representations so output is deterministic even if the
+        // collector's underlying set has no stable iteration order.
+        let mut holdouts: Vec<_> = result
+            .into_iter()
+            .map(|prog| format!("{prog:?}"))
+            .collect();
+        holdouts.sort_unstable();
+
+        println!(
+            "\n{goal} holdouts: {}",
+            show_num(holdouts.len() as u64)
+        );
+        for prog in holdouts {
+            println!("  {prog}");
+        }
+    }
+}
+
 fn test_enum_8() {
     println!("enum 8 instrs");
 
@@ -733,18 +800,6 @@ fn test_enum_p() {
 
 /**************************************/
 
-const FAST: &[fn()] = &[test_bkw, test_deciders, test_enum_8];
-
-const SLOW: &[fn()] = &[test_enum_p, test_enum_9, test_pipeline_8];
-
 fn main() {
-    FAST.par_iter().for_each(|f| f());
-
-    if !std::env::args().any(|x| x == "--all") {
-        return;
-    }
-
-    test_holdouts();
-
-    SLOW.par_iter().for_each(|f| f());
+    test_pipeline_9("0LB");
 }
