@@ -440,7 +440,7 @@ class OpSeqResult(Num):
         raise OverflowError  # no-cover
 
     @property
-    def pos(self) -> bool:
+    def pos(self) -> bool:  # ty: ignore[invalid-property-type-override]
         return True
 
     def __int__(self) -> int:

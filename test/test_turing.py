@@ -160,7 +160,7 @@ class TuringTest(TestCase):
 ########################################
 
 class Simple(TuringTest):
-    machine: MachineResult
+    machine: MachineResult  # ty: ignore[invalid-mutable-override]
 
     def run_bb(
             self,
@@ -344,7 +344,7 @@ class SimpleSlow(Simple):
 
 class Recur(TuringTest):
     prog: str
-    machine: Machine | StrictLinRecMachine | LinRecSampler
+    machine: Machine | StrictLinRecMachine | LinRecSampler  # ty: ignore[invalid-mutable-override]
 
     def assert_spinout(self) -> None:
         self.assertIsNotNone(
@@ -574,7 +574,7 @@ class Recur(TuringTest):
 ########################################
 
 class RunProver(TuringTest):
-    machine: Machine
+    machine: Machine  # ty: ignore[invalid-mutable-override]
 
     def assert_spinout(self) -> None:
         self.assertIsNotNone(
