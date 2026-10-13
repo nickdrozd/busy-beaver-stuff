@@ -1,4 +1,9 @@
-#![allow(dead_code, clippy::wildcard_imports)]
+#![allow(
+    dead_code,
+    unused_imports,
+    unused_macro_rules,
+    clippy::wildcard_imports
+)]
 #![expect(clippy::used_underscore_items, clippy::needless_for_each)]
 use rayon::prelude::*;
 
