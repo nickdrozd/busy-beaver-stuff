@@ -157,6 +157,16 @@ impl<B: Block> Span<B> {
         self.blocks.iter().rev()
     }
 
+    /// Compare the blocks closest to the tape head first.
+    ///
+    /// Span storage is farthest-to-nearest, so `self == other` checks
+    /// the far end first. Recurrence checks often differ near the head.
+    #[inline]
+    fn eq_from_head(&self, other: &Self) -> bool {
+        self.blocks.len() == other.blocks.len()
+            && self.iter().eq(other.iter())
+    }
+
     pub fn str_iter(&self) -> impl DoubleEndedIterator<Item = String> {
         self.iter().map(ToString::to_string)
     }
@@ -694,13 +704,19 @@ impl<B: Block> HeadTape<'_, B> {
 
         #[expect(clippy::comparison_chain)]
         if 0 < diff {
-            (self.tape.lspan.compare_take(&prev.tape.lspan, l_take)
-                && self.tape.rspan == prev.tape.rspan)
-                .then_some(LinRec::Translated)
+            (self.tape.rspan.eq_from_head(&prev.tape.rspan)
+                && self
+                    .tape
+                    .lspan
+                    .compare_take(&prev.tape.lspan, l_take))
+            .then_some(LinRec::Translated)
         } else if diff < 0 {
-            (self.tape.rspan.compare_take(&prev.tape.rspan, r_take)
-                && self.tape.lspan == prev.tape.lspan)
-                .then_some(LinRec::Translated)
+            (self.tape.lspan.eq_from_head(&prev.tape.lspan)
+                && self
+                    .tape
+                    .rspan
+                    .compare_take(&prev.tape.rspan, r_take))
+            .then_some(LinRec::Translated)
         } else {
             (self.tape.lspan.compare_take(&prev.tape.lspan, l_take)
                 && self
