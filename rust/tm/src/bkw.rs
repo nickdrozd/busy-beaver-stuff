@@ -40,7 +40,9 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let (entrypoints, idx) = self.entrypoints_and_indices();
 
         let slots = self.halt_slots_disp_side(&idx);
-        let slots = self.halt_slots_side_excursion(slots);
+        let instrs = BkwInstrs::new(self);
+        let (slots, seed) =
+            self.halt_slots_side_excursion(slots, &instrs);
 
         cant_reach(
             self,
@@ -49,6 +51,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             Some(entrypoints),
             halt_configs,
             false,
+            Some(instrs),
+            seed,
         )
     }
 
@@ -57,35 +61,47 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             return Refuted(0);
         }
 
+        let instrs = BkwInstrs::new(self);
+        let (slots, seed) = self.blank_slots_side_clean(&instrs);
         cant_reach(
             self,
             steps,
-            self.blank_slots_side_clean(),
+            slots,
             None,
             erase_configs,
             false,
+            Some(instrs),
+            seed,
         )
     }
 
     pub fn bkw_cant_spinout(&self, steps: Steps) -> BackwardResult {
+        let instrs = BkwInstrs::new(self);
+        let (slots, seed) = self.spinout_shifts_side_clean(&instrs);
         cant_reach(
             self,
             steps,
-            self.spinout_shifts_side_clean(),
+            slots,
             None,
             zr_configs,
             false,
+            Some(instrs),
+            seed,
         )
     }
 
     pub fn bkw_cant_zloop(&self, steps: Steps) -> BackwardResult {
+        let instrs = BkwInstrs::new(self);
+        let (slots, seed) = self.zloop_shifts_side_clean(&instrs);
         cant_reach(
             self,
             steps,
-            self.zloop_shifts_side_clean(),
+            slots,
             None,
             zr_configs,
             false,
+            Some(instrs),
+            seed,
         )
     }
 
@@ -100,6 +116,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             None,
             twostep_configs,
             true,
+            None,
+            None,
         )
     }
 }
@@ -112,6 +130,80 @@ type BlankStates = Set<State>;
 type Entry = (Slot, (Color, Shift));
 type Entries = Vec<Entry>;
 type Entrypoints = Dict<State, (Entries, Entries)>;
+
+/// A single, program-derived instruction index. `instrs` are instructions,
+/// not backward target slots: an undefined instruction is represented by None.
+/// All expensive forward domains borrow this immutable table instead of
+/// rebuilding their own `[[Option<...>; C]; S]` on each fixed-point round.
+#[derive(Clone, Copy)]
+struct BkwWriter {
+    state: usize,
+    scan: usize,
+    shift: Shift,
+    next_state: usize,
+}
+
+struct BkwInstrs<const S: usize, const C: usize> {
+    instrs: [[Option<(usize, Shift, usize)>; C]; S],
+    writers: [Vec<BkwWriter>; C],
+    forbid_left: [bool; C],
+    forbid_right: [bool; C],
+    writes_blank_on_r: bool,
+    writes_blank_on_l: bool,
+}
+
+impl<const S: usize, const C: usize> BkwInstrs<S, C> {
+    fn new(prog: &Prog<S, C>) -> Self {
+        let mut instrs = [[None; C]; S];
+        let mut writers: [Vec<BkwWriter>; C] =
+            core::array::from_fn(|_| Vec::new());
+        let mut left_writes = [false; C];
+        let mut right_writes = [false; C];
+        let mut writes_blank_on_r = false;
+        let mut writes_blank_on_l = false;
+        for ((state, read), &(print, shift, next_state)) in prog.iter()
+        {
+            let print = usize::from(print);
+            instrs[usize::from(state)][usize::from(read)] =
+                Some((print, shift, usize::from(next_state)));
+            writers[print].push(BkwWriter {
+                state: usize::from(state),
+                scan: usize::from(read),
+                shift,
+                next_state: usize::from(next_state),
+            });
+            if shift {
+                right_writes[print] = true;
+                writes_blank_on_r |= print == 0;
+            } else {
+                left_writes[print] = true;
+                writes_blank_on_l |= print == 0;
+            }
+        }
+        let mut forbid_left = [false; C];
+        let mut forbid_right = [false; C];
+        for color in 1..C {
+            forbid_left[color] = !right_writes[color];
+            forbid_right[color] = !left_writes[color];
+        }
+        Self {
+            instrs,
+            writers,
+            forbid_left,
+            forbid_right,
+            writes_blank_on_r,
+            writes_blank_on_l,
+        }
+    }
+
+    const fn get(
+        &self,
+        state: usize,
+        scan: usize,
+    ) -> Option<(usize, Shift, usize)> {
+        self.instrs[state][scan]
+    }
+}
 
 /// Compact lookup tables for which 3-cell windows `(L, scan, R)` are
 /// possible in some run from the blank tape.
@@ -163,7 +255,7 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     fn exact_side_parity_mask(
@@ -217,6 +309,16 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
 const LEFT_SIDE: usize = 0;
 const RIGHT_SIDE: usize = 1;
 
+/// Single flattened key shared by all forward exact-window projections.
+const fn bkw_window_index<const C: usize>(
+    state: usize,
+    scan: usize,
+    left: usize,
+    right: usize,
+) -> usize {
+    (((state * C) + scan) * C + left) * C + right
+}
+
 /// Whole-side color/pair summaries conditioned on an exact reachable local
 /// window `(left, scan, right)` as well as the control state.
 ///
@@ -260,7 +362,7 @@ impl<const S: usize, const C: usize> SidePossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     fn new() -> Self {
@@ -464,7 +566,7 @@ impl<const S: usize, const C: usize> SideTriplePossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     const fn index(
@@ -536,7 +638,7 @@ impl<const S: usize, const C: usize> JointSideTriplePossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     const fn triple_id(a: usize, b: usize, c: usize) -> usize {
@@ -771,6 +873,38 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         }
     }
 
+    /// Restrict the one authoritative exact-window relation. All forward
+    /// analyses supply a *necessary* witness predicate for each already-live
+    /// window; no pruning domain needs its own copy of the four nested scans.
+    fn retain_exact_windows(
+        &mut self,
+        mut keep: impl FnMut(usize, usize, usize, usize) -> bool,
+    ) -> bool {
+        let mut changed = false;
+        for st in 0..S {
+            for scan in 0..C {
+                for left in 0..C {
+                    let old = self.right[st][scan][left];
+                    let mut remaining = old;
+                    let mut rights = old;
+                    while rights != 0 {
+                        let right = rights.trailing_zeros() as usize;
+                        rights &= rights - 1;
+                        if !keep(st, scan, left, right) {
+                            remaining &= !(1_u64 << right);
+                        }
+                    }
+                    changed |= remaining != old;
+                    self.right[st][scan][left] = remaining;
+                }
+            }
+        }
+        if changed {
+            self.rebuild_window_relation();
+        }
+        changed
+    }
+
     /// Intersect the exact local-window relation with the stronger same-cell
     /// crossing closure.  The crossing relation contains every frontier
     /// checkpoint and is closed under complete one-sided excursions, so every
@@ -781,23 +915,9 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         &mut self,
         crossing: &[[[u64; C]; C]; S],
     ) -> bool {
-        let mut changed = false;
-
-        for st in 0..S {
-            for scan in 0..C {
-                for left in 0..C {
-                    let old = self.right[st][scan][left];
-                    let keep = old & crossing[st][scan][left];
-                    changed |= keep != old;
-                    self.right[st][scan][left] = keep;
-                }
-            }
-        }
-
-        if changed {
-            self.rebuild_window_relation();
-        }
-        changed
+        self.retain_exact_windows(|st, scan, left, right| {
+            crossing[st][scan][left] & (1_u64 << right) != 0
+        })
     }
 
     /// Shrink only the exact local-window relation to windows reachable in the
@@ -808,37 +928,9 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         &mut self,
         sides: &SidePossible<S, C>,
     ) -> bool {
-        let mut changed = false;
-
-        for st in 0..S {
-            for scan in 0..C {
-                for left in 0..C {
-                    let old = self.right[st][scan][left];
-                    if old == 0 {
-                        continue;
-                    }
-
-                    let mut keep = 0_u64;
-                    let mut rights = old;
-                    while rights != 0 {
-                        let right = rights.trailing_zeros() as usize;
-                        rights &= rights - 1;
-                        if sides.window(st, scan, left, right).reachable
-                        {
-                            keep |= 1_u64 << right;
-                        }
-                    }
-
-                    changed |= keep != old;
-                    self.right[st][scan][left] = keep;
-                }
-            }
-        }
-
-        if changed {
-            self.rebuild_window_relation();
-        }
-        changed
+        self.retain_exact_windows(|st, scan, left, right| {
+            sides.window(st, scan, left, right).reachable
+        })
     }
 
     /// Remove exact local windows for which the tiny joint left/right prefix
@@ -848,39 +940,9 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         &mut self,
         joint: &JointShortPossible<S, C>,
     ) -> bool {
-        let mut changed = false;
-
-        for st in 0..S {
-            for scan in 0..C {
-                for left in 0..C {
-                    let old = self.right[st][scan][left];
-                    if old == 0 {
-                        continue;
-                    }
-
-                    let mut keep = old;
-                    let mut rights = old;
-                    while rights != 0 {
-                        let right = rights.trailing_zeros() as usize;
-                        rights &= rights - 1;
-                        if joint
-                            .window(st, scan, left, right)
-                            .is_empty()
-                        {
-                            keep &= !(1_u64 << right);
-                        }
-                    }
-
-                    changed |= keep != old;
-                    self.right[st][scan][left] = keep;
-                }
-            }
-        }
-
-        if changed {
-            self.rebuild_window_relation();
-        }
-        changed
+        self.retain_exact_windows(|st, scan, left, right| {
+            !joint.window(st, scan, left, right).is_empty()
+        })
     }
 
     /// Remove exact local windows for which the cheap ordered run-prefix
@@ -891,44 +953,14 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         &mut self,
         prefixes: &SidePrefixPossible<S, C>,
     ) -> bool {
-        let mut changed = false;
-
-        for st in 0..S {
-            for scan in 0..C {
-                for left in 0..C {
-                    let old = self.right[st][scan][left];
-                    if old == 0 {
-                        continue;
-                    }
-
-                    let mut keep = old;
-                    let mut rights = old;
-                    while rights != 0 {
-                        let right = rights.trailing_zeros() as usize;
-                        rights &= rights - 1;
-
-                        let left_ok = !prefixes
-                            .prefixes(st, scan, left, right, LEFT_SIDE)
-                            .is_empty();
-                        let right_ok = !prefixes
-                            .prefixes(st, scan, left, right, RIGHT_SIDE)
-                            .is_empty();
-
-                        if !left_ok || !right_ok {
-                            keep &= !(1_u64 << right);
-                        }
-                    }
-
-                    changed |= keep != old;
-                    self.right[st][scan][left] = keep;
-                }
-            }
-        }
-
-        if changed {
-            self.rebuild_window_relation();
-        }
-        changed
+        self.retain_exact_windows(|st, scan, left, right| {
+            !prefixes
+                .prefixes(st, scan, left, right, LEFT_SIDE)
+                .is_empty()
+                && !prefixes
+                    .prefixes(st, scan, left, right, RIGHT_SIDE)
+                    .is_empty()
+        })
     }
 
     /// Once the run-prefix relation is stable, remove exact local windows for
@@ -937,48 +969,14 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         &mut self,
         prefixes: &SidePrefixPossible<S, C>,
     ) -> bool {
-        let mut changed = false;
-
-        for st in 0..S {
-            for scan in 0..C {
-                for left in 0..C {
-                    let old = self.right[st][scan][left];
-                    if old == 0 {
-                        continue;
-                    }
-
-                    let mut keep = old;
-                    let mut rights = old;
-                    while rights != 0 {
-                        let right = rights.trailing_zeros() as usize;
-                        rights &= rights - 1;
-
-                        let left_ok = !prefixes
-                            .word_prefixes(
-                                st, scan, left, right, LEFT_SIDE,
-                            )
-                            .is_empty();
-                        let right_ok = !prefixes
-                            .word_prefixes(
-                                st, scan, left, right, RIGHT_SIDE,
-                            )
-                            .is_empty();
-
-                        if !left_ok || !right_ok {
-                            keep &= !(1_u64 << right);
-                        }
-                    }
-
-                    changed |= keep != old;
-                    self.right[st][scan][left] = keep;
-                }
-            }
-        }
-
-        if changed {
-            self.rebuild_window_relation();
-        }
-        changed
+        self.retain_exact_windows(|st, scan, left, right| {
+            !prefixes
+                .word_prefixes(st, scan, left, right, LEFT_SIDE)
+                .is_empty()
+                && !prefixes
+                    .word_prefixes(st, scan, left, right, RIGHT_SIDE)
+                    .is_empty()
+        })
     }
 
     /// Remove exact local windows for which the parity-aware joint left/right
@@ -990,39 +988,9 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         &mut self,
         joint: &JointSidePrefixPossible<S, C>,
     ) -> bool {
-        let mut changed = false;
-
-        for st in 0..S {
-            for scan in 0..C {
-                for left in 0..C {
-                    let old = self.right[st][scan][left];
-                    if old == 0 {
-                        continue;
-                    }
-
-                    let mut keep = old;
-                    let mut rights = old;
-                    while rights != 0 {
-                        let right = rights.trailing_zeros() as usize;
-                        rights &= rights - 1;
-                        if joint
-                            .window(st, scan, left, right)
-                            .is_empty()
-                        {
-                            keep &= !(1_u64 << right);
-                        }
-                    }
-
-                    changed |= keep != old;
-                    self.right[st][scan][left] = keep;
-                }
-            }
-        }
-
-        if changed {
-            self.rebuild_window_relation();
-        }
-        changed
+        self.retain_exact_windows(|st, scan, left, right| {
+            !joint.window(st, scan, left, right).is_empty()
+        })
     }
 
     /// Remove exact local windows for which the joint ordered word-prefix
@@ -1033,39 +1001,9 @@ impl<const S: usize, const C: usize> WinPossible<S, C> {
         &mut self,
         joint: &JointSideWordPrefixPossible<S, C>,
     ) -> bool {
-        let mut changed = false;
-
-        for st in 0..S {
-            for scan in 0..C {
-                for left in 0..C {
-                    let old = self.right[st][scan][left];
-                    if old == 0 {
-                        continue;
-                    }
-
-                    let mut keep = old;
-                    let mut rights = old;
-                    while rights != 0 {
-                        let right = rights.trailing_zeros() as usize;
-                        rights &= rights - 1;
-                        if joint
-                            .window(st, scan, left, right)
-                            .is_empty()
-                        {
-                            keep &= !(1_u64 << right);
-                        }
-                    }
-
-                    changed |= keep != old;
-                    self.right[st][scan][left] = keep;
-                }
-            }
-        }
-
-        if changed {
-            self.rebuild_window_relation();
-        }
-        changed
+        self.retain_exact_windows(|st, scan, left, right| {
+            !joint.window(st, scan, left, right).is_empty()
+        })
     }
 }
 
@@ -3081,7 +3019,7 @@ impl<const S: usize, const C: usize> SidePrefixPossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     const fn index(
@@ -3307,7 +3245,7 @@ impl<const S: usize, const C: usize> JointShortPossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     fn new() -> Self {
@@ -3355,7 +3293,7 @@ impl<const S: usize, const C: usize> Radius2Possible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C + scan) * C + left) * C) + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     const fn disabled() -> Self {
@@ -3788,7 +3726,7 @@ impl<const S: usize, const C: usize> JointSidePrefixPossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     fn new(track_parity: bool) -> Self {
@@ -3876,7 +3814,7 @@ impl<const S: usize, const C: usize> JointSideWordPrefixPossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     fn new() -> Self {
@@ -3943,7 +3881,7 @@ impl<const S: usize, const C: usize> JointBlankPossible<S, C> {
         left: usize,
         right: usize,
     ) -> usize {
-        (((st * C) + scan) * C + left) * C + right
+        bkw_window_index::<C>(st, scan, left, right)
     }
 
     fn new() -> Self {
@@ -4008,7 +3946,7 @@ impl<const S: usize, const C: usize> ColorTailCountPossible<S, C> {
         right: usize,
         color: usize,
     ) -> usize {
-        ((((st * C) + scan) * C + left) * C + right) * C + color
+        bkw_window_index::<C>(st, scan, left, right) * C + color
     }
 
     const fn side_index(
@@ -4113,7 +4051,7 @@ impl<const S: usize, const C: usize> PairTailPresencePossible<S, C> {
         right: usize,
         pair: usize,
     ) -> usize {
-        let window = (((st * C) + scan) * C + left) * C + right;
+        let window = bkw_window_index::<C>(st, scan, left, right);
         window * Self::pair_count() + pair
     }
 
@@ -4193,6 +4131,8 @@ fn cant_reach<const s: usize, const c: usize, T: Ord, F>(
     entrypoints: Option<Entrypoints>,
     get_configs: F,
     use_exact_seen: bool,
+    instrs: Option<BkwInstrs<s, c>>,
+    window_seed: Option<BkwWindowSeed<s, c>>,
 ) -> BackwardResult
 where
     F: Fn(&Set<(State, T)>) -> Configs,
@@ -4212,12 +4152,16 @@ where
 
     // The common path is still one ordinary BKW pass: no cycle-edge history
     // is built unless a real u8 count overflow is encountered.
-    let first = cant_reach_once::<s, c, T, F, false>(
-        prog,
+    let instrs = instrs.unwrap_or_else(|| BkwInstrs::new(prog));
+    let Some(prepared) =
+        prepare_bkw(prog, &instrs, &slots, &get_configs, window_seed)
+    else {
+        return Refuted(0);
+    };
+    let first = cant_reach_once::<s, c, false>(
+        &prepared,
         steps,
-        &slots,
         &entrypoints,
-        &get_configs,
         use_exact_seen,
     );
 
@@ -4240,12 +4184,10 @@ where
     // cannot affect programs that did not first hit CountLimit.
     let cycle_steps = steps.max(4_096);
 
-    match cant_reach_once::<s, c, T, F, true>(
-        prog,
+    match cant_reach_once::<s, c, true>(
+        &prepared,
         cycle_steps,
-        &slots,
         &entrypoints,
-        &get_configs,
         use_exact_seen,
     ) {
         Refuted(step) => Refuted(step),
@@ -4253,20 +4195,64 @@ where
     }
 }
 
-fn cant_reach_once<
-    const s: usize,
-    const c: usize,
-    T: Ord,
-    F,
-    const CYCLE_ANALYSIS: bool,
->(
+/// Reused by blank and two-step-like one-sided target filters. They require
+/// identical clean/unrestricted excursions and half-blank relations.
+struct BkwHalfblankTargets<const S: usize, const C: usize> {
+    windows: WinPossible<S, C>,
+    left_clean: SideExcursions<S, C>,
+    right_clean: SideExcursions<S, C>,
+    left_any: SideExcursions<S, C>,
+    right_any: SideExcursions<S, C>,
+    left_half: [[u64; C]; S],
+    right_half: [[u64; C]; S],
+}
+
+/// Initial window information already computed by a target prefilter.
+/// Halt's last-departure test also computes the exact crossing closure; keep
+/// that fixed point for the first whole-side refinement instead of repeating it.
+struct BkwWindowSeed<const S: usize, const C: usize> {
+    windows: WinPossible<S, C>,
+    initial_any: Option<(SideExcursions<S, C>, SideExcursions<S, C>)>,
+    crossings: Option<(
+        SideExcursions<S, C>,
+        SideExcursions<S, C>,
+        Radius2Possible<S, C>,
+    )>,
+}
+
+/// Immutable forward facts and initial frontier shared across both backward
+/// search strategies. Every abstract domain has its own precision/widening,
+/// but none is reconstructed when CountLimit triggers the cycle retry.
+#[expect(clippy::struct_excessive_bools)]
+struct BkwPrepared<const s: usize, const c: usize> {
+    configs: Configs,
+    win_possible: WinPossible<s, c>,
+    radius2_possible: Radius2Possible<s, c>,
+    side_possible: SidePossible<s, c>,
+    side_triple_possible: SideTriplePossible<s, c>,
+    joint_side_triple_possible: JointSideTriplePossible<s, c>,
+    side_prefix_possible: SidePrefixPossible<s, c>,
+    joint_short_possible: JointShortPossible<s, c>,
+    joint_side_prefix_possible: JointSidePrefixPossible<s, c>,
+    joint_side_word_prefix_possible: JointSideWordPrefixPossible<s, c>,
+    blank_side_possible: BlankSidePossible<s, c>,
+    color_tail_count: ColorTailCountPossible<s, c>,
+    pair_tail_presence: PairTailPresencePossible<s, c>,
+    forbid_left: [bool; c],
+    forbid_right: [bool; c],
+    left_fresh_zero: bool,
+    right_fresh_zero: bool,
+    left_forced_blank: bool,
+    right_forced_blank: bool,
+}
+
+fn prepare_bkw<const s: usize, const c: usize, T: Ord, F>(
     prog: &Prog<s, c>,
-    steps: Steps,
+    instrs: &BkwInstrs<s, c>,
     slots: &Set<(State, T)>,
-    entrypoints: &Entrypoints,
     get_configs: &F,
-    use_exact_seen: bool,
-) -> BackwardResult
+    window_seed: Option<BkwWindowSeed<s, c>>,
+) -> Option<BkwPrepared<s, c>>
 where
     F: Fn(&Set<(State, T)>) -> Configs,
 {
@@ -4277,7 +4263,8 @@ where
     // cannot persist to the right of the head.) We use this as a
     // *sound* pruning filter to avoid spurious backward
     // configurations.
-    let (forbid_left, forbid_right) = prog.shift_side_forbidden();
+    let forbid_left = instrs.forbid_left;
+    let forbid_right = instrs.forbid_right;
 
     // If shift-side analysis proves that *no non-blank* symbol can ever
     // appear on a given side of the head in any run from the blank
@@ -4298,10 +4285,8 @@ where
     // never writes 0 on a Right move, any 0 appearing to the *left* of the
     // head must be unvisited, and thus all cells farther left must also be
     // unvisited blanks. Symmetrically for the right side and Left moves.
-    let (writes_blank_on_r, writes_blank_on_l) =
-        prog.blank_writes_by_shift();
-    let left_fresh_zero = !writes_blank_on_r;
-    let right_fresh_zero = !writes_blank_on_l;
+    let left_fresh_zero = !instrs.writes_blank_on_r;
+    let right_fresh_zero = !instrs.writes_blank_on_l;
 
     let mut configs = get_configs(slots);
 
@@ -4323,14 +4308,15 @@ where
     // The cheap state-only parity filter can avoid all forward-domain work.
     // Later checks use the stronger window-conditioned side-parity pairs.
     {
-        let nonblank_parity = prog.nonblank_parity_from_blank();
+        let nonblank_parity =
+            Prog::<s, c>::nonblank_parity_from_blank(instrs);
         configs.retain(|Config { state, tape }| {
             nonblank_parity_possible(*state, tape, &nonblank_parity)
         });
     }
 
     if configs.is_empty() {
-        return Refuted(0);
+        return None;
     }
 
     // Optional *sound* adjacency reachability filter.
@@ -4340,8 +4326,21 @@ where
     // blank tape. If a generated predecessor configuration demands an
     // immediate neighbor color that is impossible in this
     // over-approximation, we can safely prune it.
-    let mut win_possible =
-        prog.win_possible_from_blank(&forbid_left, &forbid_right);
+    let (mut win_possible, initial_crossings, initial_any) =
+        match window_seed {
+            Some(seed) => {
+                (seed.windows, seed.crossings, seed.initial_any)
+            },
+            None => (
+                Prog::<s, c>::win_possible_from_blank(
+                    instrs,
+                    &forbid_left,
+                    &forbid_right,
+                ),
+                None,
+                None,
+            ),
+        };
 
     // Reduce the exact local-window relation jointly with whole-side
     // reachability.  Each time `SidePossible` removes a window, the exact-front
@@ -4351,10 +4350,16 @@ where
     // aggregates once at the shared fixed point.
     let (
         mut side_possible,
-        crossing_left_any,
-        crossing_right_any,
+        mut crossing_left_any,
+        mut crossing_right_any,
         mut radius2_possible,
-    ) = refine_windows_by_crossings_and_sides(prog, &mut win_possible);
+    ) = refine_windows_by_crossings_and_sides(
+        prog,
+        instrs,
+        &mut win_possible,
+        initial_crossings,
+        initial_any,
+    );
     win_possible.refine_reachability(&side_possible);
 
     // Preserve the original lazy ordering: build/check every cheaper forward
@@ -4362,18 +4367,19 @@ where
     // these summaries already refute never enter the expensive prefix/window
     // feedback fixed point.
     let mut color_tail_count =
-        color_tail_count_from_blank(prog, &win_possible);
+        color_tail_count_from_blank(prog, instrs, &win_possible);
     side_possible.refine_zero_tail_pairs(&color_tail_count);
 
     let mut blank_side_possible =
         blank_side_possible_from_blank_with_any(
             prog,
+            instrs,
             &win_possible,
             &crossing_left_any,
             &crossing_right_any,
         );
     let mut pair_tail_presence =
-        pair_tail_presence_from_blank(prog, &win_possible);
+        pair_tail_presence_from_blank(prog, instrs, &win_possible);
 
     // Halt targets begin with two unknown neighbors, so the
     // `(state, scanned color)` pair must still occur in at least one reachable
@@ -4404,7 +4410,7 @@ where
     });
 
     if configs.is_empty() {
-        return Refuted(0);
+        return None;
     }
 
     // Ordered-prefix propagation can prove additional exact windows
@@ -4429,20 +4435,29 @@ where
         joint_side_word_prefix_possible,
     ) = loop {
         if windows_refined {
-            let (sides, _, _, next_radius2) =
+            let (sides, next_left_any, next_right_any, next_radius2) =
                 refine_windows_by_crossings_and_sides(
                     prog,
+                    instrs,
                     &mut win_possible,
+                    None,
+                    None,
                 );
             side_possible = sides;
+            crossing_left_any = next_left_any;
+            crossing_right_any = next_right_any;
             radius2_possible = next_radius2;
-            color_tail_count =
-                color_tail_count_from_blank(prog, &win_possible);
+            color_tail_count = color_tail_count_from_blank(
+                prog,
+                instrs,
+                &win_possible,
+            );
             side_possible.refine_zero_tail_pairs(&color_tail_count);
         }
 
-        let (mut prefixes, prefix_trans, prefix_exposed) = prog
-            .side_run_prefix_possible_from_blank(
+        let (mut prefixes, prefix_exposed) =
+            Prog::<s, c>::side_run_prefix_possible_from_blank(
+                instrs,
                 &win_possible,
                 &side_possible,
             );
@@ -4459,7 +4474,7 @@ where
 
         Prog::<s, c>::populate_side_word_prefix_possible_from_blank(
             &win_possible,
-            &prefix_trans,
+            &instrs.instrs,
             &prefix_exposed,
             &mut prefixes,
         );
@@ -4477,10 +4492,11 @@ where
             tape.obeys_side_prefix_possible(*state, &prefixes)
         });
         if configs.is_empty() {
-            return Refuted(0);
+            return None;
         }
 
-        let joint = prog.joint_short_possible_from_blank(
+        let joint = Prog::<s, c>::joint_short_possible_from_blank(
+            instrs,
             &win_possible,
             &radius2_possible,
         );
@@ -4494,17 +4510,19 @@ where
             tape.obeys_joint_short_possible(*state, &joint)
         });
         if configs.is_empty() {
-            return Refuted(0);
+            return None;
         }
 
         // Feed the stronger parity-aware reduced product back into the local
         // window relation too.  This is deliberately after the cheaper two
         // projections so most impossible windows are gone before paying for
         // the larger joint worklist.
-        let joint_side = prog.joint_side_prefix_possible_from_blank(
-            &win_possible,
-            track_joint_run_parity,
-        );
+        let joint_side =
+            Prog::<s, c>::joint_side_prefix_possible_from_blank(
+                instrs,
+                &win_possible,
+                track_joint_run_parity,
+            );
         if win_possible
             .refine_joint_side_prefix_reachability_relation(&joint_side)
         {
@@ -4516,11 +4534,14 @@ where
             tape.obeys_joint_side_prefix_possible(*state, &joint_side)
         });
         if configs.is_empty() {
-            return Refuted(0);
+            return None;
         }
 
-        let joint_word = prog
-            .joint_side_word_prefix_possible_from_blank(&win_possible);
+        let joint_word =
+            Prog::<s, c>::joint_side_word_prefix_possible_from_blank(
+                instrs,
+                &win_possible,
+            );
         if win_possible
             .refine_joint_side_word_reachability_relation(&joint_word)
         {
@@ -4535,7 +4556,7 @@ where
             )
         });
         if configs.is_empty() {
-            return Refuted(0);
+            return None;
         }
 
         break (prefixes, joint, joint_side, joint_word);
@@ -4547,13 +4568,18 @@ where
         // resurrect a removed exact window.
         win_possible.refine_reachability(&side_possible);
 
-        blank_side_possible =
-            blank_side_possible_from_blank(prog, &win_possible);
-        color_tail_count =
-            color_tail_count_from_blank(prog, &win_possible);
-        side_possible.refine_zero_tail_pairs(&color_tail_count);
+        blank_side_possible = blank_side_possible_from_blank_with_any(
+            prog,
+            instrs,
+            &win_possible,
+            &crossing_left_any,
+            &crossing_right_any,
+        );
+        // `color_tail_count` is already computed for this final window graph
+        // at the beginning of the iteration, and was already used to refine
+        // `side_possible`'s zero-tail pairs. Do not rerun its fixed point.
         pair_tail_presence =
-            pair_tail_presence_from_blank(prog, &win_possible);
+            pair_tail_presence_from_blank(prog, instrs, &win_possible);
 
         // The smaller final window graph can sharpen all of the cheap filters
         // too, so recheck only the targets that survived their first pass.
@@ -4588,12 +4614,16 @@ where
         });
 
         if configs.is_empty() {
-            return Refuted(0);
+            return None;
         }
     }
 
-    let side_triple_possible = prog
-        .side_triple_possible_from_blank(&win_possible, &side_possible);
+    let side_triple_possible =
+        Prog::<s, c>::side_triple_possible_from_blank(
+            instrs,
+            &win_possible,
+            &side_possible,
+        );
 
     // Check the cheaper independent triple domain before constructing the
     // cross-side product. If it already rejects every target, the joint
@@ -4603,11 +4633,12 @@ where
     });
 
     if configs.is_empty() {
-        return Refuted(0);
+        return None;
     }
 
-    let joint_side_triple_possible = prog
-        .joint_side_triple_possible_from_blank(
+    let joint_side_triple_possible =
+        Prog::<s, c>::joint_side_triple_possible_from_blank(
+            instrs,
             &win_possible,
             &side_possible,
         );
@@ -4625,9 +4656,43 @@ where
     });
 
     if configs.is_empty() {
-        return Refuted(0);
+        return None;
     }
 
+    Some(BkwPrepared {
+        configs,
+        win_possible,
+        radius2_possible,
+        side_possible,
+        side_triple_possible,
+        joint_side_triple_possible,
+        side_prefix_possible,
+        joint_short_possible,
+        joint_side_prefix_possible,
+        joint_side_word_prefix_possible,
+        blank_side_possible,
+        color_tail_count,
+        pair_tail_presence,
+        forbid_left,
+        forbid_right,
+        left_fresh_zero,
+        right_fresh_zero,
+        left_forced_blank,
+        right_forced_blank,
+    })
+}
+
+fn cant_reach_once<
+    const s: usize,
+    const c: usize,
+    const CYCLE_ANALYSIS: bool,
+>(
+    prepared: &BkwPrepared<s, c>,
+    steps: Steps,
+    entrypoints: &Entrypoints,
+    use_exact_seen: bool,
+) -> BackwardResult {
+    let mut configs = prepared.configs.clone();
     let mut blanks = get_blanks(&configs);
 
     // In cycle mode, exact repeats are ordinary graph cycles and can be
@@ -4717,24 +4782,7 @@ where
             step,
             &mut overflow_cycle_history,
             &mut blanks,
-            &win_possible,
-            &radius2_possible,
-            &side_possible,
-            &side_triple_possible,
-            &joint_side_triple_possible,
-            &side_prefix_possible,
-            &joint_short_possible,
-            &joint_side_prefix_possible,
-            &joint_side_word_prefix_possible,
-            &blank_side_possible,
-            &color_tail_count,
-            &pair_tail_presence,
-            &forbid_left,
-            &forbid_right,
-            left_fresh_zero,
-            right_fresh_zero,
-            left_forced_blank,
-            right_forced_blank,
+            prepared,
         ) {
             Err(err) => return err,
             Ok(stepped) => stepped,
@@ -5075,7 +5123,6 @@ fn window_color_parity_possible<const S: usize, const C: usize>(
     possible_vectors & required != 0
 }
 
-#[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
 fn step_instrs<
     const s: usize,
     const c: usize,
@@ -5086,26 +5133,30 @@ fn step_instrs<
     step: Steps,
     overflow_cycle_history: &mut OverflowCycleHistory,
     blanks: &mut BlankStates,
-    win_possible: &WinPossible<s, c>,
-    radius2_possible: &Radius2Possible<s, c>,
-    side_possible: &SidePossible<s, c>,
-    side_triple_possible: &SideTriplePossible<s, c>,
-    joint_side_triple_possible: &JointSideTriplePossible<s, c>,
-    side_prefix_possible: &SidePrefixPossible<s, c>,
-    joint_short_possible: &JointShortPossible<s, c>,
-    joint_side_prefix_possible: &JointSidePrefixPossible<s, c>,
-    joint_side_word_prefix_possible: &JointSideWordPrefixPossible<s, c>,
-    blank_side_possible: &BlankSidePossible<s, c>,
-    color_tail_count: &ColorTailCountPossible<s, c>,
-    pair_tail_presence: &PairTailPresencePossible<s, c>,
-    forbid_left: &[bool; c],
-    forbid_right: &[bool; c],
-    left_fresh_zero: bool,
-    right_fresh_zero: bool,
-    left_forced_blank: bool,
-    right_forced_blank: bool,
+    prepared: &BkwPrepared<s, c>,
     stepped: &mut Configs,
 ) -> Result<(), BackwardResult> {
+    let win_possible = &prepared.win_possible;
+    let radius2_possible = &prepared.radius2_possible;
+    let side_possible = &prepared.side_possible;
+    let side_triple_possible = &prepared.side_triple_possible;
+    let joint_side_triple_possible =
+        &prepared.joint_side_triple_possible;
+    let side_prefix_possible = &prepared.side_prefix_possible;
+    let joint_short_possible = &prepared.joint_short_possible;
+    let joint_side_prefix_possible =
+        &prepared.joint_side_prefix_possible;
+    let joint_side_word_prefix_possible =
+        &prepared.joint_side_word_prefix_possible;
+    let blank_side_possible = &prepared.blank_side_possible;
+    let color_tail_count = &prepared.color_tail_count;
+    let pair_tail_presence = &prepared.pair_tail_presence;
+    let forbid_left = &prepared.forbid_left;
+    let forbid_right = &prepared.forbid_right;
+    let left_fresh_zero = prepared.left_fresh_zero;
+    let right_fresh_zero = prepared.right_fresh_zero;
+    let left_forced_blank = prepared.left_forced_blank;
+    let right_forced_blank = prepared.right_forced_blank;
     for (color, shift, state) in instrs {
         let instr = (color, shift, state);
         let growth = CYCLE_ANALYSIS
@@ -5230,7 +5281,6 @@ fn step_instrs<
     Ok(())
 }
 
-#[expect(clippy::fn_params_excessive_bools, clippy::too_many_arguments)]
 fn step_configs<
     const s: usize,
     const c: usize,
@@ -5240,24 +5290,7 @@ fn step_configs<
     step: Steps,
     overflow_cycle_history: &mut OverflowCycleHistory,
     blanks: &mut BlankStates,
-    win_possible: &WinPossible<s, c>,
-    radius2_possible: &Radius2Possible<s, c>,
-    side_possible: &SidePossible<s, c>,
-    side_triple_possible: &SideTriplePossible<s, c>,
-    joint_side_triple_possible: &JointSideTriplePossible<s, c>,
-    side_prefix_possible: &SidePrefixPossible<s, c>,
-    joint_short_possible: &JointShortPossible<s, c>,
-    joint_side_prefix_possible: &JointSidePrefixPossible<s, c>,
-    joint_side_word_prefix_possible: &JointSideWordPrefixPossible<s, c>,
-    blank_side_possible: &BlankSidePossible<s, c>,
-    color_tail_count: &ColorTailCountPossible<s, c>,
-    pair_tail_presence: &PairTailPresencePossible<s, c>,
-    forbid_left: &[bool; c],
-    forbid_right: &[bool; c],
-    left_fresh_zero: bool,
-    right_fresh_zero: bool,
-    left_forced_blank: bool,
-    right_forced_blank: bool,
+    prepared: &BkwPrepared<s, c>,
 ) -> Result<Configs, BackwardResult> {
     let mut stepped = Configs::new();
 
@@ -5277,24 +5310,7 @@ fn step_configs<
                 step,
                 overflow_cycle_history,
                 blanks,
-                win_possible,
-                radius2_possible,
-                side_possible,
-                side_triple_possible,
-                joint_side_triple_possible,
-                side_prefix_possible,
-                joint_short_possible,
-                joint_side_prefix_possible,
-                joint_side_word_prefix_possible,
-                blank_side_possible,
-                color_tail_count,
-                pair_tail_presence,
-                forbid_left,
-                forbid_right,
-                left_fresh_zero,
-                right_fresh_zero,
-                left_forced_blank,
-                right_forced_blank,
+                prepared,
                 &mut stepped,
             )?;
         }
@@ -5309,24 +5325,7 @@ fn step_configs<
                 step,
                 overflow_cycle_history,
                 blanks,
-                win_possible,
-                radius2_possible,
-                side_possible,
-                side_triple_possible,
-                joint_side_triple_possible,
-                side_prefix_possible,
-                joint_short_possible,
-                joint_side_prefix_possible,
-                joint_side_word_prefix_possible,
-                blank_side_possible,
-                color_tail_count,
-                pair_tail_presence,
-                forbid_left,
-                forbid_right,
-                left_fresh_zero,
-                right_fresh_zero,
-                left_forced_blank,
-                right_forced_blank,
+                prepared,
                 &mut stepped,
             )?;
         }
@@ -5337,24 +5336,7 @@ fn step_configs<
             step,
             overflow_cycle_history,
             blanks,
-            win_possible,
-            radius2_possible,
-            side_possible,
-            side_triple_possible,
-            joint_side_triple_possible,
-            side_prefix_possible,
-            joint_short_possible,
-            joint_side_prefix_possible,
-            joint_side_word_prefix_possible,
-            blank_side_possible,
-            color_tail_count,
-            pair_tail_presence,
-            forbid_left,
-            forbid_right,
-            left_fresh_zero,
-            right_fresh_zero,
-            left_forced_blank,
-            right_forced_blank,
+            prepared,
             &mut stepped,
         )?;
     }
@@ -5416,35 +5398,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         entrypoints
     }
 
-    /// Returns (writes_blank_on_r, writes_blank_on_l):
-    /// - writes_blank_on_r is true if any transition writes 0 and moves Right.
-    /// - writes_blank_on_l is true if any transition writes 0 and moves Left.
-    ///
-    /// This enables one-sided "fresh blank" invariants: if blank is never
-    /// written on R-moves, then any 0 to the left of the head must be
-    /// unvisited; similarly for the right side with L-moves.
-    fn blank_writes_by_shift(&self) -> (bool, bool) {
-        let mut on_r = false;
-        let mut on_l = false;
-
-        for (_, &(print, shift, _)) in self.iter() {
-            if print != 0 {
-                continue;
-            }
-            if shift {
-                on_r = true;
-            } else {
-                on_l = true;
-            }
-
-            if on_r && on_l {
-                break;
-            }
-        }
-
-        (on_r, on_l)
-    }
-
     /// Compute a sound over-approximation of the parity of the number of
     /// nonblank tape cells in each state, starting from the blank tape.
     ///
@@ -5453,33 +5406,38 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// and this one parity bit, so every concrete run maps to a path in this
     /// finite abstract graph. Consequently, any absent parity bit is a valid
     /// invariant for backward pruning.
-    fn nonblank_parity_from_blank(&self) -> NonblankParity<s> {
+    fn nonblank_parity_from_blank(
+        instrs: &BkwInstrs<s, c>,
+    ) -> NonblankParity<s> {
         let mut possible = [0_u8; s];
         possible[0] = 0b01; // initial state, entirely blank tape
 
         loop {
             let mut changed = false;
 
-            for ((state, read), &(print, _, next_state)) in self.iter()
-            {
-                let state = state as usize;
-                let next_state = next_state as usize;
+            #[expect(clippy::disallowed_names)]
+            for (state, row) in instrs.instrs.iter().enumerate() {
+                for (read, &instruction) in row.iter().enumerate() {
+                    let Some((print, _, next_state)) = instruction
+                    else {
+                        continue;
+                    };
+                    let source = possible[state];
+                    if source == 0 {
+                        continue;
+                    }
 
-                let source = possible[state];
-                if source == 0 {
-                    continue;
+                    let flips = (read == 0) != (print == 0);
+                    let reached = if flips {
+                        ((source & 0b01) << 1) | ((source & 0b10) >> 1)
+                    } else {
+                        source
+                    };
+
+                    let old = possible[next_state];
+                    possible[next_state] |= reached;
+                    changed |= possible[next_state] != old;
                 }
-
-                let flips = (read == 0) != (print == 0);
-                let reached = if flips {
-                    ((source & 0b01) << 1) | ((source & 0b10) >> 1)
-                } else {
-                    source
-                };
-
-                let old = possible[next_state];
-                possible[next_state] |= reached;
-                changed |= possible[next_state] != old;
             }
 
             if !changed {
@@ -5488,49 +5446,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         }
 
         NonblankParity { possible }
-    }
-
-    /// Compute a *sound* shift-side restriction for each color.
-    ///
-    /// For a non-blank color `k != 0`:
-    /// - If the machine never writes `k` on an L-move, then `k` can never
-    ///   appear to the **right** of the head in any run from the
-    ///   blank tape.
-    /// - If the machine never writes `k` on an R-move, then `k` can
-    ///   never appear to the **left** of the head in any run from the
-    ///   blank tape.
-    ///
-    /// This is the classic invariant used in "shift-side" analysis:
-    /// to get a symbol to the opposite side of the head you must
-    /// *cross* it, and crossing requires leaving it behind via a move
-    /// in that direction. If that direction never writes the symbol,
-    /// the symbol cannot survive the crossing.
-    fn shift_side_forbidden(&self) -> ([bool; c], [bool; c]) {
-        // right_writes[k] == true if *any* transition writes k and moves R
-        // left_writes[k]  == true if *any* transition writes k and moves L
-        let mut left_writes = [false; c];
-        let mut right_writes = [false; c];
-
-        for (_, &(print, shift, _)) in self.iter() {
-            (if shift {
-                &mut right_writes
-            } else {
-                &mut left_writes
-            })[print as usize] = true;
-        }
-
-        let mut forbid_left = [false; c];
-        let mut forbid_right = [false; c];
-
-        // Never forbid blanks (0) on either side.
-        for k in 1..c {
-            // If k is never written on an R-move, it cannot appear on the left.
-            forbid_left[k] = !right_writes[k];
-            // If k is never written on an L-move, it cannot appear on the right.
-            forbid_right[k] = !left_writes[k];
-        }
-
-        (forbid_left, forbid_right)
     }
 
     /// Compute a sound over-approximation of which *immediate neighbor
@@ -5546,13 +5461,9 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// over-approximation, and therefore safe for pruning: if a
     /// neighbor color is *not* possible here, it is not possible in any
     /// concrete run from blank.
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::excessive_nesting,
-        clippy::cognitive_complexity
-    )]
+    #[expect(clippy::cast_possible_truncation)]
     fn win_possible_from_blank(
-        &self,
+        instrs: &BkwInstrs<s, c>,
         forbid_left: &[bool; c],
         forbid_right: &[bool; c],
     ) -> WinPossible<s, c> {
@@ -5580,25 +5491,13 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
         let total = s * 2 * c * c * c * 2;
 
-        // Each forward worklist stores the complete set of abstract residue
-        // states known at one local-window state.  `processed` records which
-        // bits have already been propagated.  If several predecessors add new
-        // residue bits before a queued window is revisited, they are handled in
-        // one batch rather than as separate queue entries.
-        macro_rules! enqueue_mask {
-            ($visited:ident, $queued:ident, $queue:ident, $n:expr, $mask:expr) => {{
-                let n = $n;
-                let mask = $mask;
-                let id = idx::<c, s>(n.0, n.1, n.2, n.3, n.4, n.5);
-                let added = mask & !$visited[id];
-                if added != 0 {
-                    $visited[id] |= added;
-                    if !$queued[id] {
-                        $queued[id] = true;
-                        $queue.push_back(n);
-                    }
-                }
-            }};
+        // All three residue projections have the same abstract control graph.
+        // Keep their bitsets independent, but schedule one shared worklist.
+        #[derive(Clone, Copy, Default)]
+        struct Residues {
+            parity: u8,
+            mod3: u16,
+            colors: u64,
         }
 
         const fn xor_side_parity_mask(side_mask: u8, xor: u8) -> u8 {
@@ -5663,292 +5562,170 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             color_parity_any: [[0; c]; s],
         };
 
-        // Four-bit mask per abstract window state. Each bit is one exact
-        // `(left-side parity, right-side parity)` combination. Propagate all
-        // newly discovered combinations for a window together.
-        let mut visited = vec![0_u8; total];
-        let mut processed = vec![0_u8; total];
+        let mut visited = vec![Residues::default(); total];
+        let mut processed = vec![Residues::default(); total];
         let mut queued = vec![false; total];
         let mut q = std::collections::VecDeque::new();
         let initial = idx::<c, s>(0, 1, 0, 0, 0, 1);
-        visited[initial] = 0b0001;
+        visited[initial] = Residues {
+            parity: 1,
+            mod3: 1,
+            colors: u64::from(
+                WinPossible::<s, c>::color_parity_enabled(),
+            ),
+        };
         queued[initial] = true;
         q.push_back((0, 1, 0, 0, 0, 1));
+
+        let push =
+            |next: (usize, usize, usize, usize, usize, usize),
+             mask: Residues,
+             visited: &mut [Residues],
+             queued: &mut [bool],
+             q: &mut std::collections::VecDeque<_>| {
+                let id = idx::<c, s>(
+                    next.0, next.1, next.2, next.3, next.4, next.5,
+                );
+                let entry = &mut visited[id];
+                let changed = mask.parity & !entry.parity != 0
+                    || mask.mod3 & !entry.mod3 != 0
+                    || mask.colors & !entry.colors != 0;
+                if changed {
+                    entry.parity |= mask.parity;
+                    entry.mod3 |= mask.mod3;
+                    entry.colors |= mask.colors;
+                    if !queued[id] {
+                        queued[id] = true;
+                        q.push_back(next);
+                    }
+                }
+            };
 
         while let Some((st, lb, l, sc, r, rb)) = q.pop_front() {
             let id = idx::<c, s>(st, lb, l, sc, r, rb);
             queued[id] = false;
-            let fresh = visited[id] & !processed[id];
-            if fresh == 0 {
+            let fresh = Residues {
+                parity: visited[id].parity & !processed[id].parity,
+                mod3: visited[id].mod3 & !processed[id].mod3,
+                colors: visited[id].colors & !processed[id].colors,
+            };
+            if fresh.parity == 0 && fresh.mod3 == 0 && fresh.colors == 0
+            {
                 continue;
             }
-            processed[id] |= fresh;
+            processed[id].parity |= fresh.parity;
+            processed[id].mod3 |= fresh.mod3;
+            processed[id].colors |= fresh.colors;
 
             possible.right[st][sc][l] |= 1_u64 << r;
             possible.left[st][sc][r] |= 1_u64 << l;
             possible.any[st][sc] = true;
-
-            let window_index =
+            let window =
                 WinPossible::<s, c>::window_index(st, sc, l, r);
+            possible.side_parity[window] |= fresh.parity;
+            possible.side_parity_right[st][sc][l] |= fresh.parity;
+            possible.side_parity_left[st][sc][r] |= fresh.parity;
+            possible.side_parity_any[st][sc] |= fresh.parity;
+            possible.side_mod3[window] |= fresh.mod3;
+            possible.side_mod3_right[st][sc][l] |= fresh.mod3;
+            possible.side_mod3_left[st][sc][r] |= fresh.mod3;
+            possible.side_mod3_any[st][sc] |= fresh.mod3;
+            possible.color_parity[window] |= fresh.colors;
+            possible.color_parity_right[st][sc][l] |= fresh.colors;
+            possible.color_parity_left[st][sc][r] |= fresh.colors;
+            possible.color_parity_any[st][sc] |= fresh.colors;
 
-            possible.side_parity[window_index] |= fresh;
-            possible.side_parity_right[st][sc][l] |= fresh;
-            possible.side_parity_left[st][sc][r] |= fresh;
-            possible.side_parity_any[st][sc] |= fresh;
-
-            let Some(&(print, shift, next_state)) =
-                self.get(&(st as State, sc as Color))
+            let Some((print, shift, next_state)) = instrs.get(st, sc)
             else {
                 continue;
             };
-
-            let p = print as usize;
-            let ns = next_state as usize;
-
-            if shift {
-                let new_lb = usize::from(lb == 1 && l == 0);
-                let xor = u8::from(p != 0) | (u8::from(r != 0) << 1);
-                let next_mask = xor_side_parity_mask(fresh, xor);
-
-                if rb == 1 {
-                    enqueue_mask!(
-                        visited,
-                        queued,
-                        q,
-                        (ns, new_lb, p, r, 0, 1),
-                        next_mask
-                    );
-                } else {
-                    for new_r in 0..c {
-                        if forbid_right[new_r] {
-                            continue;
-                        }
-                        enqueue_mask!(
-                            visited,
-                            queued,
-                            q,
-                            (ns, new_lb, p, r, new_r, 0),
-                            next_mask
-                        );
-                    }
-                }
-            } else {
-                let new_rb = usize::from(rb == 1 && r == 0);
-                let xor = u8::from(l != 0) | (u8::from(p != 0) << 1);
-                let next_mask = xor_side_parity_mask(fresh, xor);
-
-                if lb == 1 {
-                    enqueue_mask!(
-                        visited,
-                        queued,
-                        q,
-                        (ns, 1, 0, l, p, new_rb),
-                        next_mask
-                    );
-                } else {
-                    for new_l in 0..c {
-                        if forbid_left[new_l] {
-                            continue;
-                        }
-                        enqueue_mask!(
-                            visited,
-                            queued,
-                            q,
-                            (ns, 0, new_l, l, p, new_rb),
-                            next_mask
-                        );
-                    }
-                }
-            }
-        }
-
-        // Joint left/right nonblank counts modulo 3. As above, one queue item
-        // represents all newly reached residues for its abstract local window.
-        let mut mod3_visited = vec![0_u16; total];
-        let mut mod3_processed = vec![0_u16; total];
-        let mut mod3_queued = vec![false; total];
-        let mut mod3_q = std::collections::VecDeque::new();
-        mod3_visited[initial] = 1;
-        mod3_queued[initial] = true;
-        mod3_q.push_back((0, 1, 0, 0, 0, 1));
-
-        while let Some((st, lb, l, sc, r, rb)) = mod3_q.pop_front() {
-            let id = idx::<c, s>(st, lb, l, sc, r, rb);
-            mod3_queued[id] = false;
-            let fresh = mod3_visited[id] & !mod3_processed[id];
-            if fresh == 0 {
-                continue;
-            }
-            mod3_processed[id] |= fresh;
-
-            let residue_index =
-                WinPossible::<s, c>::window_index(st, sc, l, r);
-            possible.side_mod3[residue_index] |= fresh;
-            possible.side_mod3_right[st][sc][l] |= fresh;
-            possible.side_mod3_left[st][sc][r] |= fresh;
-            possible.side_mod3_any[st][sc] |= fresh;
-
-            let Some(&(print, shift, next_state)) =
-                self.get(&(st as State, sc as Color))
-            else {
-                continue;
-            };
-
-            let p = print as usize;
-            let ns = next_state as usize;
-
-            if shift {
-                let new_lb = usize::from(lb == 1 && l == 0);
-                let left_add = u8::from(p != 0);
-                let right_add = 2 * u8::from(r != 0); // -1 mod 3
-                let next_mask =
-                    shift_mod3_mask(fresh, left_add, right_add);
-
-                if rb == 1 {
-                    enqueue_mask!(
-                        mod3_visited,
-                        mod3_queued,
-                        mod3_q,
-                        (ns, new_lb, p, r, 0, 1),
-                        next_mask
-                    );
-                } else {
-                    for new_r in 0..c {
-                        if forbid_right[new_r] {
-                            continue;
-                        }
-                        enqueue_mask!(
-                            mod3_visited,
-                            mod3_queued,
-                            mod3_q,
-                            (ns, new_lb, p, r, new_r, 0),
-                            next_mask
-                        );
-                    }
-                }
-            } else {
-                let new_rb = usize::from(rb == 1 && r == 0);
-                let left_add = 2 * u8::from(l != 0); // -1 mod 3
-                let right_add = u8::from(p != 0);
-                let next_mask =
-                    shift_mod3_mask(fresh, left_add, right_add);
-
-                if lb == 1 {
-                    enqueue_mask!(
-                        mod3_visited,
-                        mod3_queued,
-                        mod3_q,
-                        (ns, 1, 0, l, p, new_rb),
-                        next_mask
-                    );
-                } else {
-                    for new_l in 0..c {
-                        if forbid_left[new_l] {
-                            continue;
-                        }
-                        enqueue_mask!(
-                            mod3_visited,
-                            mod3_queued,
-                            mod3_q,
-                            (ns, 0, new_l, l, p, new_rb),
-                            next_mask
-                        );
-                    }
-                }
-            }
-        }
-
-        // Global per-color parity. A transition XORs the vector by a fixed
-        // color mask, so the complete set of newly reached vectors can likewise
-        // be permuted and propagated as one u64 bitset.
-        if WinPossible::<s, c>::color_parity_enabled() {
-            let mut color_visited = vec![0_u64; total];
-            let mut color_processed = vec![0_u64; total];
-            let mut color_queued = vec![false; total];
-            let mut color_q = std::collections::VecDeque::new();
-            color_visited[initial] = 1;
-            color_queued[initial] = true;
-            color_q.push_back((0, 1, 0, 0, 0, 1));
-
-            while let Some((st, lb, l, sc, r, rb)) = color_q.pop_front()
-            {
-                let id = idx::<c, s>(st, lb, l, sc, r, rb);
-                color_queued[id] = false;
-                let fresh = color_visited[id] & !color_processed[id];
-                if fresh == 0 {
-                    continue;
-                }
-                color_processed[id] |= fresh;
-
-                let vector_index =
-                    WinPossible::<s, c>::window_index(st, sc, l, r);
-                possible.color_parity[vector_index] |= fresh;
-                possible.color_parity_right[st][sc][l] |= fresh;
-                possible.color_parity_left[st][sc][r] |= fresh;
-                possible.color_parity_any[st][sc] |= fresh;
-
-                let Some(&(print, shift, next_state)) =
-                    self.get(&(st as State, sc as Color))
-                else {
-                    continue;
-                };
-
-                let p = print as usize;
-                let ns = next_state as usize;
-                let mut xor = 0_u8;
+            let mut color_xor = 0_u8;
+            if WinPossible::<s, c>::color_parity_enabled() {
                 if sc != 0 {
-                    xor ^= 1_u8 << (sc - 1);
+                    color_xor ^= 1_u8 << (sc - 1);
                 }
-                if p != 0 {
-                    xor ^= 1_u8 << (p - 1);
+                if print != 0 {
+                    color_xor ^= 1_u8 << (print - 1);
                 }
-                let next_mask = xor_color_parity_mask(fresh, xor);
-
-                if shift {
-                    let new_lb = usize::from(lb == 1 && l == 0);
-                    if rb == 1 {
-                        enqueue_mask!(
-                            color_visited,
-                            color_queued,
-                            color_q,
-                            (ns, new_lb, p, r, 0, 1),
-                            next_mask
-                        );
-                    } else {
-                        for new_r in 0..c {
-                            if forbid_right[new_r] {
-                                continue;
-                            }
-                            enqueue_mask!(
-                                color_visited,
-                                color_queued,
-                                color_q,
-                                (ns, new_lb, p, r, new_r, 0),
-                                next_mask
+            }
+            if shift {
+                let next = Residues {
+                    parity: xor_side_parity_mask(
+                        fresh.parity,
+                        u8::from(print != 0) | (u8::from(r != 0) << 1),
+                    ),
+                    mod3: shift_mod3_mask(
+                        fresh.mod3,
+                        u8::from(print != 0),
+                        2 * u8::from(r != 0),
+                    ),
+                    colors: xor_color_parity_mask(
+                        fresh.colors,
+                        color_xor,
+                    ),
+                };
+                let new_lb = usize::from(lb == 1 && l == 0);
+                if rb == 1 {
+                    push(
+                        (next_state, new_lb, print, r, 0, 1),
+                        next,
+                        &mut visited,
+                        &mut queued,
+                        &mut q,
+                    );
+                } else {
+                    for new_right in 0..c {
+                        if !forbid_right[new_right] {
+                            push(
+                                (
+                                    next_state, new_lb, print, r,
+                                    new_right, 0,
+                                ),
+                                next,
+                                &mut visited,
+                                &mut queued,
+                                &mut q,
                             );
                         }
                     }
+                }
+            } else {
+                let next = Residues {
+                    parity: xor_side_parity_mask(
+                        fresh.parity,
+                        u8::from(l != 0) | (u8::from(print != 0) << 1),
+                    ),
+                    mod3: shift_mod3_mask(
+                        fresh.mod3,
+                        2 * u8::from(l != 0),
+                        u8::from(print != 0),
+                    ),
+                    colors: xor_color_parity_mask(
+                        fresh.colors,
+                        color_xor,
+                    ),
+                };
+                let new_rb = usize::from(rb == 1 && r == 0);
+                if lb == 1 {
+                    push(
+                        (next_state, 1, 0, l, print, new_rb),
+                        next,
+                        &mut visited,
+                        &mut queued,
+                        &mut q,
+                    );
                 } else {
-                    let new_rb = usize::from(rb == 1 && r == 0);
-                    if lb == 1 {
-                        enqueue_mask!(
-                            color_visited,
-                            color_queued,
-                            color_q,
-                            (ns, 1, 0, l, p, new_rb),
-                            next_mask
-                        );
-                    } else {
-                        for new_l in 0..c {
-                            if forbid_left[new_l] {
-                                continue;
-                            }
-                            enqueue_mask!(
-                                color_visited,
-                                color_queued,
-                                color_q,
-                                (ns, 0, new_l, l, p, new_rb),
-                                next_mask
+                    for new_left in 0..c {
+                        if !forbid_left[new_left] {
+                            push(
+                                (
+                                    next_state, 0, new_left, l, print,
+                                    new_rb,
+                                ),
+                                next,
+                                &mut visited,
+                                &mut queued,
+                                &mut q,
                             );
                         }
                     }
@@ -5975,7 +5752,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// conservative (the moved-over neighbor may remain in the summary), while
     /// the newly pushed boundary pair is exact for the source window.
     fn side_possible_from_blank(
-        &self,
+        instrs: &BkwInstrs<s, c>,
         win_possible: &WinPossible<s, c>,
     ) -> SidePossible<s, c> {
         assert!(c <= 64, "side bitmasks support at most 64 colors");
@@ -6059,15 +5836,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             changed
         }
 
-        let mut trans = [[None; c]; s];
-        for ((state, read), &(print, shift, next_state)) in self.iter()
-        {
-            let st = state as usize;
-            let sc = read as usize;
-            let pr = print as usize;
-            let ns = next_state as usize;
-            trans[st][sc] = Some((pr, shift, ns));
-        }
+        let trans = &instrs.instrs;
 
         // Worklist fixed point: only revisit an exact local window when its
         // whole-side summary actually gains information. The previous
@@ -6170,7 +5939,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// special deletion: retaining triples that involved the consumed nearest
     /// cell is an over-approximation and cannot make the backward proof unsound.
     fn side_triple_possible_from_blank(
-        &self,
+        instrs: &BkwInstrs<s, c>,
         windows: &WinPossible<s, c>,
         sides: &SidePossible<s, c>,
     ) -> SideTriplePossible<s, c> {
@@ -6179,12 +5948,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             return possible;
         }
 
-        let mut trans = [[None; c]; s];
-        for ((state, read), &(print, shift, next_state)) in self.iter()
-        {
-            trans[state as usize][read as usize] =
-                Some((print as usize, shift, next_state as usize));
-        }
+        let trans = &instrs.instrs;
 
         // On the true blank tape, both oriented sides contain 000 everywhere.
         for side in [LEFT_SIDE, RIGHT_SIDE] {
@@ -6345,7 +6109,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// source joint relation, rather than with the global Cartesian product of
     /// the independent side summaries.
     fn joint_side_triple_possible_from_blank(
-        &self,
+        instrs: &BkwInstrs<s, c>,
         windows: &WinPossible<s, c>,
         sides: &SidePossible<s, c>,
     ) -> JointSideTriplePossible<s, c> {
@@ -6354,12 +6118,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             return possible;
         }
 
-        let mut trans = [[None; c]; s];
-        for ((state, read), &(print, shift, next_state)) in self.iter()
-        {
-            trans[state as usize][read as usize] =
-                Some((print as usize, shift, next_state as usize));
-        }
+        let trans = &instrs.instrs;
 
         let blank = JointSideTriplePossible::<s, c>::triple_id(0, 0, 0);
         possible.insert_ids(0, 0, 0, 0, blank, blank);
@@ -6527,20 +6286,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     /// finally degrades to exact blank/dirty status.
     #[expect(clippy::cast_possible_truncation)]
     fn side_run_prefix_possible_from_blank(
-        &self,
+        instrs: &BkwInstrs<s, c>,
         windows: &WinPossible<s, c>,
         sides: &SidePossible<s, c>,
-    ) -> (
-        SidePrefixPossible<s, c>,
-        [[Option<(usize, Shift, usize)>; c]; s],
-        Vec<u64>,
-    ) {
-        let mut trans = [[None; c]; s];
-        for ((state, read), &(print, shift, next_state)) in self.iter()
-        {
-            trans[state as usize][read as usize] =
-                Some((print as usize, shift, next_state as usize));
-        }
+    ) -> (SidePrefixPossible<s, c>, Vec<u64>) {
+        let trans = &instrs.instrs;
 
         // The newly exposed opposite-side neighbor depends only on the exact
         // source window, not on which prefix alternative is being propagated.
@@ -6799,7 +6549,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             }
         }
 
-        (possible, trans, exposed)
+        (possible, exposed)
     }
 
     #[expect(
@@ -7106,16 +6856,11 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 impl<const S: usize, const C: usize> Prog<S, C> {
     #[expect(clippy::cast_possible_truncation)]
     fn joint_short_possible_from_blank(
-        &self,
+        instrs: &BkwInstrs<S, C>,
         windows: &WinPossible<S, C>,
         radius2: &Radius2Possible<S, C>,
     ) -> JointShortPossible<S, C> {
-        let mut trans = [[None; C]; S];
-        for ((state, read), &(print, shift, next_state)) in self.iter()
-        {
-            trans[state as usize][read as usize] =
-                Some((print as usize, shift, next_state as usize));
-        }
+        let trans = &instrs.instrs;
 
         let mut possible = JointShortPossible::new();
         let mut q = VecDeque::new();
@@ -7221,16 +6966,11 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
     #[expect(clippy::cast_possible_truncation)]
     fn joint_side_prefix_possible_from_blank(
-        &self,
+        instrs: &BkwInstrs<S, C>,
         windows: &WinPossible<S, C>,
         track_parity: bool,
     ) -> JointSidePrefixPossible<S, C> {
-        let mut trans = [[None; C]; S];
-        for ((state, read), &(print, shift, next_state)) in self.iter()
-        {
-            trans[state as usize][read as usize] =
-                Some((print as usize, shift, next_state as usize));
-        }
+        let trans = &instrs.instrs;
 
         let mut possible = JointSidePrefixPossible::new(track_parity);
         let mut q = VecDeque::new();
@@ -7582,15 +7322,10 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
     #[expect(clippy::cast_possible_truncation)]
     fn joint_side_word_prefix_possible_from_blank(
-        &self,
+        instrs: &BkwInstrs<S, C>,
         windows: &WinPossible<S, C>,
     ) -> JointSideWordPrefixPossible<S, C> {
-        let mut trans = [[None; C]; S];
-        for ((state, read), &(print, shift, next_state)) in self.iter()
-        {
-            trans[state as usize][read as usize] =
-                Some((print as usize, shift, next_state as usize));
-        }
+        let trans = &instrs.instrs;
 
         let mut possible = JointSideWordPrefixPossible::new();
         let mut q = VecDeque::new();
@@ -12081,7 +11816,8 @@ fn window_child_mask<const S: usize, const C: usize>(
 /// the radius-2 same-cell crossing product.  Clean excursions and larger
 /// alphabets keep the cheaper pop-color-only encoding.
 fn side_excursions<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
+    _prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     push: Shift,
     clean: bool,
@@ -12134,12 +11870,7 @@ fn side_excursions<const S: usize, const C: usize>(
     let pop_shift = !push;
     let exact_nodes = C * S * C * C;
     let mut outcomes = vec![0_u64; exact_nodes * S];
-    let mut trans = [[None; C]; S];
-
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     // For fixed `push`, this maps [state][scan][exact back] to the exact
     // possible front colors of the local window.
@@ -12331,7 +12062,8 @@ fn side_excursions<const S: usize, const C: usize>(
 /// cross through dirty intermediate configurations via `clean` excursions.
 /// The unconstrained side may use arbitrary balanced excursions.
 fn halfblank_slots<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
+    _prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     blank_side: Shift,
     clean: &SideExcursions<S, C>,
@@ -12340,12 +12072,7 @@ fn halfblank_slots<const S: usize, const C: usize>(
     debug_assert!(away.pop.is_some());
 
     let mut possible = [[0_u64; C]; S];
-    let mut trans = [[None; C]; S];
-
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     let mut q = VecDeque::new();
     let away_side = !blank_side;
@@ -12452,7 +12179,8 @@ fn halfblank_slots<const S: usize, const C: usize>(
 /// outward onto the next fresh cell, whose scanned color is exactly 0.  A
 /// direct inward move that does not return is not itself a frontier checkpoint.
 fn frontier_slots<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
+    _prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     frontier_side: Shift,
     inward: &SideExcursions<S, C>,
@@ -12460,12 +12188,7 @@ fn frontier_slots<const S: usize, const C: usize>(
     debug_assert!(inward.pop.is_some());
 
     let mut possible = [[0_u64; C]; S];
-    let mut trans = [[None; C]; S];
-
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     let mut q = VecDeque::new();
 
@@ -12556,6 +12279,7 @@ fn same_cell_crossing_windows_radius1_from_blank<
     const C: usize,
 >(
     prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     left_any: &SideExcursions<S, C>,
     right_any: &SideExcursions<S, C>,
@@ -12563,16 +12287,13 @@ fn same_cell_crossing_windows_radius1_from_blank<
     debug_assert!(left_any.exact_pop.is_some());
     debug_assert!(right_any.exact_pop.is_some());
 
-    let left_frontier = frontier_slots(prog, windows, false, right_any);
-    let right_frontier = frontier_slots(prog, windows, true, left_any);
+    let left_frontier =
+        frontier_slots(prog, instrs, windows, false, right_any);
+    let right_frontier =
+        frontier_slots(prog, instrs, windows, true, left_any);
     let mut possible = [[[0_u64; C]; C]; S];
     let mut q = VecDeque::new();
-    let mut trans = [[None; C]; S];
-
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     let push =
         |st: usize,
@@ -12689,7 +12410,8 @@ fn same_cell_crossing_windows_radius1_from_blank<
 /// `(near, far)`.  Keeping this pair here avoids the old radius-2 seed step
 /// taking a Cartesian product with every possible second-neighbor color.
 fn frontier_pair_slots<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
+    _prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     frontier_side: Shift,
     inward: &SideExcursions<S, C>,
@@ -12698,11 +12420,7 @@ fn frontier_pair_slots<const S: usize, const C: usize>(
     debug_assert!(inward.exact_pop.is_some());
 
     let mut possible = [[0_u64; C]; S];
-    let mut trans = [[None; C]; S];
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     let mut q = VecDeque::new();
     let push = |st: usize,
@@ -12793,6 +12511,7 @@ fn same_cell_crossing_windows_radius2_from_blank<
     const C: usize,
 >(
     prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     left_any: &SideExcursions<S, C>,
     right_any: &SideExcursions<S, C>,
@@ -12802,23 +12521,18 @@ fn same_cell_crossing_windows_radius2_from_blank<
     debug_assert!(right_any.exact_pop.is_some());
 
     let left_frontier =
-        frontier_pair_slots(prog, windows, false, right_any);
+        frontier_pair_slots(prog, instrs, windows, false, right_any);
     let right_frontier =
-        frontier_pair_slots(prog, windows, true, left_any);
+        frontier_pair_slots(prog, instrs, windows, true, left_any);
     let window_count = S * C * C * C;
     let mut possible2 = vec![0_u64; window_count];
     let mut pending = vec![0_u64; window_count];
     let mut q = VecDeque::<usize>::new();
-    let mut trans = [[None; C]; S];
-
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     let window_index =
         |st: usize, scan: usize, left: usize, right: usize| {
-            (((st * C + scan) * C + left) * C) + right
+            bkw_window_index::<C>(st, scan, left, right)
         };
 
     let push = |st: usize,
@@ -12986,18 +12700,28 @@ fn refine_windows_by_same_cell_crossings<
     const C: usize,
 >(
     prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &mut WinPossible<S, C>,
+    first_any: Option<(SideExcursions<S, C>, SideExcursions<S, C>)>,
 ) -> (
     SideExcursions<S, C>,
     SideExcursions<S, C>,
     Radius2Possible<S, C>,
 ) {
+    let mut initial = first_any;
     loop {
-        let left_any = side_excursions(prog, windows, false, false);
-        let right_any = side_excursions(prog, windows, true, false);
+        let (left_any, right_any) =
+            initial.take().unwrap_or_else(|| {
+                (
+                    side_excursions(
+                        prog, instrs, windows, false, false,
+                    ),
+                    side_excursions(prog, instrs, windows, true, false),
+                )
+            });
 
         let crossing1 = same_cell_crossing_windows_radius1_from_blank(
-            prog, windows, &left_any, &right_any,
+            prog, instrs, windows, &left_any, &right_any,
         );
         if windows.refine_crossing_reachability_relation(&crossing1) {
             continue;
@@ -13005,7 +12729,7 @@ fn refine_windows_by_same_cell_crossings<
 
         if C <= 8 {
             let radius2 = same_cell_crossing_windows_radius2_from_blank(
-                prog, windows, &left_any, &right_any,
+                prog, instrs, windows, &left_any, &right_any,
             );
             let crossing2 = radius2.radius1_projection();
             if windows.refine_crossing_reachability_relation(&crossing2)
@@ -13028,17 +12752,34 @@ fn refine_windows_by_crossings_and_sides<
     const C: usize,
 >(
     prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &mut WinPossible<S, C>,
+    first_crossings: Option<(
+        SideExcursions<S, C>,
+        SideExcursions<S, C>,
+        Radius2Possible<S, C>,
+    )>,
+    first_any: Option<(SideExcursions<S, C>, SideExcursions<S, C>)>,
 ) -> (
     SidePossible<S, C>,
     SideExcursions<S, C>,
     SideExcursions<S, C>,
     Radius2Possible<S, C>,
 ) {
+    let mut initial = first_crossings;
+    let mut initial_any = first_any;
     loop {
         let (left_any, right_any, radius2) =
-            refine_windows_by_same_cell_crossings(prog, windows);
-        let sides = prog.side_possible_from_blank(windows);
+            initial.take().unwrap_or_else(|| {
+                refine_windows_by_same_cell_crossings(
+                    prog,
+                    instrs,
+                    windows,
+                    initial_any.take(),
+                )
+            });
+        let sides =
+            Prog::<S, C>::side_possible_from_blank(instrs, windows);
         if !windows.refine_side_reachability_relation(&sides) {
             return (sides, left_any, right_any, radius2);
         }
@@ -13054,7 +12795,8 @@ fn refine_windows_by_crossings_and_sides<
 /// color from `2+` leaves either `1` or `2+`. L moves are symmetric.
 #[expect(clippy::cast_possible_truncation)]
 fn color_tail_count_from_blank<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
+    _prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
 ) -> ColorTailCountPossible<S, C> {
     fn add_neighbor(count: u8, matches: bool) -> u8 {
@@ -13077,11 +12819,7 @@ fn color_tail_count_from_blank<const S: usize, const C: usize>(
         }
     }
 
-    let mut trans = [[None; C]; S];
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     let mut possible = ColorTailCountPossible::new();
     let mut q = VecDeque::new();
@@ -13203,7 +12941,8 @@ fn color_tail_count_from_blank<const S: usize, const C: usize>(
 /// runs, while the stored 16-bit mask retains all same-run correlations.
 #[expect(clippy::similar_names)]
 fn pair_tail_presence_from_blank<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
+    _prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
 ) -> PairTailPresencePossible<S, C> {
     fn residual_mask(
@@ -13220,11 +12959,7 @@ fn pair_tail_presence_from_blank<const S: usize, const C: usize>(
         }
     }
 
-    let mut trans = [[None; C]; S];
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     let mut possible = PairTailPresencePossible::new();
     if C < 3 {
@@ -13380,14 +13115,11 @@ fn pair_tail_presence_from_blank<const S: usize, const C: usize>(
 /// The global `WinPossible` relation is used only as a sound cap on newly
 /// exposed neighbor colors.
 fn joint_blank_status_from_blank<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
+    _prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
 ) -> JointBlankPossible<S, C> {
-    let mut trans = [[None; C]; S];
-    for ((st, co), &(print, shift, tr)) in prog.iter() {
-        trans[st as usize][co as usize] =
-            Some((print as usize, shift, tr as usize));
-    }
+    let trans = &instrs.instrs;
 
     let mut possible = JointBlankPossible::new();
     let mut q = VecDeque::new();
@@ -13611,35 +13343,39 @@ fn blank_side_possible_from_blank_with_any<
     const C: usize,
 >(
     prog: &Prog<S, C>,
+    instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     left_any: &SideExcursions<S, C>,
     right_any: &SideExcursions<S, C>,
 ) -> BlankSidePossible<S, C> {
-    let left_clean = side_excursions(prog, windows, false, true);
-    let right_clean = side_excursions(prog, windows, true, true);
+    let left_clean =
+        side_excursions(prog, instrs, windows, false, true);
+    let right_clean =
+        side_excursions(prog, instrs, windows, true, true);
 
-    let left_half =
-        halfblank_slots(prog, windows, false, &left_clean, right_any);
-    let right_half =
-        halfblank_slots(prog, windows, true, &right_clean, left_any);
-    let joint = joint_blank_status_from_blank(prog, windows);
+    let left_half = halfblank_slots(
+        prog,
+        instrs,
+        windows,
+        false,
+        &left_clean,
+        right_any,
+    );
+    let right_half = halfblank_slots(
+        prog,
+        instrs,
+        windows,
+        true,
+        &right_clean,
+        left_any,
+    );
+    let joint = joint_blank_status_from_blank(prog, instrs, windows);
 
     BlankSidePossible {
         left_half,
         right_half,
         joint,
     }
-}
-
-fn blank_side_possible_from_blank<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
-    windows: &WinPossible<S, C>,
-) -> BlankSidePossible<S, C> {
-    let left_any = side_excursions(prog, windows, false, false);
-    let right_any = side_excursions(prog, windows, true, false);
-    blank_side_possible_from_blank_with_any(
-        prog, windows, &left_any, &right_any,
-    )
 }
 
 fn scc_from_reach<const S: usize>(
@@ -13875,34 +13611,27 @@ fn has_neg_cycle_in_scc<const S: usize>(
 
 type ColorMask = u64;
 
-fn printed_mask<const S: usize, const C: usize>(
-    prog: &Prog<S, C>,
-) -> ColorMask {
-    let mut m = 0;
-    for ((_, _read), &(pr, _, _)) in prog.iter() {
-        m |= 1 << pr;
-    }
-    m
-}
-
+/// Build the read->write color graph and the printed-color union together.
 fn color_closure<const S: usize, const C: usize>(
     prog: &Prog<S, C>,
-) -> [ColorMask; C] {
+) -> ([ColorMask; C], ColorMask) {
     debug_assert!(C <= 64);
 
     let mut clo = [0; C];
+    let mut printed = 0;
 
-    // direct edges: read -> print
-    for ((_, read), &(pr, _, _)) in prog.iter() {
-        clo[read as usize] |= 1 << pr;
+    // One instruction scan supplies both independent color facts.
+    for ((_, read), &(print, _, _)) in prog.iter() {
+        let bit = 1_u64 << print;
+        clo[usize::from(read)] |= bit;
+        printed |= bit;
     }
 
-    // include self
     for a in 0..C {
-        clo[a] |= 1 << a;
+        clo[a] |= 1_u64 << a;
     }
 
-    // transitive closure (bitset Floyd)
+    // Transitive closure (bitset Floyd).
     for k in 0..C {
         let kset = clo[k];
         for a in 0..C {
@@ -13912,7 +13641,7 @@ fn color_closure<const S: usize, const C: usize>(
         }
     }
 
-    clo
+    (clo, printed)
 }
 
 fn unerasable_mask<const C: usize>(clo: &[ColorMask; C]) -> ColorMask {
@@ -14074,29 +13803,42 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     /// abstraction tracks that stronger visited-interval boundary property.
     /// Previously visited zero cells are covered by the same
     /// last-departure rule, with a transition that writes 0.
-    fn halt_slots_side_excursion(&self, slots: Set<Slot>) -> Set<Slot> {
+    fn halt_slots_side_excursion(
+        &self,
+        slots: Set<Slot>,
+        instrs: &BkwInstrs<S, C>,
+    ) -> (Set<Slot>, Option<BkwWindowSeed<S, C>>) {
         if slots.is_empty() {
-            return slots;
+            return (slots, None);
         }
 
-        let (forbid_left, forbid_right) = self.shift_side_forbidden();
-        let mut windows =
-            self.win_possible_from_blank(&forbid_left, &forbid_right);
-        let (left_any, right_any, _) =
-            refine_windows_by_same_cell_crossings(self, &mut windows);
+        let mut windows = Self::win_possible_from_blank(
+            instrs,
+            &instrs.forbid_left,
+            &instrs.forbid_right,
+        );
+        let (left_any, right_any, radius2) =
+            refine_windows_by_same_cell_crossings(
+                self,
+                instrs,
+                &mut windows,
+                None,
+            );
 
         let frontiers =
             slots.iter().any(|&(_, color)| color == 0).then(|| {
                 // At the left frontier, arbitrary balanced work is to the
                 // right/inward side.  At the right frontier it is to the left.
-                let left =
-                    frontier_slots(self, &windows, false, &right_any);
-                let right =
-                    frontier_slots(self, &windows, true, &left_any);
+                let left = frontier_slots(
+                    self, instrs, &windows, false, &right_any,
+                );
+                let right = frontier_slots(
+                    self, instrs, &windows, true, &left_any,
+                );
                 (left, right)
             });
 
-        slots
+        let filtered = slots
             .into_iter()
             .filter(|&(state, color)| {
                 let h = state as usize;
@@ -14115,31 +13857,85 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                     return true;
                 }
 
-                self.iter().any(
-                    |((st, read), &(print, shift, child_st))| {
-                        if print != color {
-                            return false;
-                        }
+                instrs.writers[co].iter().any(|&writer| {
+                    let BkwWriter {
+                        state: st,
+                        scan: read,
+                        shift,
+                        next_state: child_st,
+                    } = writer;
+                    let child_colors =
+                        window_neighbor_mask(st, read, shift, &windows);
+                    let excursions =
+                        if shift { &right_any } else { &left_any };
 
-                        let st = st as usize;
-                        let read = read as usize;
-                        let child_st = child_st as usize;
-                        let child_colors = window_neighbor_mask(
-                            st, read, shift, &windows,
-                        );
-                        let excursions =
-                            if shift { &right_any } else { &left_any };
-
-                        excursions.ret_from_mask_possible(
-                            co,
-                            child_st,
-                            child_colors,
-                            h,
-                        )
-                    },
-                )
+                    excursions.ret_from_mask_possible(
+                        co,
+                        child_st,
+                        child_colors,
+                        h,
+                    )
+                })
             })
-            .collect()
+            .collect();
+
+        (
+            filtered,
+            Some(BkwWindowSeed {
+                windows,
+                initial_any: None,
+                crossings: Some((left_any, right_any, radius2)),
+            }),
+        )
+    }
+
+    /// Construct the same half-blank facts for blank and zloop targets.
+    fn bkw_halfblank_targets(
+        &self,
+        instrs: &BkwInstrs<S, C>,
+    ) -> BkwHalfblankTargets<S, C> {
+        let windows = Self::win_possible_from_blank(
+            instrs,
+            &instrs.forbid_left,
+            &instrs.forbid_right,
+        );
+        let left_clean =
+            side_excursions(self, instrs, &windows, false, true);
+        let right_clean =
+            side_excursions(self, instrs, &windows, true, true);
+        let left_any =
+            side_excursions(self, instrs, &windows, false, false);
+        let right_any =
+            side_excursions(self, instrs, &windows, true, false);
+
+        // false = left side blank:  0+ [color] ?
+        // true  = right side blank: ? [color] 0+
+        let left_half = halfblank_slots(
+            self,
+            instrs,
+            &windows,
+            false,
+            &left_clean,
+            &right_any,
+        );
+        let right_half = halfblank_slots(
+            self,
+            instrs,
+            &windows,
+            true,
+            &right_clean,
+            &left_any,
+        );
+
+        BkwHalfblankTargets {
+            windows,
+            left_clean,
+            right_clean,
+            left_any,
+            right_any,
+            left_half,
+            right_half,
+        }
     }
 
     /// Static target-shape filter for `0+ [color] 0+` blank predecessors.
@@ -14154,33 +13950,25 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     /// target cell.  The untouched opposite side must already be blank at the
     /// departure, replacing the old weak `control state is reachable` gate.
     /// The departed side must then admit a clean return to the target state.
-    fn blank_slots_side_clean(&self) -> Set<Slot> {
-        let (forbid_left, forbid_right) = self.shift_side_forbidden();
-        let windows =
-            self.win_possible_from_blank(&forbid_left, &forbid_right);
-        let left_clean = side_excursions(self, &windows, false, true);
-        let right_clean = side_excursions(self, &windows, true, true);
-        let left_any = side_excursions(self, &windows, false, false);
-        let right_any = side_excursions(self, &windows, true, false);
+    fn blank_slots_side_clean(
+        &self,
+        instrs: &BkwInstrs<S, C>,
+    ) -> (Set<Slot>, Option<BkwWindowSeed<S, C>>) {
+        let slots = self.erase_slots();
+        if slots.is_empty() {
+            return (slots, None);
+        }
+        let BkwHalfblankTargets {
+            windows,
+            left_clean,
+            right_clean,
+            left_any,
+            right_any,
+            left_half,
+            right_half,
+        } = self.bkw_halfblank_targets(instrs);
 
-        // false = left side blank:  0+ [color] ?
-        // true  = right side blank: ? [color] 0+
-        let left_half = halfblank_slots(
-            self,
-            &windows,
-            false,
-            &left_clean,
-            &right_any,
-        );
-        let right_half = halfblank_slots(
-            self,
-            &windows,
-            true,
-            &right_clean,
-            &left_any,
-        );
-
-        self.erase_slots()
+        let filtered = slots
             .into_iter()
             .filter(|&(state, color)| {
                 let h = state as usize;
@@ -14203,16 +13991,13 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 // For a nonzero scanned color, the cell was written earlier.
                 // At its last departure before the target, the opposite side
                 // is never touched again and therefore must already be blank.
-                for ((st, read), &(print, shift, child_st)) in
-                    self.iter()
+                for &BkwWriter {
+                    state: st,
+                    scan: read,
+                    shift,
+                    next_state: child_st,
+                } in &instrs.writers[co]
                 {
-                    let st = st as usize;
-                    let read = read as usize;
-                    let child_st = child_st as usize;
-                    if print != color {
-                        continue;
-                    }
-
                     let (opposite_half, clean) = if shift {
                         // Depart right: left side remains untouched.
                         (&left_half, &right_clean)
@@ -14247,7 +14032,15 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
                 false
             })
-            .collect()
+            .collect();
+        (
+            filtered,
+            Some(BkwWindowSeed {
+                windows,
+                initial_any: Some((left_any, right_any)),
+                crossings: None,
+            }),
+        )
     }
 
     /// Filter one-sided zero targets by reachable halfblank shape:
@@ -14257,30 +14050,20 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     fn shifts_side_clean(
         &self,
         shifts: Set<(State, Shift)>,
-    ) -> Set<(State, Shift)> {
-        let (forbid_left, forbid_right) = self.shift_side_forbidden();
-        let windows =
-            self.win_possible_from_blank(&forbid_left, &forbid_right);
-        let left_clean = side_excursions(self, &windows, false, true);
-        let right_clean = side_excursions(self, &windows, true, true);
-        let left_any = side_excursions(self, &windows, false, false);
-        let right_any = side_excursions(self, &windows, true, false);
-        let left_half = halfblank_slots(
-            self,
-            &windows,
-            false,
-            &left_clean,
-            &right_any,
-        );
-        let right_half = halfblank_slots(
-            self,
-            &windows,
-            true,
-            &right_clean,
-            &left_any,
-        );
-
-        shifts
+        instrs: &BkwInstrs<S, C>,
+    ) -> (Set<(State, Shift)>, Option<BkwWindowSeed<S, C>>) {
+        if shifts.is_empty() {
+            return (shifts, None);
+        }
+        let BkwHalfblankTargets {
+            windows,
+            left_any,
+            right_any,
+            left_half,
+            right_half,
+            ..
+        } = self.bkw_halfblank_targets(instrs);
+        let filtered = shifts
             .into_iter()
             .filter(|&(state, side)| {
                 let h = state as usize;
@@ -14290,26 +14073,41 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                     left_half[h][0] != 0
                 }
             })
-            .collect()
+            .collect();
+        (
+            filtered,
+            Some(BkwWindowSeed {
+                windows,
+                initial_any: Some((left_any, right_any)),
+                crossings: None,
+            }),
+        )
     }
 
-    fn spinout_shifts_side_clean(&self) -> Set<(State, Shift)> {
+    fn spinout_shifts_side_clean(
+        &self,
+        instrs: &BkwInstrs<S, C>,
+    ) -> (Set<(State, Shift)>, Option<BkwWindowSeed<S, C>>) {
         let shifts = self.zr_shifts();
         if shifts.is_empty() {
-            return shifts;
+            return (shifts, None);
         }
 
-        let (forbid_left, forbid_right) = self.shift_side_forbidden();
-        let windows =
-            self.win_possible_from_blank(&forbid_left, &forbid_right);
-        let left_any = side_excursions(self, &windows, false, false);
-        let right_any = side_excursions(self, &windows, true, false);
+        let windows = Self::win_possible_from_blank(
+            instrs,
+            &instrs.forbid_left,
+            &instrs.forbid_right,
+        );
+        let left_any =
+            side_excursions(self, instrs, &windows, false, false);
+        let right_any =
+            side_excursions(self, instrs, &windows, true, false);
         let left_frontier =
-            frontier_slots(self, &windows, false, &right_any);
+            frontier_slots(self, instrs, &windows, false, &right_any);
         let right_frontier =
-            frontier_slots(self, &windows, true, &left_any);
+            frontier_slots(self, instrs, &windows, true, &left_any);
 
-        shifts
+        let filtered = shifts
             .into_iter()
             .filter(|&(state, side)| {
                 let h = state as usize;
@@ -14319,23 +14117,28 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                     left_frontier[h][0] != 0
                 }
             })
-            .collect()
+            .collect();
+        (
+            filtered,
+            Some(BkwWindowSeed {
+                windows,
+                initial_any: Some((left_any, right_any)),
+                crossings: None,
+            }),
+        )
     }
 
-    fn zloop_shifts_side_clean(&self) -> Set<(State, Shift)> {
-        self.shifts_side_clean(self.blank_loops())
+    fn zloop_shifts_side_clean(
+        &self,
+        instrs: &BkwInstrs<S, C>,
+    ) -> (Set<(State, Shift)>, Option<BkwWindowSeed<S, C>>) {
+        self.shifts_side_clean(self.blank_loops(), instrs)
     }
 
     fn cant_blank_by_color_graph(&self) -> bool {
-        let clo = color_closure::<S, C>(self);
+        let (clo, printed) = color_closure::<S, C>(self);
         let bad = unerasable_mask::<C>(&clo);
-        if bad == 0 {
-            return false;
-        }
-
-        let pr = printed_mask::<S, C>(self);
-
-        (pr & bad) != 0
+        (printed & bad) != 0
     }
 }
 
