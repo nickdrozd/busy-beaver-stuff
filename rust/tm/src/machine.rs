@@ -604,6 +604,18 @@ fn test_mult_rule() {
         .run_prover(10_000)
         .is_mult()
     );
+
+    assert!(
+        Prog::<3, 3>::from("1RB 0LB 2LA  1LA 0RC 0LB  2RC 2RB 0LC")
+            .run_prover(300)
+            .is_mult()
+    );
+
+    assert!(
+        Prog::<3, 3>::from("1RB 1RC 2RA  0RC 2RA 0RB  2LC 2LB 0LA")
+            .run_prover(400)
+            .is_mult()
+    );
 }
 
 #[test]
