@@ -1805,6 +1805,7 @@ MODULAR = {
     "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  0RB 1LC",
     "1RB ...  1RC 1RB  1LC 1LD  1RB 1LE  0RC 0RE",
     "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF",
+    "1RB ... ... ...  2RC 2RB ... 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...",
     "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC",
     "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
 }
@@ -2284,6 +2285,8 @@ DO_BLANK: set[str] = {
     "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
 
     "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
+
+    "1RB 0RA ... ...  2RC 2RB 0RA 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...",  # (10 ↑↑ 3) A -> A
 }
 
 DO_SPINOUT: set[str] = {
@@ -2340,11 +2343,21 @@ type ProverEst = dict[
 
 PROVER_HALT_TOO_SLOW = {
     "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",
+    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...",
 }
 
 PROVER_HALT: ProverEst = {
+    # BBi(8)
+    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC": (1.3, 783),
+
+    # BBi(9)
+    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...": "(10 ↑↑ 4)",                           # 2x5 yuan
+    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": "(10 ↑↑ 3)",                  # 3x4 BBi(8) ext
+    "1RB ... ... ...  2RC 2RB ... 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...": "(10 ↑↑ 3)", # 4x4 no-A
+    "1RB ... 0LD  2RC ... 2RB  2LA ... 0RC  2LD 2LC 0RD": (4.0, 19728),                # 2x5
+    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),                          # 2x5 pavel
+
     # 2/5
-    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),
     "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...": (1.7, 352),
     "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ...": (5.2, 105),
     "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA ...": (5.2, 105),
@@ -2384,12 +2397,10 @@ PROVER_HALT: ProverEst = {
     "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(10 ↑↑ 2049)",
     "1RB ... 1LA 2RB  2RC 3RC 3LB 2RA  2LB 3RB 3LC 1LA": "(10 ↑↑ 189)",
     "1RB 2LC 1RC 2RA  1LA 3RA 2RB ...  3LB 2LC 1RA 0LB": "(10 ↑↑ 130)",
-    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": "(10 ↑↑ 3)",
     "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (1.2, 443682),
     "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC": (3.7, 6518),
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": (2.2, 2372),
     "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB": (1.7, 1301),
-    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC": (1.3, 783),
     "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA": (2.1,  628),
     "1RB 0RB 3LC 1RC  0RC ... 2RC 3RC  1LB 2LA 3LA 2RB": (4.6,  434),
     "1RB 1LA 1LB 1RA  0LA 2RB 2LC ...  3RB 2LB 1RC 0RC": (2.4,   26),
@@ -2594,11 +2605,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 360805,
-    "divs": 51500,
-    "exps": 231448,
-    "muls": 164574,
-    "totl": 808327,
+    "adds": 360869,
+    "divs": 51543,
+    "exps": 231455,
+    "muls": 164588,
+    "totl": 808455,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -2739,6 +2750,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "((13 + (8 * (7 ** 743))) // 3)",
             "(9481 + (40 * (7 ** 741)))",
         ),
+        "1RB ... ... ...  2RC 2RB ... 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...": (
+            282,
+            "(10 ↑↑ 3)",
+            "((-11 + (3 ** ((7 + (3 ** 548)) // 4))) // 2)",
+            "((6297 + ((3 ** 548) * (1 + (2 * (3 ** ((-2189 + (3 ** 548)) // 4)))))) // 4)",
+        ),
         "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC": (
             278,
             "(10 ** 783)",
@@ -2750,6 +2767,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ↑↑ 3)",
             "((-5 + (3 ** ((-5 + (3 ** 1642)) // 4))) // 2)",
             "((15017 + (5 * (3 ** 1641))) // 4)",
+        ),
+        "1RB ... 0LD  2RC ... 2RB  2LA ... 0RC  2LD 2LC 0RD": (
+            174,
+            "(10 ** 19729)",
+            "(-3 + (2 ** (1 + (2 ** 16))))",
+            "(96 + ((2 ** 17) * (1 + (2 ** (-17 + (2 ** 16))))))",
         ),
         "1RB 4RB 1RA 0RA ...  2LC ... 2RB ... ...  2LA 2LC 3RC ... ...": (
             162,
@@ -3132,6 +3155,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "infrul": {
+        "1RB 0RA ... ...  2RC 2RB 0RA 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...": (
+            283,
+            "0",
+            "0",
+            "((6297 + ((3 ** 548) * (1 + (2 * (3 ** ((-2189 + (3 ** 548)) // 4)))))) // 4)",
+        ),
         "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA": (
             326,
             "3",
@@ -3955,7 +3984,7 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
         "spinout": 18,
     },
     "bkw": {
-        "halt": 48,
+        "halt": 49,
         "blank": 21,
         "spinout": 58,
         "twostep": 0,
@@ -4064,6 +4093,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1RD 0LF",
             "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
             "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
+            "1RB 0RA ... ...  2RC 2RB 0RA 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...",
         },
         "blank": {
             "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
