@@ -2234,6 +2234,7 @@ DO_HALT: set[str] = {
     "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  0LF 1RF  0RB ...",
 
     # 7/2
+    "1RB 0RG  1RC 1RB  0RD ...  0LE 0LD  0LF 1LE  1RA 1LF  0LD 0RB",  # 3 ^20 3
     "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",  # 2 ^11 2 ^11 3
     "1RB 1RF  0RC 1RG  1LD 1LE  0LE 1LD  0RF 0LC  1RA 0LC  0RF ...",  # 10^^286
 
@@ -2605,11 +2606,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 360869,
-    "divs": 51543,
-    "exps": 231455,
-    "muls": 164588,
-    "totl": 808455,
+    "adds": 361790,
+    "divs": 52282,
+    "exps": 231547,
+    "muls": 164769,
+    "totl": 810388,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -2998,6 +2999,15 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "!!!",
             "(-7 + ((2 ** (-1 + (2 ** (3 + !!!)))) + (2 ** (-1 + (2 ** (3 + !!!))))))",
             "(-81 + (... + ...))",
+        ),
+    },
+
+    "Add.__lt__: ((3 * !!!) + (-3 * !!!)) < 1000": {
+        "1RB 0RG  1RC 1RB  0RD ...  0LE 0LD  0LF 1LE  1RA 1LF  0LD 0RB": (
+            4692,
+            "!!!",
+            "((52 + ((5 * (3 ** (14 + (3 * !!!)))) + (5 * (3 ** ((-3 + (5 * (3 ** (15 + (3 * !!!))))) // 2))))) // 2)",
+            "(... // 2)",
         ),
     },
 
