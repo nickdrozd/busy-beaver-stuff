@@ -10,6 +10,7 @@ pub const _8_0_ch: &[&str] = &[
     "1RB ... ... ...  0RC 2LB 3LB 1RB  1LA ... 2RB 3RC",
     "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC",
     "1RB 1RA ...  2RC ... ...  2LD 2RD ...  2RA 2RC 1LD",
+    "1RB ... ... ...  2RC ... ... ...  3LC 1RD 0RC 2LC  ... ... 2RD 3RC",
 ];
 
 /**************************************/

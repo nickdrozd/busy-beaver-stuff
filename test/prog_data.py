@@ -136,6 +136,9 @@ HALT_SLOW = {
 
     # 3/4
     "1RB ... ... ...  0RC 2LB 3LB 1RB  1LA ... 2RB 3RC": (32, 663941479),
+
+    # 4/4
+    "1RB ... ... ...  2RC ... ... ...  3LC 1RD 0RC 2LC  ... ... 2RD 3RC": (34, 3545123826),  # D0
 }
 
 SPINOUT: dict[str, tuple[int, int]] = {
@@ -2573,6 +2576,7 @@ CFGLIM = {
     "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC",  # SIAB
     "1RB 1RC  1LD 0LE  1RE ...  0RA 0LB  1LD 1RD",
     "1RB ... ... ...  0RC 2LB 3LB 1RB  1LA ... 2RB 3RC",
+    "1RB ... ... ...  2RC ... ... ...  3LC 1RD 0RC 2LC  ... ... 2RD 3RC",
 }
 
 FAILURES = set(MACRO_FAILURES) | PROVER_FAILURES | CFGLIM
