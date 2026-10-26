@@ -844,6 +844,215 @@ impl<'h, const states: usize, const colors: usize>
 /**************************************/
 
 #[derive(Clone, Copy)]
+struct HaltReachUndo<const states: usize> {
+    predecessors: Mask,
+    writers: Mask,
+    ancestors: [Mask; states],
+}
+
+// Defined instructions only: prove that execution from blank cannot reach
+// its first open slot. This subsumes the direction-only reverse-engineer
+// test by requiring a state path between a writer and a returning entry.
+struct HaltReachability<const states: usize, const colors: usize> {
+    // Sources entering a state, indexed by the entry's direction.
+    predecessors: [[Mask; 2]; states],
+    // Destinations after printing a color, indexed by the writer's direction.
+    writers: [[Mask; 2]; colors],
+    // Reflexive transitive predecessors: bit u in ancestors[v] means u ->* v.
+    ancestors: [Mask; states],
+    open: [Mask; states],
+    remaining: usize,
+}
+
+impl<const states: usize, const colors: usize>
+    HaltReachability<states, colors>
+{
+    const fn init() -> Self {
+        assert!(states >= 2 && states <= 16);
+        assert!(colors >= 2 && colors <= 16);
+        let all = if colors == 16 {
+            Mask::MAX
+        } else {
+            (1_u16 << colors) - 1
+        };
+        let mut open = [all; states];
+        let mut predecessors = [[0; 2]; states];
+        let mut writers = [[0; 2]; colors];
+        let mut ancestors = [0; states];
+        let mut state = 0;
+        while state < states {
+            ancestors[state] = 1_u16 << state;
+            state += 1;
+        }
+        // Normalized A0 = 1RB is already defined.
+        open[0] &= !1;
+        predecessors[1][1] = 1;
+        writers[1][1] = 1 << 1;
+        ancestors[1] |= 1;
+        Self {
+            predecessors,
+            writers,
+            ancestors,
+            open,
+            remaining: states * colors - 1,
+        }
+    }
+
+    fn insert(
+        &mut self,
+        slot: &Slot,
+        instr: &Instr,
+    ) -> HaltReachUndo<states> {
+        let source = usize::from(slot.0);
+        let print = usize::from(instr.0);
+        let target = usize::from(instr.2);
+        let direction = usize::from(instr.1);
+        let previous = HaltReachUndo {
+            predecessors: self.predecessors[target][direction],
+            writers: self.writers[print][direction],
+            // At most 32 bytes: a fixed-size snapshot avoids allocating an
+            // undo log and handles cycles and duplicate edges on rollback.
+            ancestors: self.ancestors,
+        };
+        let source_bit = 1_u16 << source;
+        let target_bit = 1_u16 << target;
+        debug_assert!(self.open[source] & (1_u16 << slot.1) != 0);
+        self.predecessors[target][direction] |= source_bit;
+        self.writers[print][direction] |= target_bit;
+        self.open[source] &= !(1_u16 << slot.1);
+        self.remaining -= 1;
+
+        // Adding u -> v connects every old ancestor of u to every old
+        // descendant of v. Capture the source row before updating any rows.
+        if self.ancestors[target] & source_bit == 0 {
+            let added = self.ancestors[source];
+            for ancestors in &mut self.ancestors {
+                if *ancestors & target_bit != 0 {
+                    *ancestors |= added;
+                }
+            }
+        }
+        previous
+    }
+
+    fn remove(
+        &mut self,
+        old: HaltReachUndo<states>,
+        slot: &Slot,
+        instr: &Instr,
+    ) {
+        let direction = usize::from(instr.1);
+        self.predecessors[usize::from(instr.2)][direction] =
+            old.predecessors;
+        self.writers[usize::from(instr.0)][direction] = old.writers;
+        self.ancestors = old.ancestors;
+        self.open[usize::from(slot.0)] |= 1_u16 << slot.1;
+        self.remaining += 1;
+    }
+
+    // States that can reach any seed with net displacement 0 modulo 3.
+    // Prepending a left edge subtracts 1; a right edge adds 1. Each
+    // (state, residue) is visited at most once. All storage is on the stack.
+    fn zero_mod3_origins(&self, seeds: Mask) -> Mask {
+        let mut seen = [seeds, 0_u16, 0_u16];
+        let mut pending = seen;
+        // [current residue][edge direction], with left = 0, right = 1.
+        const PREPEND: [[usize; 2]; 3] = [[2, 1], [0, 2], [1, 0]];
+
+        while pending[0] | pending[1] | pending[2] != 0 {
+            for residue in 0..3 {
+                while pending[residue] != 0 {
+                    let state =
+                        pending[residue].trailing_zeros() as usize;
+                    pending[residue] &= pending[residue] - 1;
+                    for direction in 0..2 {
+                        let next = PREPEND[residue][direction];
+                        let added = self.predecessors[state][direction]
+                            & !seen[next];
+                        seen[next] |= added;
+                        pending[next] |= added;
+                    }
+                }
+            }
+        }
+        seen[0]
+    }
+
+    fn cannot_halt(&self) -> bool {
+        if self.remaining == 0 || self.open[0] & 1 != 0 {
+            return false;
+        }
+
+        // A fresh blank cell need not have a writer. Leave these slots
+        // inconclusive whenever an entry exists, before doing graph queries.
+        for state in 0..states {
+            if self.open[state] & 1 != 0
+                && (self.predecessors[state][0]
+                    | self.predecessors[state][1])
+                    != 0
+            {
+                return false;
+            }
+        }
+
+        for state in 0..states {
+            let mut pending = self.open[state];
+            if pending == 0 {
+                continue;
+            }
+            // A write in direction d needs a final entry in direction !d.
+            // Aggregate its possible earlier states once for the whole row.
+            let mut returns = [0_u16; 2];
+            for (direction, origins) in returns.iter_mut().enumerate() {
+                let mut predecessors =
+                    self.predecessors[state][1 - direction];
+                while predecessors != 0 {
+                    let source = predecessors.trailing_zeros() as usize;
+                    predecessors &= predecessors - 1;
+                    *origins |= self.ancestors[source];
+                }
+            }
+            if returns[0] | returns[1] == 0 {
+                continue;
+            }
+            // Blank-read entries were handled above. Nonblank cells must
+            // have been written before the first undefined instruction.
+            // Compute the stronger graph only for directions with an ordinary
+            // witness, then share its result across all open colors here.
+            let mut zero_origins = [None; 2];
+            pending &= !1;
+            while pending != 0 {
+                let color = pending.trailing_zeros() as usize;
+                pending &= pending - 1;
+                for direction in 0..2 {
+                    let writers = self.writers[color][direction]
+                        & returns[direction];
+                    if writers == 0 {
+                        continue;
+                    }
+                    let seeds = self.predecessors[state][1 - direction];
+                    // Empty paths already have displacement zero. Avoid
+                    // building the residue graph for this common witness.
+                    if writers & seeds != 0 {
+                        return false;
+                    }
+                    let origins = zero_origins[direction]
+                        .unwrap_or_else(|| {
+                            let origins = self.zero_mod3_origins(seeds);
+                            zero_origins[direction] = Some(origins);
+                            origins
+                        });
+                    if writers & origins != 0 {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
+    }
+}
+
+#[derive(Clone, Copy)]
 struct TreeUndo {
     used_states: Count,
     used_colors: Count,
@@ -855,6 +1064,7 @@ struct TreeUndo {
 
 struct Tree<const states: usize, const colors: usize, AvIn, Harv> {
     prog: Prog<states, colors>,
+    halt_reachability: HaltReachability<states, colors>,
     instrs: AvIn,
     sim_lim: Steps,
     remaining_slots: Slots,
@@ -897,6 +1107,7 @@ impl<
 
         Self {
             prog,
+            halt_reachability: HaltReachability::init(),
             instrs,
             sim_lim,
             remaining_slots,
@@ -985,66 +1196,64 @@ impl<
         }
     }
 
-    // Overapproximate the states and tape colors reachable after executing a
-    // candidate. If every state/color pair in that closure is defined, no
-    // future execution can encounter an undefined slot. The caller only uses
-    // this when both tape spans are blank, so initially the tape can contain
-    // only 0 and the candidate's printed color.
+    // Find states closed over `reads`, which includes every possible tape
+    // color after one candidate step, including its print color and blank.
+    // Treat the current slot as defined but omit its target edge. Any target
+    // inside the resulting set keeps that set closed when the edge is added.
+    // The print is already in `reads`, so this proof is shared by all
+    // candidate targets, directions, and prints with the same color mask.
     #[expect(clippy::cast_possible_truncation)]
-    fn restricted_terminal(&self, slot: &Slot, instr: &Instr) -> bool {
-        let mut reachable_states = 1_u16 << instr.2;
-        let mut reachable_colors = 1_u16 | (1_u16 << instr.0);
-        let mut processed = [0_u16; states];
+    fn restricted_terminal_states(
+        &self,
+        slot: &Slot,
+        reads: Mask,
+    ) -> Mask {
+        let source = usize::from(slot.0);
+        let source_read = 1_u16 << slot.1;
+        let mut closed = 0_u16;
+        let mut targets = [0_u16; states];
 
-        loop {
-            let mut pending_states = reachable_states;
-            let mut progressed = false;
-
-            while pending_states != 0 {
-                let state = pending_states.trailing_zeros() as usize;
-                pending_states &= pending_states - 1;
-
-                let mut reads = reachable_colors & !processed[state];
-                if reads == 0 {
-                    continue;
-                }
-
-                let defined = self.defined_reads[state]
-                    | if state == usize::from(slot.0) {
-                        1_u16 << slot.1
-                    } else {
-                        0
-                    };
-                if reads & !defined != 0 {
-                    return false;
-                }
-
-                processed[state] |= reads;
-                progressed = true;
-
-                while reads != 0 {
-                    let color = reads.trailing_zeros() as usize;
-                    reads &= reads - 1;
-
-                    let (print, _, target) = if state
-                        == usize::from(slot.0)
-                        && color == usize::from(slot.1)
-                    {
-                        *instr
-                    } else {
-                        *self
-                            .prog
-                            .get(&(state as State, color as Color))
-                            .unwrap()
-                    };
-
-                    reachable_colors |= 1_u16 << print;
-                    reachable_states |= 1_u16 << target;
-                }
+        for state in 0..usize::from(self.used_states) {
+            let defined = self.defined_reads[state]
+                | if state == source { source_read } else { 0 };
+            if reads & !defined != 0 {
+                continue;
             }
 
-            if !progressed {
-                return true;
+            let mut pending = reads;
+            if state == source {
+                pending &= !source_read;
+            }
+            let mut stays = true;
+            while pending != 0 {
+                let color = pending.trailing_zeros() as Color;
+                pending &= pending - 1;
+                let &(print, _, target) =
+                    self.prog.get(&(state as State, color)).unwrap();
+                if reads & (1_u16 << print) == 0 {
+                    stays = false;
+                    break;
+                }
+                targets[state] |= 1_u16 << target;
+            }
+            if stays {
+                closed |= 1_u16 << state;
+            }
+        }
+
+        loop {
+            let old = closed;
+            let mut pending = closed;
+            while pending != 0 {
+                let state = pending.trailing_zeros() as usize;
+                let bit = 1_u16 << state;
+                pending &= pending - 1;
+                if targets[state] & !closed != 0 {
+                    closed &= !bit;
+                }
+            }
+            if closed == old {
+                return closed;
             }
         }
     }
@@ -1323,7 +1532,10 @@ impl<
         self.harvester.harvest(&self.prog, config);
     }
 
-    #[expect(clippy::cast_possible_truncation)]
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cognitive_complexity
+    )]
     fn branch(&mut self, mut config: Config) {
         let slot @ (slot_state, _) = match self.run(&mut config) {
             Undefined(slot) => slot,
@@ -1424,40 +1636,59 @@ impl<
 
         avail_instrs.retain(|instr| self.instrs.allows(&slot, instr));
 
-        // When the rest of the tape is blank, the candidate leaves only its
-        // printed color and 0 on the tape. Reject it if these colors cannot
-        // lead to any undefined transition, even when rows for other colors
-        // remain incomplete. Only try this after the cheaper pruning checks.
-        if colors > 2
-            && !self.final_slot()
-            && config.tape.lspan.blank()
-            && config.tape.rspan.blank()
+        // Scan span colors once, excluding the current cell because the
+        // candidate overwrites it. Stop as soon as all introduced colors are
+        // present: the full-alphabet terminal check above already covers that
+        // case. Counts and candidate direction do not affect this mask.
+        if colors > 2 && !self.final_slot() && !avail_instrs.is_empty()
         {
-            // Direction does not affect this overapproximation, so reuse the
-            // result for both shifts of the same (print, target) pair.
-            let mut checked = [0_u16; colors];
-            let mut terminal = [0_u16; colors];
-
-            avail_instrs.retain(|instr @ &(print, _, target)| {
-                let print_index = usize::from(print);
-                if print_index >= usize::from(self.used_colors)
-                    || usize::from(target)
-                        >= usize::from(self.used_states)
-                {
-                    // A newly introduced color or state has undefined slots.
-                    return true;
+            let used_reads =
+                Self::low_bits(usize::from(self.used_colors));
+            let mut span_colors = 1_u16;
+            for block in
+                config.tape.lspan.iter().chain(config.tape.rspan.iter())
+            {
+                span_colors |= 1_u16 << block.color;
+                if span_colors == used_reads {
+                    break;
                 }
+            }
 
-                let target_bit = 1_u16 << target;
-                if checked[print_index] & target_bit == 0 {
-                    checked[print_index] |= target_bit;
-                    if self.restricted_terminal(&slot, instr) {
-                        terminal[print_index] |= target_bit;
+            if span_colors != used_reads {
+                let mut checked = 0_u16;
+                let mut terminal = [0_u16; colors];
+
+                avail_instrs.retain(|&(print, _, target)| {
+                    if usize::from(print)
+                        >= usize::from(self.used_colors)
+                        || usize::from(target)
+                            >= usize::from(self.used_states)
+                    {
+                        return true;
                     }
-                }
+                    let print_bit = 1_u16 << print;
+                    let reads = span_colors | print_bit;
+                    if reads == used_reads {
+                        return true;
+                    }
 
-                terminal[print_index] & target_bit == 0
-            });
+                    // Every print already present in the spans has the same
+                    // mask. Blank is always present, so cache all those under
+                    // index 0; other prints each add one distinct color.
+                    let key = if span_colors & print_bit != 0 {
+                        0
+                    } else {
+                        usize::from(print)
+                    };
+                    let key_bit = 1_u16 << key;
+                    if checked & key_bit == 0 {
+                        checked |= key_bit;
+                        terminal[key] = self
+                            .restricted_terminal_states(&slot, reads);
+                    }
+                    terminal[key] & (1_u16 << target) == 0
+                });
+            }
         }
 
         // Reject exact two-step stationary loops. For each existing target
@@ -1674,26 +1905,40 @@ impl<
 
         for next_instr in instrs {
             self.prog.insert(&slot, next_instr);
+            let reverse =
+                self.halt_reachability.insert(&slot, next_instr);
 
-            let shape = self.on_shape_insert(&slot, next_instr);
-            self.instrs.on_insert(&slot, next_instr);
+            // Internal candidates only: no reachable open slot means this
+            // program cannot grow another branch. Reject before cloning.
+            if !self.halt_reachability.cannot_halt() {
+                let shape = self.on_shape_insert(&slot, next_instr);
+                self.instrs.on_insert(&slot, next_instr);
 
-            self.branch(config.clone());
+                self.branch(config.clone());
 
-            self.instrs.on_remove();
-            self.on_shape_remove(shape, &slot);
+                self.instrs.on_remove();
+                self.on_shape_remove(shape, &slot);
+            }
+            self.halt_reachability.remove(reverse, &slot, next_instr);
         }
 
         {
             self.prog.insert(&slot, last_instr);
+            let reverse =
+                self.halt_reachability.insert(&slot, last_instr);
 
-            let shape = self.on_shape_insert(&slot, last_instr);
-            self.instrs.on_insert(&slot, last_instr);
+            // Internal candidates only: no reachable open slot means this
+            // program cannot grow another branch. Reject before cloning.
+            if !self.halt_reachability.cannot_halt() {
+                let shape = self.on_shape_insert(&slot, last_instr);
+                self.instrs.on_insert(&slot, last_instr);
 
-            self.branch(config);
+                self.branch(config);
 
-            self.instrs.on_remove();
-            self.on_shape_remove(shape, &slot);
+                self.instrs.on_remove();
+                self.on_shape_remove(shape, &slot);
+            }
+            self.halt_reachability.remove(reverse, &slot, last_instr);
         }
 
         self.prog.remove(&slot);
@@ -1720,6 +1965,7 @@ impl<
 
                 tree.remaining_slots -= 1;
                 tree.prog.insert(&INIT_SLOT, instr);
+                tree.halt_reachability.insert(&INIT_SLOT, instr);
                 tree.on_shape_insert(&INIT_SLOT, instr);
                 tree.instrs.on_insert(&INIT_SLOT, instr);
 
