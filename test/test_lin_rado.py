@@ -237,7 +237,7 @@ def yield_programs(
 ) -> Iterator[str]:
     yield from filter(
         lambda prog: not any(
-            re.compile(regex).match(prog)
+            re.match(regex, prog)
             for regex in rejects or []
         ),
         (
