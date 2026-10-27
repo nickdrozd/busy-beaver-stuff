@@ -169,6 +169,14 @@ trait AvailInstrs<'h, const states: usize, const colors: usize> {
         true
     }
 
+    fn filter_final(
+        &self,
+        _: &Prog<states, colors>,
+        _: &Slot,
+        _: &mut Vec<Instr>,
+    ) {
+    }
+
     fn on_insert(&mut self, _: &Slot, _: &Instr) {}
     fn on_remove(&mut self) {}
 }
@@ -268,6 +276,91 @@ impl<const colors: usize> AvailBlanks<colors> {
 
     const fn low_bits(n: usize) -> Mask {
         if n == 16 { Mask::MAX } else { (1_u16 << n) - 1 }
+    }
+
+    // Last three steps I, J, K: J prints zero, K erases a nonzero.
+    // If I and J move alike, I must print zero on a cell left behind.
+    // If they reverse, K revisits I's cell and must read I's nonzero print.
+    // Normalized A0=1RB rules out blanking in fewer than three steps.
+    // Build masks once per final batch; no graph updates on tree edges.
+    fn filter_final<const states: usize>(
+        prog: &Prog<states, colors>,
+        &(source, read): &Slot,
+        avail_instrs: &mut Vec<Instr>,
+    ) {
+        let mut ingress = [[0_u16; 2]; states];
+        let mut erasers = [0_u16; states];
+        for ((state, color), &(print, shift, target)) in prog.iter() {
+            ingress[usize::from(target)][usize::from(shift)] |=
+                Self::bit(usize::from(print));
+            if print == 0 && color != 0 {
+                erasers[usize::from(state)] |=
+                    Self::bit(usize::from(color));
+            }
+        }
+
+        // Candidate as I: permitted targets, indexed by its print/direction.
+        let mut first = [[0_u16; 2]; colors];
+        // Candidate as both I and K, with an existing middle instruction.
+        let mut repeated = [0_u16; 2];
+        let mut last = false;
+        for ((middle, _), &(print, shift, target)) in prog.iter() {
+            if print != 0 {
+                continue;
+            }
+            let direction = usize::from(shift);
+            let middle_index = usize::from(middle);
+            let middle_bit = Self::bit(middle_index);
+            let erase = erasers[usize::from(target)];
+            let same_zero = ingress[middle_index][direction] & 1 != 0;
+            let opposite = ingress[middle_index][direction ^ 1];
+            if erase != 0 && (same_zero || opposite & erase != 0) {
+                // All three instructions already exist: every candidate survives.
+                return;
+            }
+            if erase != 0 {
+                first[0][direction] |= middle_bit;
+                let mut pending = erase;
+                while pending != 0 {
+                    let color = pending.trailing_zeros() as usize;
+                    pending &= pending - 1;
+                    first[color][direction ^ 1] |= middle_bit;
+                }
+            }
+            if read != 0 && target == source {
+                last |= same_zero
+                    || opposite & Self::bit(usize::from(read)) != 0;
+                repeated[direction] |= middle_bit;
+            }
+        }
+
+        avail_instrs.retain(|&(print, shift, target)| {
+            let direction = usize::from(shift);
+            let target_bit = Self::bit(usize::from(target));
+            if first[usize::from(print)][direction] & target_bit != 0 {
+                return true;
+            }
+            if print != 0 {
+                return false;
+            }
+            if last || repeated[direction] & target_bit != 0 {
+                return true;
+            }
+            // Candidate as J; it may also supply I or K on another cell.
+            let same_state = target == source;
+            let erase = erasers[usize::from(target)]
+                | if same_state && read != 0 {
+                    Self::bit(usize::from(read))
+                } else {
+                    0
+                };
+            erase != 0
+                && (same_state
+                    || ingress[usize::from(source)][direction] & 1 != 0
+                    || ingress[usize::from(source)][direction ^ 1]
+                        & erase
+                        != 0)
+        });
     }
 
     fn must_erase(&self, read: Color) -> bool {
@@ -438,6 +531,15 @@ impl<'h, const states: usize, const colors: usize>
         self.avail_blanks.allows(slot, instr)
     }
 
+    fn filter_final(
+        &self,
+        prog: &Prog<states, colors>,
+        slot: &Slot,
+        instrs: &mut Vec<Instr>,
+    ) {
+        AvailBlanks::<colors>::filter_final(prog, slot, instrs);
+    }
+
     fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
         self.avail_params.on_insert::<states, colors>(slot, instr);
 
@@ -564,6 +666,126 @@ impl<const states: usize> AvailSpinouts<states> {
         // Otherwise one undefined slot is needed for the future spin
         // transition and a distinct second slot for its ingress.
         undefined > 1
+    }
+
+    // Rebuild from the table: incremental tracking stops at a one-step
+    // witness, which need not satisfy this stronger two-step ingress test.
+    // At spin entry the scanned cell and forward ray must all be blank.
+    // For predecessors I,J, only two moves along the spin direction allow
+    // I to print nonzero. J must print zero if it moves against the spin.
+    fn filter_final<const colors: usize>(
+        prog: &Prog<states, colors>,
+        &(source, read): &Slot,
+        instrs: &mut Vec<Instr>,
+    ) {
+        let mut spins = [0_u16; 2];
+        let mut incoming = [0_u16; 2];
+        let mut zero_incoming = [0_u16; 2];
+        for ((state, color), &(print, shift, target)) in prog.iter() {
+            let direction = usize::from(shift);
+            let bit = Self::bit(target);
+            incoming[direction] |= bit;
+            if print == 0 {
+                zero_incoming[direction] |= bit;
+            }
+            if color == 0 && state == target {
+                spins[direction] |= bit;
+            }
+        }
+        // A0=1RB can enter a rightward B spin directly, with only one
+        // predecessor. Do not require a fictitious step before A0.
+        if spins[1] & Self::bit(1) != 0 {
+            return;
+        }
+
+        // Allowed candidate targets, indexed by [prints zero][direction].
+        let mut allowed = [[0_u16; 2]; 2];
+        let mut last = [false, read == 0 && source == 1];
+        let mut repeated_any = [false; 2];
+        let mut repeated_zero = [false; 2];
+        let zero_any = zero_incoming[0] | zero_incoming[1];
+        for ((middle, color), &(print, shift, target)) in prog.iter() {
+            // Choose the last distinct ingress before the uninterrupted spin.
+            if color == 0 && middle == target {
+                continue;
+            }
+            let direction = usize::from(shift);
+            let middle_bit = Self::bit(middle);
+            for spin in 0..2 {
+                let same = direction == spin;
+                if !same && print != 0 {
+                    continue;
+                }
+                let predecessors = if same {
+                    incoming[spin] | zero_incoming[spin ^ 1]
+                } else {
+                    zero_any
+                };
+                if spins[spin] & Self::bit(target) != 0 {
+                    if predecessors & middle_bit != 0 {
+                        // A complete witness already exists, independent of
+                        // the candidate; no filtering is necessary.
+                        return;
+                    }
+                    // Candidate supplies I before this existing J and spin.
+                    allowed[1][0] |= middle_bit;
+                    allowed[1][1] |= middle_bit;
+                    if same {
+                        allowed[0][spin] |= middle_bit;
+                    }
+                }
+                if read == 0 && target == source {
+                    last[spin] |= predecessors & middle_bit != 0;
+                    if middle == source {
+                        // Candidate supplies both I and the final spin.
+                        if same {
+                            repeated_any[spin] = true;
+                        } else {
+                            repeated_zero[spin] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        let source_bit = Self::bit(source);
+        for direction in 0..2 {
+            // Candidate supplies J, optionally also I on a different cell.
+            let same =
+                incoming[direction] | zero_incoming[direction ^ 1];
+            let mut middle_any = if same & source_bit != 0 {
+                spins[direction]
+            } else {
+                0
+            };
+            let mut middle_zero = middle_any
+                | if zero_any & source_bit != 0 {
+                    spins[direction ^ 1]
+                } else {
+                    0
+                };
+            middle_any |= spins[direction] & source_bit;
+            middle_zero |= (spins[0] | spins[1]) & source_bit;
+            if read == 0 {
+                // A blank self-transition is the spin, not a distinct J.
+                middle_any &= !source_bit;
+                middle_zero &= !source_bit;
+                if last[direction] || repeated_any[direction] {
+                    allowed[0][direction] |= source_bit;
+                    allowed[1][direction] |= source_bit;
+                }
+                if repeated_zero[direction] {
+                    allowed[1][direction] |= source_bit;
+                }
+            }
+            allowed[0][direction] |= middle_any;
+            allowed[1][direction] |= middle_zero;
+        }
+        instrs.retain(|&(print, shift, target)| {
+            allowed[usize::from(print == 0)][usize::from(shift)]
+                & Self::bit(target)
+                != 0
+        });
     }
 
     fn allows(
@@ -761,6 +983,15 @@ impl<'h, const states: usize, const colors: usize>
         self.avail_spinouts.allows(slot, instr)
     }
 
+    fn filter_final(
+        &self,
+        prog: &Prog<states, colors>,
+        slot: &Slot,
+        instrs: &mut Vec<Instr>,
+    ) {
+        AvailSpinouts::<states>::filter_final(prog, slot, instrs);
+    }
+
     fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
         self.avail_params.on_insert::<states, colors>(slot, instr);
 
@@ -830,6 +1061,15 @@ impl<'h, const states: usize, const colors: usize>
 
     fn allows(&self, slot: &Slot, instr: &Instr) -> bool {
         self.avail_blanks.allows(slot, instr)
+    }
+
+    fn filter_final(
+        &self,
+        prog: &Prog<states, colors>,
+        slot: &Slot,
+        instrs: &mut Vec<Instr>,
+    ) {
+        AvailBlanks::<colors>::filter_final(prog, slot, instrs);
     }
 
     fn on_insert(&mut self, slot: &Slot, instr: &Instr) {
@@ -978,27 +1218,89 @@ impl<const states: usize, const colors: usize>
         seen[0]
     }
 
-    fn cannot_halt(&self) -> bool {
+    // Possible read colors after two defined steps entering `target`.
+    // Equal directions visit a new cell: its color is unconstrained.
+    // Opposite directions return to the first cell: read must equal print.
+    fn ingress_colors(
+        &self,
+        target: usize,
+        prog: &Prog<states, colors>,
+        prints: &mut Option<[[Mask; 2]; states]>,
+    ) -> Mask {
+        let entries = self.predecessors[target];
+        if entries[0] | entries[1] == 0 {
+            return 0;
+        }
+        for direction in 0..2 {
+            let mut middle = entries[direction];
+            while middle != 0 {
+                let state = middle.trailing_zeros() as usize;
+                middle &= middle - 1;
+                if self.predecessors[state][direction] != 0 {
+                    return Mask::MAX;
+                }
+            }
+        }
+        // Only reversing pairs remain. Build this small table lazily, once
+        // per candidate, and share it across all possible open-slot targets.
+        let prints = prints.get_or_insert_with(|| {
+            let mut incoming = [[0_u16; 2]; states];
+            for (_, &(print, shift, next)) in prog.iter() {
+                incoming[usize::from(next)][usize::from(shift)] |=
+                    1_u16 << print;
+            }
+            incoming
+        });
+        let mut reads = 0;
+        for direction in 0..2 {
+            let mut middle = entries[direction];
+            while middle != 0 {
+                let state = middle.trailing_zeros() as usize;
+                middle &= middle - 1;
+                reads |= prints[state][direction ^ 1];
+            }
+        }
+        reads
+    }
+
+    fn cannot_halt(&self, prog: &Prog<states, colors>) -> bool {
         if self.remaining == 0 || self.open[0] & 1 != 0 {
             return false;
         }
 
-        // A fresh blank cell need not have a writer. Leave these slots
-        // inconclusive whenever an entry exists, before doing graph queries.
+        // A first open slot reached after A0 alone has no two-step prefix.
+        if self.open[1] & 1 != 0 {
+            return false;
+        }
+        let mut prints = None;
+        let mut reachable_open = self.open;
+        // Try blank witnesses first: they can end the entire check without
+        // doing ingress work for nonblank-only rows.
         for state in 0..states {
-            if self.open[state] & 1 != 0
-                && (self.predecessors[state][0]
-                    | self.predecessors[state][1])
-                    != 0
-            {
+            if self.open[state] & 1 == 0 {
+                continue;
+            }
+            let reachable = self.open[state]
+                & self.ingress_colors(state, prog, &mut prints);
+            reachable_open[state] = reachable;
+            // Blank cells need no writer, but must still have a compatible
+            // two-step ingress. A surviving blank witness is inconclusive.
+            if reachable & 1 != 0 {
                 return false;
             }
         }
 
         for state in 0..states {
-            let mut pending = self.open[state];
+            let mut pending = reachable_open[state];
             if pending == 0 {
                 continue;
+            }
+            if self.open[state] & 1 == 0 {
+                pending &=
+                    self.ingress_colors(state, prog, &mut prints);
+                if pending == 0 {
+                    continue;
+                }
             }
             // A write in direction d needs a final entry in direction !d.
             // Aggregate its possible earlier states once for the whole row.
@@ -1872,6 +2174,14 @@ impl<
             }
         }
 
+        if self.final_slot() && !avail_instrs.is_empty() {
+            self.instrs.filter_final(
+                &self.prog,
+                &slot,
+                &mut avail_instrs,
+            );
+        }
+
         let Some((last_instr, instrs)) = avail_instrs.split_last()
         else {
             return;
@@ -1910,7 +2220,7 @@ impl<
 
             // Internal candidates only: no reachable open slot means this
             // program cannot grow another branch. Reject before cloning.
-            if !self.halt_reachability.cannot_halt() {
+            if !self.halt_reachability.cannot_halt(&self.prog) {
                 let shape = self.on_shape_insert(&slot, next_instr);
                 self.instrs.on_insert(&slot, next_instr);
 
@@ -1929,7 +2239,7 @@ impl<
 
             // Internal candidates only: no reachable open slot means this
             // program cannot grow another branch. Reject before cloning.
-            if !self.halt_reachability.cannot_halt() {
+            if !self.halt_reachability.cannot_halt(&self.prog) {
                 let shape = self.on_shape_insert(&slot, last_instr);
                 self.instrs.on_insert(&slot, last_instr);
 
