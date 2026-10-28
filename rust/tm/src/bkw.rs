@@ -4220,12 +4220,93 @@ struct BkwWindowSeed<const S: usize, const C: usize> {
     )>,
 }
 
+struct PhaseFilters<const S: usize, const C: usize> {
+    head: PhasePossible<S, C>,
+    pair: PairPhasePossible<S, C>,
+    quad: QuadPhasePossible<S, C>,
+    run: RunPhasePossible<S, C>,
+    blocks: QuadPhasePossible<S, C>,
+}
+
+impl<const S: usize, const C: usize> PhaseFilters<S, C> {
+    fn prepare(
+        instrs: &BkwInstrs<S, C>,
+        configs: &mut Configs,
+    ) -> Option<Self> {
+        macro_rules! retain_phase {
+            ($possible:expr) => {{
+                let possible = $possible;
+                configs.retain(|Config { state, tape }| {
+                    possible.compatible(*state, tape)
+                });
+                if configs.is_empty() {
+                    return None;
+                }
+                possible
+            }};
+        }
+        let needs_blank_edge =
+            configs.iter().any(|Config { tape, .. }| {
+                tape.lspan.end == TapeEnd::Blanks
+                    || tape.rspan.end == TapeEnd::Blanks
+            });
+        let mut quad = retain_phase!(if needs_blank_edge {
+            QuadPhasePossible::from_blank(instrs)
+        } else {
+            QuadPhasePossible::with_parity(instrs)
+        });
+        let pair = retain_phase!(PairPhasePossible::from_blank(instrs));
+        let mut run =
+            retain_phase!(RunPhasePossible::from_blank(instrs));
+        let head = retain_phase!(PhasePossible::from_blank(instrs));
+        run.refine(instrs);
+        configs.retain(|Config { state, tape }| {
+            run.compatible(*state, tape)
+        });
+        if configs.is_empty() {
+            return None;
+        }
+        if quad.slots.is_none() {
+            quad = QuadPhasePossible::with_mode(
+                instrs,
+                QUAD_PHASE_MAX_CONFIGS,
+                if needs_blank_edge { 4 } else { 2 },
+                true,
+            );
+            configs.retain(|Config { state, tape }| {
+                quad.compatible(*state, tape)
+            });
+            if configs.is_empty() {
+                return None;
+            }
+        }
+        let blocks =
+            retain_phase!(QuadPhasePossible::from_block_runs(instrs));
+        Some(Self {
+            head,
+            pair,
+            quad,
+            run,
+            blocks,
+        })
+    }
+
+    fn compatible(&self, state: State, tape: &Tape) -> bool {
+        self.quad.compatible(state, tape)
+            && self.pair.compatible(state, tape)
+            && self.head.compatible(state, tape)
+            && self.run.compatible(state, tape)
+            && self.blocks.compatible(state, tape)
+    }
+}
+
 /// Immutable forward facts and initial frontier shared across both backward
 /// search strategies. Every abstract domain has its own precision/widening,
 /// but none is reconstructed when CountLimit triggers the cycle retry.
 #[expect(clippy::struct_excessive_bools)]
 struct BkwPrepared<const s: usize, const c: usize> {
     configs: Configs,
+    phase_filters: PhaseFilters<s, c>,
     win_possible: WinPossible<s, c>,
     radius2_possible: Radius2Possible<s, c>,
     side_possible: SidePossible<s, c>,
@@ -4244,6 +4325,1691 @@ struct BkwPrepared<const s: usize, const c: usize> {
     right_fresh_zero: bool,
     left_forced_blank: bool,
     right_forced_blank: bool,
+}
+
+// Phase masks describe a finite side segment followed by blank infinity.
+// Length codes are 0/1/2/3, even >= 4, odd >= 5. Keeping the boundary and
+// length parity is essential: including infinity in the masks loses the
+// distinction between clearing a run and stopping inside it.
+// Monomorphized relation algebra retains each domain's native bit width.
+macro_rules! phase_relation_ops {
+    ($bits:ty, $size:expr, $identity:ident, $apply:ident,
+     $compose:ident, $apply_power:ident, $relation_power:ident, $traverse:ident) => {
+        fn $identity() -> [$bits; $size] {
+            core::array::from_fn(|index| 1 << index)
+        }
+        fn $apply(
+            relation: &[$bits; $size],
+            mut states: $bits,
+        ) -> $bits {
+            let mut result = 0;
+            while states != 0 {
+                let index = usize::try_from(states.trailing_zeros())
+                    .expect("phase state fits usize");
+                states &= states - 1;
+                result |= relation[index];
+            }
+            result
+        }
+        fn $compose(
+            first: [$bits; $size],
+            second: [$bits; $size],
+        ) -> [$bits; $size] {
+            first.map(|states| $apply(&second, states))
+        }
+        fn $apply_power(
+            mut relation: [$bits; $size],
+            mut count: usize,
+            mut states: $bits,
+        ) -> $bits {
+            while count != 0 && states != 0 {
+                if count & 1 != 0 {
+                    states = $apply(&relation, states);
+                }
+                count >>= 1;
+                if count != 0 {
+                    relation = $compose(relation, relation);
+                }
+            }
+            states
+        }
+        fn $relation_power(
+            mut relation: [$bits; $size],
+            mut count: usize,
+        ) -> [$bits; $size] {
+            let mut result = $identity();
+            while count != 0 {
+                if count & 1 != 0 {
+                    result = $compose(result, relation);
+                }
+                count >>= 1;
+                if count != 0 {
+                    relation = $compose(relation, relation);
+                }
+            }
+            result
+        }
+        // Pair transitions depend on the preceding color. Consuming the
+        // first copy makes subsequent copies stationary; runs also use this
+        // path to keep single-copy blocks free of matrix construction.
+        fn $traverse<const FIRST_COPY: bool>(
+            span: &Span,
+            mut states: $bits,
+            cell: impl Fn(Color, Color) -> [$bits; $size],
+            advance: impl Fn(Color, Color, $bits) -> $bits,
+        ) -> ($bits, Color) {
+            let mut previous = 0;
+            for block in span.span.iter() {
+                let word = block.word();
+                let (mut minimum, step) = phase_repetitions(block);
+                if FIRST_COPY {
+                    for &color in word {
+                        states = advance(previous, color, states);
+                        previous = color;
+                        if states == 0 {
+                            return (0, previous);
+                        }
+                    }
+                    minimum -= 1;
+                    if minimum == 0 && step.is_none() {
+                        continue;
+                    }
+                }
+                let relation = if word.len() == 1 {
+                    let relation = cell(previous, word[0]);
+                    previous = word[0];
+                    relation
+                } else {
+                    let mut relation = $identity();
+                    for &color in word {
+                        relation =
+                            $compose(relation, cell(previous, color));
+                        previous = color;
+                    }
+                    relation
+                };
+                states = $apply_power(relation, minimum, states);
+                if states == 0 {
+                    return (0, previous);
+                }
+                if let Some(step) = step {
+                    let repeat = if step == 1 {
+                        relation
+                    } else {
+                        $relation_power(relation, step)
+                    };
+                    loop {
+                        let next = states | $apply(&repeat, states);
+                        if next == states {
+                            break;
+                        }
+                        states = next;
+                    }
+                }
+            }
+            (states, previous)
+        }
+    };
+}
+
+phase_relation_ops!(
+    u8,
+    8,
+    phase_identity,
+    phase_apply,
+    phase_compose,
+    phase_apply_power,
+    phase_relation_power,
+    phase_traverse
+);
+phase_relation_ops!(
+    u16,
+    9,
+    edge_phase_identity,
+    edge_phase_apply,
+    edge_phase_compose,
+    edge_phase_apply_power,
+    edge_phase_relation_power,
+    edge_phase_traverse
+);
+phase_relation_ops!(
+    u64,
+    41,
+    run_phase_identity,
+    run_phase_apply,
+    run_phase_compose,
+    run_phase_apply_power,
+    run_phase_relation_power,
+    run_phase_traverse
+);
+
+fn phase_repetitions(block: &Block) -> (usize, Option<usize>) {
+    match block {
+        Block::Run { count, .. } => {
+            let step = match count {
+                BlockCount::Exact(_) => None,
+                BlockCount::AtLeast(_) => Some(1),
+                BlockCount::Stride { step, .. } => {
+                    Some(usize::from(*step))
+                },
+            };
+            (usize::from(count.minimum()), step)
+        },
+        Block::Word { count, .. } => {
+            (count.minimum(), count.is_indef().then_some(1))
+        },
+    }
+}
+
+// Shared mechanics only: each domain keeps its own representation and budget.
+trait PhaseDomain: Copy + Eq + Hash {
+    const BLANK: Self;
+    fn push_phase(self, color: Color, modulus: u8) -> Option<Self>;
+    fn pull_phase(self, modulus: u8, emit: impl FnMut(Color, Self));
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct PhaseNode<D> {
+    state: usize,
+    scan: usize,
+    sides: [D; 2],
+}
+
+// Do not expose partial summaries: callers discard their output on failure.
+fn explore_phase<const S: usize, const C: usize, D: PhaseDomain>(
+    instrs: &BkwInstrs<S, C>,
+    budget: usize,
+    modulus: u8,
+    mut record: impl FnMut(usize, [D; 2]),
+) -> bool {
+    if budget == 0 {
+        return false;
+    }
+    let initial = PhaseNode {
+        state: 0,
+        scan: 0,
+        sides: [D::BLANK; 2],
+    };
+    let mut seen = Set::new();
+    seen.insert(initial);
+    let mut pending = vec![initial];
+    while let Some(config) = pending.pop() {
+        record(config.state * C + config.scan, config.sides);
+        let Some((print, right, state)) =
+            instrs.get(config.state, config.scan)
+        else {
+            continue;
+        };
+        let pull_side = usize::from(right);
+        let push_side = 1 - pull_side;
+        let print = Color::try_from(print)
+            .expect("instruction color fits Color");
+        // Compute once, even when the pull produces several alternatives.
+        let Some(pushed) =
+            config.sides[push_side].push_phase(print, modulus)
+        else {
+            return false;
+        };
+        let mut exhausted = false;
+        config.sides[pull_side].pull_phase(
+            modulus,
+            |scan, remainder| {
+                if exhausted {
+                    return;
+                }
+                let mut sides = config.sides;
+                sides[pull_side] = remainder;
+                sides[push_side] = pushed;
+                let next = PhaseNode {
+                    state,
+                    scan: usize::from(scan),
+                    sides,
+                };
+                if !seen.contains(&next) {
+                    if seen.len() == budget {
+                        exhausted = true;
+                    } else {
+                        seen.insert(next);
+                        pending.push(next);
+                    }
+                }
+            },
+        );
+        if exhausted {
+            return false;
+        }
+    }
+    true
+}
+
+trait PhaseMatch: Copy + Eq + Hash {
+    const BUDGET: usize;
+    fn limit_budget(budget: usize) -> usize {
+        budget
+    }
+    const UNKNOWN_FAST: bool = false;
+    fn matches_phase(self, span: &Span) -> bool;
+}
+
+impl PhaseMatch for PhaseSide {
+    const BUDGET: usize = PHASE_SIDE_MAX_CONFIGS;
+    fn matches_phase(self, span: &Span) -> bool {
+        self.matches(span)
+    }
+}
+
+struct PhaseReach<D, const S: usize, const C: usize> {
+    slots: Option<Vec<PhaseSlot<D>>>,
+}
+
+impl<D: PhaseDomain + PhaseMatch, const S: usize, const C: usize>
+    PhaseReach<D, S, C>
+{
+    fn from_blank(instrs: &BkwInstrs<S, C>) -> Self {
+        Self::with_budget(instrs, D::BUDGET)
+    }
+
+    fn with_budget(instrs: &BkwInstrs<S, C>, budget: usize) -> Self {
+        let mut slots = vec![Vec::new(); S * C];
+        if !explore_phase(
+            instrs,
+            D::limit_budget(budget),
+            0,
+            |slot, sides: [D; 2]| slots[slot].push(sides),
+        ) {
+            return Self { slots: None };
+        }
+        Self {
+            slots: Some(
+                slots.into_iter().map(PhaseSlot::new).collect(),
+            ),
+        }
+    }
+
+    fn compatible(&self, state: State, tape: &Tape) -> bool {
+        self.slots.as_ref().is_none_or(|slots| {
+            slots[usize::from(state) * C + usize::from(tape.scan)]
+                .compatible(tape)
+        })
+    }
+}
+
+// Intern sides independently, retaining the original joint witnesses.
+struct PhaseSlot<D> {
+    sides: [Vec<D>; 2],
+    pairs: Vec<[usize; 2]>,
+}
+
+impl<D: PhaseMatch> PhaseSlot<D> {
+    fn new(alternatives: Vec<[D; 2]>) -> Self {
+        let mut sides = [Vec::new(), Vec::new()];
+        let mut indices = [Dict::new(), Dict::new()];
+        let pairs = alternatives
+            .into_iter()
+            .map(|pair| {
+                core::array::from_fn(|side| {
+                    *indices[side].entry(pair[side]).or_insert_with(
+                        || {
+                            let index = sides[side].len();
+                            sides[side].push(pair[side]);
+                            index
+                        },
+                    )
+                })
+            })
+            .collect();
+        Self { sides, pairs }
+    }
+
+    fn compatible(&self, tape: &Tape) -> bool {
+        if D::UNKNOWN_FAST
+            && tape.lspan.span.first().is_none()
+            && tape.lspan.end == TapeEnd::Unknown
+            && tape.rspan.span.first().is_none()
+            && tape.rspan.end == TapeEnd::Unknown
+        {
+            return !self.pairs.is_empty();
+        }
+        if self.pairs.len() <= 1 {
+            return self.pairs.iter().any(|pair| {
+                self.sides[LEFT_SIDE][pair[LEFT_SIDE]]
+                    .matches_phase(&tape.lspan)
+                    && self.sides[RIGHT_SIDE][pair[RIGHT_SIDE]]
+                        .matches_phase(&tape.rspan)
+            });
+        }
+        let size =
+            self.sides[LEFT_SIDE].len() + self.sides[RIGHT_SIDE].len();
+        // Small domains and small head slots avoid heap allocation. Larger
+        // head slots retain a dynamically sized cache, never a truncated one.
+        if size <= 1024 {
+            self.compatible_cached(tape, &mut [0; 1024])
+        } else {
+            self.compatible_cached(tape, &mut vec![0; size])
+        }
+    }
+
+    fn compatible_cached(&self, tape: &Tape, cache: &mut [u8]) -> bool {
+        let offset = self.sides[LEFT_SIDE].len();
+        self.pairs.iter().any(|pair| {
+            let left = pair[LEFT_SIDE];
+            if cache[left] == 0 {
+                cache[left] = 1 + u8::from(
+                    self.sides[LEFT_SIDE][left]
+                        .matches_phase(&tape.lspan),
+                );
+            }
+            if cache[left] == 1 {
+                return false;
+            }
+            let right = pair[RIGHT_SIDE];
+            let index = offset + right;
+            if cache[index] == 0 {
+                cache[index] = 1 + u8::from(
+                    self.sides[RIGHT_SIDE][right]
+                        .matches_phase(&tape.rspan),
+                );
+            }
+            cache[index] == 2
+        })
+    }
+}
+
+impl PhaseDomain for PhaseSide {
+    const BLANK: Self = Self::BLANK;
+    fn push_phase(self, color: Color, _modulus: u8) -> Option<Self> {
+        Some(self.push(color))
+    }
+    fn pull_phase(self, _modulus: u8, emit: impl FnMut(Color, Self)) {
+        self.pull(emit);
+    }
+}
+
+impl PhaseDomain for HeadPhaseSide {
+    const BLANK: Self = Self::BLANK;
+    fn push_phase(self, color: Color, _modulus: u8) -> Option<Self> {
+        Some(self.push(color))
+    }
+    fn pull_phase(self, _modulus: u8, emit: impl FnMut(Color, Self)) {
+        self.pull(emit);
+    }
+}
+
+impl PhaseMatch for HeadPhaseSide {
+    const BUDGET: usize = PHASE_SIDE_MAX_CONFIGS;
+    fn matches_phase(self, span: &Span) -> bool {
+        self.matches(span)
+    }
+}
+
+impl PhaseDomain for PairPhaseSide {
+    const BLANK: Self = Self::BLANK;
+    fn push_phase(self, color: Color, _modulus: u8) -> Option<Self> {
+        (usize::from(color) < PAIR_PHASE_COLORS)
+            .then(|| self.push(color))
+    }
+    fn pull_phase(self, _modulus: u8, emit: impl FnMut(Color, Self)) {
+        self.pull(emit);
+    }
+}
+
+impl PhaseMatch for PairPhaseSide {
+    const BUDGET: usize = PAIR_PHASE_MAX_CONFIGS;
+    fn matches_phase(self, span: &Span) -> bool {
+        self.matches(span)
+    }
+}
+
+impl<const MIN: u8, const MAX: u8> PhaseDomain
+    for RunPhaseSide<MIN, MAX>
+{
+    const BLANK: Self = Self::BLANK;
+    fn push_phase(self, color: Color, _modulus: u8) -> Option<Self> {
+        self.push(color)
+    }
+    fn pull_phase(self, _modulus: u8, emit: impl FnMut(Color, Self)) {
+        self.pull(emit);
+    }
+}
+
+impl<const MIN: u8, const MAX: u8> PhaseMatch
+    for RunPhaseSide<MIN, MAX>
+{
+    fn limit_budget(budget: usize) -> usize {
+        budget.min(Self::BUDGET)
+    }
+    const BUDGET: usize = RUN_PHASE_MAX_CONFIGS;
+    const UNKNOWN_FAST: bool = true;
+    fn matches_phase(self, span: &Span) -> bool {
+        self.matches(span)
+    }
+}
+
+impl PhaseDomain for QuadPhaseSide {
+    const BLANK: Self = Self::BLANK;
+    fn push_phase(self, color: Color, modulus: u8) -> Option<Self> {
+        (usize::from(color) < QUAD_PHASE_COLORS)
+            .then(|| self.push(color, modulus))
+    }
+    fn pull_phase(self, modulus: u8, emit: impl FnMut(Color, Self)) {
+        self.pull(modulus, emit);
+    }
+}
+
+const PHASE_SIDE_MAX_CONFIGS: usize = 8_192;
+const PHASE_SIDE_NEXT: [u8; 6] = [1, 2, 3, 4, 5, 4];
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct PhaseSide {
+    len: u8,
+    colors: [u64; 2],
+}
+
+impl PhaseSide {
+    const BLANK: Self = Self {
+        len: 0,
+        colors: [0; 2],
+    };
+
+    const fn normalized(mut self) -> Self {
+        if self.len == 0 {
+            return Self::BLANK;
+        }
+        if self.len == 1 {
+            self.colors[1] = 0;
+        }
+        if self.colors[0] | self.colors[1] == 1 {
+            Self::BLANK
+        } else {
+            self
+        }
+    }
+
+    fn push(self, color: Color) -> Self {
+        Self {
+            len: PHASE_SIDE_NEXT[usize::from(self.len)],
+            colors: [self.colors[1] | (1_u64 << color), self.colors[0]],
+        }
+        .normalized()
+    }
+
+    fn pull(self, mut emit: impl FnMut(Color, Self)) {
+        if self.len == 0 {
+            emit(0, self);
+            return;
+        }
+        let lengths: &[u8] = match self.len {
+            1 => &[0],
+            2 => &[1],
+            3 => &[2],
+            4 => &[3, 5],
+            5 => &[4],
+            _ => unreachable!("phase length code"),
+        };
+        let mut colors = self.colors[0];
+        while colors != 0 {
+            let color = Color::try_from(colors.trailing_zeros())
+                .expect("phase color fits Color");
+            colors &= colors - 1;
+            for &len in lengths {
+                emit(
+                    color,
+                    Self {
+                        len,
+                        colors: [self.colors[1], self.colors[0]],
+                    }
+                    .normalized(),
+                );
+            }
+        }
+    }
+
+    // Seven-state language matcher: states 0..5 count cells consumed in the
+    // finite segment; state 6 has entered its blank tail. The two saturated
+    // counters preserve parity. This automaton is local to ONE side summary,
+    // not a product of the existing forward domains. Array slot 7 is reserved
+    // for the optional exact nearest cell.
+    fn cell_relation(self, color: Color) -> [u8; 8] {
+        let mut relation = [0; 8];
+        for (position, out) in relation[..6].iter_mut().enumerate() {
+            if (self.len >= 4 || position < usize::from(self.len))
+                && self.colors[position % 2] & (1_u64 << color) != 0
+            {
+                *out |= 1_u8 << PHASE_SIDE_NEXT[position];
+            }
+            if color == 0 && position == usize::from(self.len) {
+                *out |= 1 << 6;
+            }
+        }
+        if color == 0 {
+            relation[6] = 1 << 6;
+        }
+        relation
+    }
+
+    fn matches(self, span: &Span) -> bool {
+        phase_matches(span, 1, (1 << self.len) | (1 << 6), |color| {
+            self.cell_relation(color)
+        })
+    }
+}
+
+fn phase_matches(
+    span: &Span,
+    mut states: u8,
+    accepting: u8,
+    cell_relation: impl Fn(Color) -> [u8; 8],
+) -> bool {
+    (states, _) = phase_traverse::<false>(
+        span,
+        states,
+        |_, color| cell_relation(color),
+        |_, color, states| phase_apply(&cell_relation(color), states),
+    );
+    if states == 0 {
+        return false;
+    }
+
+    if span.end == TapeEnd::Unknown {
+        // Every reachable matcher state has a finite completion.
+        return states != 0;
+    }
+    let zeros = cell_relation(0);
+    loop {
+        // The finite segment can end here, or has already ended. All
+        // remaining concrete cells must be zero for a blank-ended span.
+        if states & accepting != 0 {
+            return true;
+        }
+        let next = states | phase_apply(&zeros, states);
+        if next == states {
+            return false;
+        }
+        states = next;
+    }
+}
+
+type PhaseTailPossible<const S: usize, const C: usize> =
+    PhaseReach<PhaseSide, S, C>;
+
+// An exact nearest cell and a phase summary of the remaining finite side.
+// Even the blank side has an exact zero cell; its tail is blank infinity.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct HeadPhaseSide {
+    head: Color,
+    tail: PhaseSide,
+}
+
+impl HeadPhaseSide {
+    const BLANK: Self = Self {
+        head: 0,
+        tail: PhaseSide::BLANK,
+    };
+
+    fn push(self, color: Color) -> Self {
+        Self {
+            head: color,
+            tail: self.tail.push(self.head),
+        }
+    }
+
+    fn pull(self, mut emit: impl FnMut(Color, Self)) {
+        self.tail
+            .pull(|head, tail| emit(self.head, Self { head, tail }));
+    }
+
+    fn matches(self, span: &Span) -> bool {
+        if !span.matches_color(self.head) {
+            return false;
+        }
+        if span.span.first().is_none() {
+            return span.end == TapeEnd::Unknown
+                || self.tail.len == 0
+                || (self.tail.colors[0] & 1 != 0
+                    && (self.tail.len == 1
+                        || self.tail.colors[1] & 1 != 0));
+        }
+
+        // State 7 consumes the exact cell, then enters the tail automaton.
+        phase_matches(
+            span,
+            1 << 7,
+            (1 << self.tail.len) | (1 << 6),
+            |color| {
+                let mut relation = self.tail.cell_relation(color);
+                if color == self.head {
+                    relation[7] = 1;
+                }
+                relation
+            },
+        )
+    }
+}
+
+// Intern each side independently, but keep the original pairs: compatibility
+// must still be witnessed by a single reachable joint alternative.
+
+enum PhasePossible<const S: usize, const C: usize> {
+    Head(PhaseReach<HeadPhaseSide, S, C>),
+    Tail(PhaseTailPossible<S, C>),
+}
+
+impl<const S: usize, const C: usize> PhasePossible<S, C> {
+    fn from_blank(instrs: &BkwInstrs<S, C>) -> Self {
+        Self::with_head_budget(instrs, PHASE_SIDE_MAX_CONFIGS)
+    }
+
+    fn with_head_budget(
+        instrs: &BkwInstrs<S, C>,
+        budget: usize,
+    ) -> Self {
+        let head = PhaseReach::with_budget(instrs, budget);
+        if head.slots.is_some() {
+            Self::Head(head)
+        } else {
+            Self::Tail(PhaseTailPossible::from_blank(instrs))
+        }
+    }
+
+    fn compatible(&self, state: State, tape: &Tape) -> bool {
+        match self {
+            Self::Tail(fallback) => fallback.compatible(state, tape),
+            Self::Head(head) => head.compatible(state, tape),
+        }
+    }
+}
+
+// Oriented adjacent pairs, indexed by the parity of their nearer endpoint.
+// The finite segment ends at an exact nonblank color. Its length is exact
+// below four and otherwise retained modulo four. This prevents an interior
+// zero from becoming a fictitious blank edge after a sweep.
+// Eight actual colors fit in each u64; unused generic dimensions do not
+// disable the analysis. A reachable write outside this range disables it.
+const PAIR_PHASE_MAX_CONFIGS: usize = 512;
+const PAIR_PHASE_COLORS: usize = 8;
+const PAIR_PHASE_NEXT: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 4];
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct PairPhaseSide {
+    len: u8,
+    head: Color,
+    last: Color,
+    pairs: [u64; 2],
+}
+
+impl PairPhaseSide {
+    const BLANK: Self = Self {
+        len: 0,
+        head: 0,
+        last: 0,
+        pairs: [0; 2],
+    };
+
+    fn normalized(mut self) -> Option<Self> {
+        if self.len == 0 {
+            return Some(Self::BLANK);
+        }
+        debug_assert_ne!(self.last, 0);
+        if self.len == 1 {
+            if self.head != self.last {
+                return None;
+            }
+            self.pairs = [0; 2];
+        } else if self.len == 2 {
+            let edge = 1_u64
+                << (PAIR_PHASE_COLORS * usize::from(self.head)
+                    + usize::from(self.last));
+            if self.pairs[0] & edge == 0 {
+                return None;
+            }
+            self.pairs = [edge, 0];
+        }
+        Some(self)
+    }
+
+    fn push(self, color: Color) -> Self {
+        if self.len == 0 {
+            return if color == 0 {
+                Self::BLANK
+            } else {
+                Self {
+                    len: 1,
+                    head: color,
+                    last: color,
+                    pairs: [0; 2],
+                }
+            };
+        }
+        let boundary = 1_u64
+            << (PAIR_PHASE_COLORS * usize::from(color)
+                + usize::from(self.head));
+        Self {
+            len: PAIR_PHASE_NEXT[usize::from(self.len)],
+            head: color,
+            last: self.last,
+            pairs: [self.pairs[1] | boundary, self.pairs[0]],
+        }
+    }
+
+    fn pull(self, mut emit: impl FnMut(Color, Self)) {
+        if self.len <= 1 {
+            emit(self.head, Self::BLANK);
+            return;
+        }
+        let lengths: &[u8] = match self.len {
+            2 => &[1],
+            3 => &[2],
+            4 => &[3, 7],
+            5 => &[4],
+            6 => &[5],
+            7 => &[6],
+            _ => unreachable!("pair phase length code"),
+        };
+        let mut successors = (self.pairs[0]
+            >> (PAIR_PHASE_COLORS * usize::from(self.head)))
+            & 0xff;
+        while successors != 0 {
+            let head = Color::try_from(successors.trailing_zeros())
+                .expect("pair phase color fits Color");
+            successors &= successors - 1;
+            for &len in lengths {
+                if let Some(remainder) = (Self {
+                    len,
+                    head,
+                    last: self.last,
+                    pairs: [self.pairs[1], self.pairs[0]],
+                })
+                .normalized()
+                {
+                    emit(self.head, remainder);
+                }
+            }
+        }
+    }
+
+    fn cell_relation(self, previous: Color, color: Color) -> [u16; 9] {
+        let mut relation = [0; 9];
+        if usize::from(color) >= PAIR_PHASE_COLORS {
+            return relation;
+        }
+        for (position, out) in relation[..8].iter_mut().enumerate() {
+            let allowed = if position == 0 {
+                color == self.head
+            } else {
+                self.pairs[(position - 1) % 2]
+                    & (1_u64
+                        << (PAIR_PHASE_COLORS * usize::from(previous)
+                            + usize::from(color)))
+                    != 0
+            };
+            if (self.len >= 4 || position < usize::from(self.len))
+                && allowed
+            {
+                *out |= 1 << PAIR_PHASE_NEXT[position];
+            }
+            if color == 0
+                && position == usize::from(self.len)
+                && (self.len == 0 || previous == self.last)
+            {
+                *out |= 1 << 8;
+            }
+        }
+        if color == 0 {
+            relation[8] = 1 << 8;
+        }
+        relation
+    }
+
+    fn matches(self, span: &Span) -> bool {
+        if !span.matches_color(self.head) {
+            return false;
+        }
+        if span.span.first().is_none() {
+            return span.end == TapeEnd::Unknown || self.len == 0;
+        }
+        let (states, previous) = edge_phase_traverse::<true>(
+            span,
+            1,
+            |previous, color| self.cell_relation(previous, color),
+            |previous, color, states| {
+                edge_phase_apply(
+                    &self.cell_relation(previous, color),
+                    states,
+                )
+            },
+        );
+        if states == 0 {
+            return false;
+        }
+        if span.end == TapeEnd::Unknown {
+            // Some pair paths may have no finite completion. Keeping them is
+            // conservative; only an empty matcher state proves incompatibility.
+            return true;
+        }
+        // No unconsumed nonblank endpoint can fit in the implicit zero tail.
+        // Unlike the unanchored domain, no trailing-zero closure is needed.
+        let boundary = if self.len == 0 || previous == self.last {
+            1 << self.len
+        } else {
+            0
+        };
+        states & (boundary | (1 << 8)) != 0
+    }
+}
+
+type PairPhasePossible<const S: usize, const C: usize> =
+    PhaseReach<PairPhaseSide, S, C>;
+
+// Shared forward run filter: preserve the entire sequence of equal-color runs.
+// MIN=3 keeps exact counts 1/2, then parity (the original domain).
+// MIN=2 keeps exact count 1, then residues modulo three. Both use codes
+// through 4 and the same five matcher positions; no larger bitsets.
+// Unlike cell windows, this keeps an arbitrarily long uniform barrier intact.
+// Both sides remain in the same configuration; no independent-side join.
+const RUN_PHASE_MAX_CONFIGS: usize = 512;
+const RUN_PHASE_MAX_RUNS: usize = 8;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct RunPhaseSide<const MIN: u8 = 3, const MAX: u8 = 4> {
+    runs: [(Color, u8); RUN_PHASE_MAX_RUNS],
+    len: usize,
+}
+
+impl<const MIN: u8, const MAX: u8> RunPhaseSide<MIN, MAX> {
+    const BLANK: Self = Self {
+        runs: [(0, 0); RUN_PHASE_MAX_RUNS],
+        len: 0,
+    };
+
+    fn push(mut self, color: Color) -> Option<Self> {
+        if self.len == 0 && color == 0 {
+            return Some(self);
+        }
+        if self.len != 0 && self.runs[0].0 == color {
+            let count = &mut self.runs[0].1;
+            *count = if *count == MAX { MIN } else { *count + 1 };
+        } else {
+            if self.len == RUN_PHASE_MAX_RUNS {
+                return None;
+            }
+            self.runs.copy_within(..self.len, 1);
+            self.runs[0] = (color, 1);
+            self.len += 1;
+        }
+        Some(self)
+    }
+
+    fn pull(mut self, mut emit: impl FnMut(Color, Self)) {
+        if self.len == 0 {
+            emit(0, self);
+            return;
+        }
+        let (color, count) = self.runs[0];
+        if count == 1 {
+            self.runs.copy_within(1..self.len, 0);
+            self.len -= 1;
+            self.runs[self.len] = (0, 0);
+            emit(color, self);
+        } else {
+            self.runs[0].1 = count - 1;
+            emit(color, self);
+            if count == MIN {
+                self.runs[0].1 = MAX;
+                emit(color, self);
+            }
+        }
+    }
+}
+
+// Preserve parity facts and add a small complementary residue summary only
+// after the existing phase filters have failed to discharge every target.
+struct RunPhasePossible<const S: usize, const C: usize> {
+    parity: PhaseReach<RunPhaseSide, S, C>,
+    mod_three: Option<PhaseReach<RunPhaseSide<2>, S, C>>,
+}
+
+impl<const S: usize, const C: usize> RunPhasePossible<S, C> {
+    fn from_blank(instrs: &BkwInstrs<S, C>) -> Self {
+        Self {
+            parity: PhaseReach::from_blank(instrs),
+            mod_three: None,
+        }
+    }
+
+    fn refine(&mut self, instrs: &BkwInstrs<S, C>) {
+        let possible = PhaseReach::with_budget(instrs, 256);
+        if possible.slots.is_some() {
+            self.mod_three = Some(possible);
+        }
+    }
+
+    fn compatible(&self, state: State, tape: &Tape) -> bool {
+        self.parity.compatible(state, tape)
+            && self
+                .mod_three
+                .as_ref()
+                .is_none_or(|possible| possible.compatible(state, tape))
+    }
+}
+
+// Five positions per run: exact consumed counts below MIN, then residues.
+// Accepting a count also activates the next run's start. The final state
+// consumes the infinite blank tail. Forty-one bits cover eight whole runs.
+const RUN_PHASE_STATES: usize = 5 * RUN_PHASE_MAX_RUNS + 1;
+type RunPhaseRelation = [u64; RUN_PHASE_STATES];
+
+#[expect(clippy::multiple_inherent_impl)]
+impl<const MIN: u8, const MAX: u8> RunPhaseSide<MIN, MAX> {
+    fn advance(self, color: Color, mut states: u64) -> u64 {
+        let mut out = 0;
+        while states != 0 {
+            let index = usize::try_from(states.trailing_zeros())
+                .expect("run state fits usize");
+            states &= states - 1;
+            let run = index / 5;
+            if run == self.len {
+                if color == 0 {
+                    out |= 1 << index;
+                }
+                continue;
+            }
+            let (run_color, count) = self.runs[run];
+            if color != run_color {
+                continue;
+            }
+            let position = index % 5;
+            if position > usize::from(MAX) {
+                continue;
+            }
+            let next = if position == usize::from(MAX) {
+                usize::from(MIN)
+            } else {
+                position + 1
+            };
+            if count < MIN && next > usize::from(count) {
+                continue;
+            }
+            if next == usize::from(count) {
+                out |= 1 << (5 * (run + 1));
+            }
+            if count >= MIN || next < usize::from(count) {
+                out |= 1 << (5 * run + next);
+            }
+        }
+        out
+    }
+
+    fn cell_relation(self, color: Color) -> RunPhaseRelation {
+        let mut relation = [0; RUN_PHASE_STATES];
+        for (index, &(run_color, count)) in
+            self.runs[..self.len].iter().enumerate()
+        {
+            if color != run_color {
+                continue;
+            }
+            for position in 0..=usize::from(MAX) {
+                let next = if position == usize::from(MAX) {
+                    usize::from(MIN)
+                } else {
+                    position + 1
+                };
+                if count < MIN && next > usize::from(count) {
+                    continue;
+                }
+                #[expect(clippy::disallowed_names)]
+                let row = &mut relation[5 * index + position];
+                if next == usize::from(count) {
+                    *row |= 1 << (5 * (index + 1));
+                }
+                if count >= MIN || next < usize::from(count) {
+                    *row |= 1 << (5 * index + next);
+                }
+            }
+        }
+        if color == 0 {
+            relation[5 * self.len] = 1 << (5 * self.len);
+        }
+        relation
+    }
+
+    fn matches(self, span: &Span) -> bool {
+        if span.span.first().is_none() {
+            return span.end == TapeEnd::Unknown || self.len == 0;
+        }
+        let head = if self.len == 0 { 0 } else { self.runs[0].0 };
+        if !span.matches_color(head) {
+            return false;
+        }
+        if span.end == TapeEnd::Blanks && span.blank() {
+            return self.len == 0;
+        }
+        let (states, _) = run_phase_traverse::<true>(
+            span,
+            1,
+            |_, color| self.cell_relation(color),
+            |_, color, states| self.advance(color, states),
+        );
+        if states == 0 {
+            return false;
+        }
+        span.end == TapeEnd::Unknown
+            || states & (1 << (5 * self.len)) != 0
+    }
+}
+
+// Pair consecutive cells before run compression. A single buffered cell
+// preserves alignment; the rest is a stack of equal two-cell blocks.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct BlockRunSide {
+    buffer: Option<Color>,
+    blocks: RunPhaseSide<2, 3>,
+}
+
+impl PhaseDomain for BlockRunSide {
+    const BLANK: Self = Self {
+        buffer: None,
+        blocks: RunPhaseSide::BLANK,
+    };
+
+    fn push_phase(self, color: Color, _modulus: u8) -> Option<Self> {
+        if usize::from(color) >= QUAD_PHASE_COLORS {
+            return None;
+        }
+        if let Some(previous) = self.buffer {
+            let code = Color::try_from(
+                4 * usize::from(color) + usize::from(previous),
+            )
+            .expect("two-cell block fits Color");
+            Some(Self {
+                buffer: None,
+                blocks: self.blocks.push(code)?,
+            })
+        } else if color == 0 && self.blocks.len == 0 {
+            Some(Self::BLANK)
+        } else {
+            Some(Self {
+                buffer: Some(color),
+                ..self
+            })
+        }
+    }
+
+    fn pull_phase(
+        self,
+        _modulus: u8,
+        mut emit: impl FnMut(Color, Self),
+    ) {
+        if let Some(color) = self.buffer {
+            emit(
+                color,
+                Self {
+                    buffer: None,
+                    ..self
+                },
+            );
+        } else {
+            self.blocks.pull(|code, blocks| {
+                let far = code % 4;
+                let buffer =
+                    (far != 0 || blocks.len != 0).then_some(far);
+                emit(code / 4, Self { buffer, blocks });
+            });
+        }
+    }
+}
+
+impl BlockRunSide {
+    const fn blank(self) -> bool {
+        self.buffer.is_none() && self.blocks.len == 0
+    }
+
+    const fn prefix(self) -> [Color; 3] {
+        let code = if self.blocks.len == 0 {
+            0
+        } else {
+            self.blocks.runs[0].0
+        };
+        if let Some(color) = self.buffer {
+            [color, code / 4, code % 4]
+        } else {
+            let next = if self.blocks.len == 0 {
+                0
+            } else if self.blocks.runs[0].1 >= 2 {
+                code / 4
+            } else if self.blocks.len > 1 {
+                self.blocks.runs[1].0 / 4
+            } else {
+                0
+            };
+            [code / 4, code % 4, next]
+        }
+    }
+}
+
+// Four-cell words retain correlations that independent adjacent pairs lose.
+// The exact first three cells and last nonblank cell anchor the finite side;
+// length is exact below four and otherwise retains parity or modulo four. Each phase
+// has four u64 rows: the first color selects the row, the remaining three
+// select a bit. Only actual reachable writes >= 4 disable this domain.
+const QUAD_PHASE_MAX_CONFIGS: usize = 512;
+const QUAD_PHASE_COLORS: usize = 4;
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct QuadPhaseSide {
+    len: u8,
+    prefix: [Color; 3],
+    last: Color,
+    words: [[u64; 4]; 2],
+}
+
+impl QuadPhaseSide {
+    const BLANK: Self = Self {
+        len: 0,
+        prefix: [0; 3],
+        last: 0,
+        words: [[0; 4]; 2],
+    };
+
+    fn normalized(mut self) -> Option<Self> {
+        if self.len == 0 {
+            return Some(Self::BLANK);
+        }
+        debug_assert_ne!(self.last, 0);
+        if self.len < 4 {
+            let len = usize::from(self.len);
+            if self.prefix[len - 1] != self.last {
+                return None;
+            }
+            self.prefix[len..].fill(0);
+            self.words = [[0; 4]; 2];
+        }
+        Some(self)
+    }
+
+    fn push(self, color: Color, modulus: u8) -> Self {
+        if self.len == 0 {
+            return if color == 0 {
+                Self::BLANK
+            } else {
+                Self {
+                    len: 1,
+                    prefix: [color, 0, 0],
+                    last: color,
+                    words: [[0; 4]; 2],
+                }
+            };
+        }
+        let mut words = [self.words[1], self.words[0]];
+        if self.len >= 3 {
+            let bit = 16 * usize::from(self.prefix[0])
+                + 4 * usize::from(self.prefix[1])
+                + usize::from(self.prefix[2]);
+            words[0][usize::from(color)] |= 1_u64 << bit;
+        }
+        Self {
+            len: if self.len == 3 + modulus {
+                4
+            } else {
+                self.len + 1
+            },
+            prefix: [color, self.prefix[0], self.prefix[1]],
+            last: self.last,
+            words,
+        }
+    }
+
+    fn pull(self, modulus: u8, mut emit: impl FnMut(Color, Self)) {
+        let head = self.prefix[0];
+        if self.len <= 1 {
+            emit(head, Self::BLANK);
+            return;
+        }
+        if self.len < 4 {
+            emit(
+                head,
+                Self {
+                    len: self.len - 1,
+                    prefix: [self.prefix[1], self.prefix[2], 0],
+                    last: self.last,
+                    words: [[0; 4]; 2],
+                },
+            );
+            return;
+        }
+        let lengths = if self.len == 4 {
+            [3, 3 + modulus]
+        } else {
+            [self.len - 1; 2]
+        };
+        let lengths = &lengths[..if self.len == 4 { 2 } else { 1 }];
+        let shift = 16 * usize::from(self.prefix[1])
+            + 4 * usize::from(self.prefix[2]);
+        let mut successors =
+            (self.words[0][usize::from(head)] >> shift) & 0xf;
+        while successors != 0 {
+            let color = Color::try_from(successors.trailing_zeros())
+                .expect("quad phase color fits Color");
+            successors &= successors - 1;
+            for &len in lengths {
+                if let Some(remainder) = (Self {
+                    len,
+                    prefix: [self.prefix[1], self.prefix[2], color],
+                    last: self.last,
+                    words: [self.words[1], self.words[0]],
+                })
+                .normalized()
+                {
+                    emit(head, remainder);
+                }
+            }
+        }
+    }
+}
+
+struct QuadPhasePossible<const S: usize, const C: usize> {
+    // For each slot and blank-side requirement, retain exact adjacent color
+    // pairs. Both neighbors and the blank requirements must have a common
+    // reachable witness. Partial fixed points are never retained.
+    slots: Option<Vec<[u16; 4]>>,
+    // Packed exact prefixes: left 6 bits, right 6 bits, joint blank flags 2.
+    // At most one entry per explored configuration before deduplication.
+    prefixes: Option<Vec<Vec<u16>>>,
+}
+
+// Widen only word masks. Exact state, scan, side lengths, prefixes and far
+// endpoints stay in the key. Shape pairs stay joint; word-mask correlations
+// are deliberately widened.
+fn quad_phase_key(
+    mut config: PhaseNode<QuadPhaseSide>,
+) -> PhaseNode<QuadPhaseSide> {
+    for side in &mut config.sides {
+        side.words = [[0; 4]; 2];
+    }
+    config
+}
+
+fn explore_merged_quad<const S: usize, const C: usize>(
+    instrs: &BkwInstrs<S, C>,
+    modulus: u8,
+    mut record: impl FnMut(usize, [QuadPhaseSide; 2]),
+) -> bool {
+    let initial = PhaseNode {
+        state: 0,
+        scan: 0,
+        sides: [QuadPhaseSide::BLANK; 2],
+    };
+    let mut indices = Dict::new();
+    indices.insert(quad_phase_key(initial), 0);
+    let mut configs = vec![initial];
+    let mut queued = vec![true];
+    let mut pending = std::collections::VecDeque::from([0]);
+    let mut expansions = 0;
+    while let Some(index) = pending.pop_front() {
+        if expansions == 1024 {
+            return false;
+        }
+        expansions += 1;
+        queued[index] = false;
+        let config = configs[index];
+        let Some((print, right, state)) =
+            instrs.get(config.state, config.scan)
+        else {
+            continue;
+        };
+        if print >= QUAD_PHASE_COLORS {
+            return false;
+        }
+        let pull_side = usize::from(right);
+        let push_side = 1 - pull_side;
+        let print =
+            Color::try_from(print).expect("quad color fits Color");
+        let pushed = config.sides[push_side].push(print, modulus);
+        let mut exhausted = false;
+        config.sides[pull_side].pull(modulus, |scan, remainder| {
+            if exhausted {
+                return;
+            }
+            let mut sides = config.sides;
+            sides[pull_side] = remainder;
+            sides[push_side] = pushed;
+            let next = PhaseNode {
+                state,
+                scan: usize::from(scan),
+                sides,
+            };
+            let key = quad_phase_key(next);
+            if let Some(&index) = indices.get(&key) {
+                let old = configs[index].sides;
+                for (target, source) in
+                    configs[index].sides.iter_mut().zip(sides)
+                {
+                    for (target, source) in
+                        target.words.iter_mut().zip(source.words)
+                    {
+                        for (target, source) in
+                            target.iter_mut().zip(source)
+                        {
+                            *target |= source;
+                        }
+                    }
+                }
+                if configs[index].sides != old && !queued[index] {
+                    pending.push_back(index);
+                    queued[index] = true;
+                }
+            } else if configs.len() == QUAD_PHASE_MAX_CONFIGS {
+                exhausted = true;
+            } else {
+                let index = configs.len();
+                indices.insert(key, index);
+                configs.push(next);
+                queued.push(true);
+                pending.push_back(index);
+            }
+        });
+        if exhausted {
+            return false;
+        }
+    }
+    // Only publish a closed fixed point. Reaching either bound disables
+    // the whole refinement, never just the unprocessed successors.
+    for config in configs {
+        record(config.state * C + config.scan, config.sides);
+    }
+    true
+}
+
+impl<const S: usize, const C: usize> QuadPhasePossible<S, C> {
+    fn record_prefixes(
+        slots: &mut [[u16; 4]],
+        prefixes: &mut [Vec<u16>],
+        slot: usize,
+        heads: [[Color; 3]; 2],
+        blanks: u8,
+    ) {
+        let codes = heads.map(|prefix| {
+            prefix.into_iter().fold(0_usize, |code, color| {
+                QUAD_PHASE_COLORS * code + usize::from(color)
+            })
+        });
+        let packed = codes[LEFT_SIDE]
+            | (codes[RIGHT_SIDE] << 6)
+            | (usize::from(blanks) << 12);
+        prefixes[slot].push(
+            u16::try_from(packed).expect("quad prefix pair fits u16"),
+        );
+        let neighbors = QUAD_PHASE_COLORS
+            * usize::from(heads[LEFT_SIDE][0])
+            + usize::from(heads[RIGHT_SIDE][0]);
+        for required in 0..4_u8 {
+            if required & blanks == required {
+                slots[slot][usize::from(required)] |= 1 << neighbors;
+            }
+        }
+    }
+
+    fn from_block_runs(instrs: &BkwInstrs<S, C>) -> Self {
+        let mut slots = vec![[0; 4]; S * C];
+        let mut prefixes = vec![Vec::new(); S * C];
+        let complete = explore_phase(
+            instrs,
+            256,
+            0,
+            |slot, sides: [BlockRunSide; 2]| {
+                let blanks = u8::from(sides[LEFT_SIDE].blank())
+                    | (u8::from(sides[RIGHT_SIDE].blank()) << 1);
+                Self::record_prefixes(
+                    &mut slots,
+                    &mut prefixes,
+                    slot,
+                    sides.map(BlockRunSide::prefix),
+                    blanks,
+                );
+            },
+        );
+        if !complete {
+            return Self {
+                slots: None,
+                prefixes: None,
+            };
+        }
+        for alternatives in &mut prefixes {
+            alternatives.sort_unstable();
+            alternatives.dedup();
+        }
+        Self {
+            slots: Some(slots),
+            prefixes: Some(prefixes),
+        }
+    }
+
+    fn from_blank(instrs: &BkwInstrs<S, C>) -> Self {
+        Self::with_budget(instrs, QUAD_PHASE_MAX_CONFIGS)
+    }
+
+    fn with_parity(instrs: &BkwInstrs<S, C>) -> Self {
+        Self::with_settings(instrs, QUAD_PHASE_MAX_CONFIGS, 2)
+    }
+
+    fn with_budget(instrs: &BkwInstrs<S, C>, budget: usize) -> Self {
+        Self::with_settings(instrs, budget, 4)
+    }
+
+    fn with_settings(
+        instrs: &BkwInstrs<S, C>,
+        budget: usize,
+        modulus: u8,
+    ) -> Self {
+        Self::with_mode(instrs, budget, modulus, false)
+    }
+
+    fn with_mode(
+        instrs: &BkwInstrs<S, C>,
+        budget: usize,
+        modulus: u8,
+        merged: bool,
+    ) -> Self {
+        assert!(modulus == 2 || modulus == 4);
+        let mut slots = vec![[0; 4]; S * C];
+        let mut prefixes = vec![Vec::new(); S * C];
+        let record = |slot: usize, sides: [QuadPhaseSide; 2]| {
+            let blanks = u8::from(sides[LEFT_SIDE].len == 0)
+                | (u8::from(sides[RIGHT_SIDE].len == 0) << 1);
+            Self::record_prefixes(
+                &mut slots,
+                &mut prefixes,
+                slot,
+                sides.map(|side| side.prefix),
+                blanks,
+            );
+        };
+        let complete = if merged {
+            explore_merged_quad(instrs, modulus, record)
+        } else {
+            explore_phase(instrs, budget, modulus, record)
+        };
+        if !complete {
+            return Self {
+                slots: None,
+                prefixes: None,
+            };
+        }
+        for alternatives in &mut prefixes {
+            alternatives.sort_unstable();
+            alternatives.dedup();
+        }
+        Self {
+            slots: Some(slots),
+            prefixes: Some(prefixes),
+        }
+    }
+
+    fn compatible(&self, state: State, tape: &Tape) -> bool {
+        let Some(slots) = &self.slots else {
+            return true;
+        };
+        let required = u8::from(
+            tape.lspan.end == TapeEnd::Blanks && tape.lspan.blank(),
+        ) | (u8::from(
+            tape.rspan.end == TapeEnd::Blanks && tape.rspan.blank(),
+        ) << 1);
+        let neighbors = slots
+            [usize::from(state) * C + usize::from(tape.scan)]
+            [usize::from(required)];
+        if neighbors == 0 {
+            return false;
+        }
+        let left = quad_phase_neighbor_colors(&tape.lspan);
+        let right = u16::from(quad_phase_neighbor_colors(&tape.rspan));
+        if !(0..QUAD_PHASE_COLORS).any(|color| {
+            left & (1 << color) != 0
+                && neighbors & (right << (QUAD_PHASE_COLORS * color))
+                    != 0
+        }) {
+            return false;
+        }
+        let Some(prefixes) = &self.prefixes else {
+            return true;
+        };
+        let left_prefixes = quad_phase_prefix_mask(&tape.lspan);
+        let right_prefixes = quad_phase_prefix_mask(&tape.rspan);
+        if left_prefixes == 0 || right_prefixes == 0 {
+            return false;
+        }
+        // Neighbor-only and blank-only constraints are already decided by
+        // the small table above. Avoid scanning alternatives in those cases.
+        if (required & 1 != 0
+            || left_prefixes == quad_phase_prefix_heads(left))
+            && (required & 2 != 0
+                || right_prefixes
+                    == quad_phase_prefix_heads(
+                        quad_phase_neighbor_colors(&tape.rspan),
+                    ))
+        {
+            return true;
+        }
+        prefixes[usize::from(state) * C + usize::from(tape.scan)]
+            .iter()
+            .any(|&packed| {
+                let flags = u8::try_from(packed >> 12)
+                    .expect("quad blank flags fit u8");
+                flags & required == required
+                    && left_prefixes & (1_u64 << (packed & 63)) != 0
+                    && right_prefixes & (1_u64 << ((packed >> 6) & 63))
+                        != 0
+            })
+    }
+}
+
+fn quad_phase_neighbor_colors(span: &Span) -> u8 {
+    if let Some(block) = span.span.first() {
+        let color = usize::from(block.first_color());
+        return if color < QUAD_PHASE_COLORS {
+            1 << color
+        } else {
+            0
+        };
+    }
+    if span.end == TapeEnd::Blanks { 1 } else { 0xf }
+}
+
+// Enumerate only the first three concrete cells. Indefinite counts need at
+// most three short alternatives plus one truncated continuation; no full
+// block, tape, or automaton intersection is constructed.
+fn quad_phase_prefix_mask(span: &Span) -> u64 {
+    let mut states = [1_u64, 0, 0, 0];
+    for block in span.span.iter() {
+        if states[..3].iter().all(|&mask| mask == 0) {
+            break;
+        }
+        let word = block.word();
+        let (minimum, step) = match block {
+            Block::Run { count, .. } => {
+                let step = match count {
+                    BlockCount::Exact(_) => None,
+                    BlockCount::AtLeast(_) => Some(1),
+                    BlockCount::Stride { step, .. } => {
+                        Some(usize::from(*step))
+                    },
+                };
+                (usize::from(count.minimum()), step)
+            },
+            Block::Word { count, .. } => {
+                (count.minimum(), count.is_indef().then_some(1))
+            },
+        };
+        let mut next = [0, 0, 0, states[3]];
+        for depth in 0..3 {
+            let remaining: usize = 3 - depth;
+            let threshold = remaining.div_ceil(word.len());
+            let mut prefixes = states[depth];
+            while prefixes != 0 {
+                let prefix = usize::try_from(prefixes.trailing_zeros())
+                    .expect("quad prefix fits usize");
+                prefixes &= prefixes - 1;
+                let mut copies = minimum;
+                loop {
+                    let take = if copies >= threshold {
+                        remaining
+                    } else {
+                        copies * word.len()
+                    };
+                    let mut code = prefix;
+                    let mut valid = true;
+                    for offset in 0..take {
+                        let color =
+                            usize::from(word[offset % word.len()]);
+                        if color >= QUAD_PHASE_COLORS {
+                            valid = false;
+                            break;
+                        }
+                        code = QUAD_PHASE_COLORS * code + color;
+                    }
+                    if valid {
+                        next[depth + take] |= 1_u64 << code;
+                    }
+                    if copies >= threshold {
+                        break;
+                    }
+                    let Some(step) = step else {
+                        break;
+                    };
+                    // Counts beyond the horizon have the same three cells.
+                    copies = threshold.min(copies + step);
+                }
+            }
+        }
+        states = next;
+    }
+    let mut result = states[3];
+    for depth in 0..3 {
+        let suffixes = 1_usize << (2 * (3 - depth));
+        let mut prefixes = states[depth];
+        while prefixes != 0 {
+            let prefix = usize::try_from(prefixes.trailing_zeros())
+                .expect("quad prefix fits usize");
+            prefixes &= prefixes - 1;
+            let start = prefix * suffixes;
+            if span.end == TapeEnd::Blanks {
+                result |= 1_u64 << start;
+            } else {
+                for suffix in 0..suffixes {
+                    result |= 1_u64 << (start + suffix);
+                }
+            }
+        }
+    }
+    result
+}
+
+fn quad_phase_prefix_heads(colors: u8) -> u64 {
+    let mut mask = 0;
+    for color in 0..QUAD_PHASE_COLORS {
+        if colors & (1 << color) != 0 {
+            mask |= 0xffff_u64 << (16 * color);
+        }
+    }
+    mask
 }
 
 fn prepare_bkw<const s: usize, const c: usize, T: Ord, F>(
@@ -4318,6 +6084,8 @@ where
     if configs.is_empty() {
         return None;
     }
+
+    let phase_filters = PhaseFilters::prepare(instrs, &mut configs)?;
 
     // Optional *sound* adjacency reachability filter.
     //
@@ -4661,6 +6429,7 @@ where
 
     Some(BkwPrepared {
         configs,
+        phase_filters,
         win_possible,
         radius2_possible,
         side_possible,
@@ -5213,6 +6982,10 @@ fn step_instrs<
                 right_fresh_zero,
             )
         {
+            continue;
+        }
+
+        if !prepared.phase_filters.compatible(state, &tape) {
             continue;
         }
 
