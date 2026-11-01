@@ -2204,6 +2204,8 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
 ########################################
 
 DO_HALT: set[str] = {
+    "1RB ... ... ...  0RC 2RB 3LB 1LB  2LA 1RC ... 3RB",  # BBi(8) #2 25753636880139151262408664803138
+
     # 3/4
     "1RB ... 1LA 2RB  1RC 3RC 1LA 2LB  2LB 2RC 1LC 3RB",  # superpowers(10)
     "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC",  # 2^[15]5 + 14
