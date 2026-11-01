@@ -9161,6 +9161,7 @@ impl Span {
     }
 
     fn matches_color(&self, print: Color) -> bool {
+        #[expect(clippy::unnecessary_lazy_evaluations)]
         self.span.first().map_or_else(
             || match self.end {
                 TapeEnd::Blanks => print == 0,

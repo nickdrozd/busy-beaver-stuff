@@ -257,13 +257,12 @@ fn cps_cant_reach_level<const G: u8, const LEVEL: usize>(
             prog.is_blank(tape.scan)
                 && pull.base_blank_span(prog, &mut configs.span_pool)
                 && push.base_all_blank(prog, &mut configs.span_pool)
-        } else if G == CPS_GOAL_SPINOUT {
-            init_scan == 0
+        } else {
+            G == CPS_GOAL_SPINOUT
+                && init_scan == 0
                 && tape.scan == 0
                 && pull.blank_span(&configs.span_pool)
                 && state == next_state
-        } else {
-            false
         };
 
         let Configs {
