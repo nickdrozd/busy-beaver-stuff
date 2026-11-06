@@ -1,4 +1,5 @@
 use core::{
+    cell::OnceCell,
     fmt,
     hash::{Hash, Hasher as _},
     iter::once,
@@ -2450,6 +2451,172 @@ struct RequirementSet {
     unconstrained: bool,
 }
 
+// Both triple analyses consume exactly the same mandatory span triples.
+// Keep their distinct forward facts, but compile the backward requirements
+// once per configuration. Packed triples are a projection of the same rows.
+struct TripleRequirements<const C: usize> {
+    masks: [[u64; C]; C],
+    packed: u64,
+}
+
+impl<const C: usize> TripleRequirements<C> {
+    const fn add(&mut self, a: usize, b: usize, c: usize) {
+        self.masks[a][b] |= 1_u64 << c;
+        if C <= JOINT_SIDE_TRIPLE_MAX_COLORS {
+            self.packed |= 1_u64 << ((a * C + b) * C + c);
+        }
+    }
+
+    #[expect(clippy::missing_asserts_for_indexing)]
+    fn compile(span: &Span) -> Self {
+        #[derive(Clone, Copy)]
+        struct BlockBoundary {
+            first: usize,
+            last: usize,
+            prefix2: Option<(usize, usize)>,
+            suffix2: Option<(usize, usize)>,
+            exactly_one_cell: bool,
+        }
+
+        let mut req = Self {
+            masks: [[0; C]; C],
+            packed: 0,
+        };
+        let mut previous_last: Option<usize> = None;
+        let mut previous_suffix2: Option<(usize, usize)> = None;
+
+        for block in span.span.iter() {
+            let boundary = match block {
+                Block::Run { color, count } => {
+                    let color = *color as usize;
+                    let minimum = usize::from(count.minimum());
+                    if minimum >= 3 {
+                        req.add(color, color, color);
+                    }
+
+                    BlockBoundary {
+                        first: color,
+                        last: color,
+                        prefix2: (minimum >= 2)
+                            .then_some((color, color)),
+                        suffix2: (minimum >= 2)
+                            .then_some((color, color)),
+                        exactly_one_cell: matches!(
+                            *count,
+                            BlockCount::Exact(1)
+                        ),
+                    }
+                },
+                Block::Word { word, count } => {
+                    let first = word[0] as usize;
+                    let last = *word.last().unwrap() as usize;
+                    let minimum = count.minimum();
+
+                    // Every concrete member contains at least `minimum`
+                    // whole copies.  Three copies suffice to expose every
+                    // possible length-3 window of a periodic word.
+                    let copies = minimum.min(3);
+                    let mut a = None;
+                    let mut b = None;
+                    for _ in 0..copies {
+                        for &color in word.iter() {
+                            let color = color as usize;
+                            if let (Some(a), Some(b)) = (a, b) {
+                                req.add(a, b, color);
+                            }
+                            a = b;
+                            b = Some(color);
+                        }
+                    }
+
+                    let prefix2 = if word.len() >= 2 {
+                        Some((word[0] as usize, word[1] as usize))
+                    } else if minimum >= 2 {
+                        Some((first, first))
+                    } else {
+                        None
+                    };
+                    let suffix2 = if word.len() >= 2 {
+                        Some((
+                            word[word.len() - 2] as usize,
+                            word[word.len() - 1] as usize,
+                        ))
+                    } else if minimum >= 2 {
+                        Some((last, last))
+                    } else {
+                        None
+                    };
+
+                    BlockBoundary {
+                        first,
+                        last,
+                        prefix2,
+                        suffix2,
+                        exactly_one_cell: word.len() == 1
+                            && matches!(*count, WordCount::Exact(1)),
+                    }
+                },
+            };
+
+            // Triples crossing the block boundary are required only when
+            // the necessary two-cell suffix/prefix is fixed for every
+            // concretization of the adjacent blocks.
+            if let Some((a, b)) = previous_suffix2 {
+                req.add(a, b, boundary.first);
+            }
+            if let (Some(a), Some((b, c))) =
+                (previous_last, boundary.prefix2)
+            {
+                req.add(a, b, c);
+            }
+
+            let combined_suffix2 = boundary.suffix2.map_or_else(
+                || {
+                    if boundary.exactly_one_cell {
+                        previous_last.map(|a| (a, boundary.last))
+                    } else {
+                        None
+                    }
+                },
+                Some,
+            );
+
+            previous_last = Some(boundary.last);
+            previous_suffix2 = combined_suffix2;
+        }
+
+        if matches!(&span.end, &TapeEnd::Blanks) {
+            // The infinite blank suffix guarantees every boundary triple
+            // that can be formed from the fixed explicit suffix, plus 000.
+            if let Some((a, b)) = previous_suffix2 {
+                req.add(a, b, 0);
+            }
+            if let Some(a) = previous_last {
+                req.add(a, 0, 0);
+            }
+            req.add(0, 0, 0);
+        }
+
+        req
+    }
+}
+
+#[derive(Default)]
+struct TripleMatchRequirements<const C: usize> {
+    sides: Option<[TripleRequirements<C>; 2]>,
+}
+
+impl<const C: usize> TripleMatchRequirements<C> {
+    fn sides(&mut self, tape: &Tape) -> &[TripleRequirements<C>; 2] {
+        self.sides.get_or_insert_with(|| {
+            [
+                TripleRequirements::compile(&tape.lspan),
+                TripleRequirements::compile(&tape.rspan),
+            ]
+        })
+    }
+}
+
 #[derive(Default)]
 struct SideMatchRequirements {
     runs: Option<[RequirementSet; 2]>,
@@ -4124,6 +4291,661 @@ impl<const S: usize, const C: usize> PairTailPresencePossible<S, C> {
     }
 }
 
+// Both words are stored nearest cell first. A tail fact says that on one
+// side a four-cell overlap may be followed by a particular fifth color.
+type FiveCells = [Color; 5];
+type FiveCellNode = PhaseNode<FiveCells>;
+
+#[derive(Default)]
+struct WindowExtensions {
+    colors: Vec<Color>,
+    // The last cell on this side of each successor is awaiting a color.
+    waiting: Vec<FiveCellNode>,
+}
+
+// The common two- and three-color machines have only 16 or 81
+// overlaps per side. Use the printed alphabet (plus blank), so padding
+// a program to a larger Prog<S, C> does not select a slower path.
+enum WindowOverlapTable {
+    Dense {
+        radix: usize,
+        rows: Vec<WindowExtensions>,
+    },
+    Sparse(Dict<(usize, [Color; 4]), WindowExtensions>),
+}
+
+#[expect(clippy::disallowed_names)]
+impl WindowOverlapTable {
+    fn new<const S: usize, const C: usize>(
+        instrs: &BkwInstrs<S, C>,
+    ) -> Self {
+        let radix = 1 + instrs
+            .writers
+            .iter()
+            .rposition(|writers| !writers.is_empty())
+            .unwrap_or(0);
+        if radix > 4 {
+            return Self::Sparse(Dict::new());
+        }
+        let rows = (0..2 * radix.pow(4))
+            .map(|_| WindowExtensions::default())
+            .collect();
+        Self::Dense { radix, rows }
+    }
+
+    fn row(
+        &mut self,
+        side: usize,
+        overlap: [Color; 4],
+    ) -> &mut WindowExtensions {
+        match self {
+            Self::Dense { radix, rows } => {
+                let index =
+                    overlap.into_iter().fold(side, |index, color| {
+                        index * *radix + usize::from(color)
+                    });
+                &mut rows[index]
+            },
+            Self::Sparse(rows) => {
+                rows.entry((side, overlap)).or_default()
+            },
+        }
+    }
+}
+
+const WINDOW_SORT_THRESHOLD: usize = 32;
+
+struct FiveCellWindows {
+    by_slot: Dict<(usize, usize), Vec<[FiveCells; 2]>>,
+}
+
+impl FiveCellWindows {
+    fn from_blank<const S: usize, const C: usize>(
+        instrs: &BkwInstrs<S, C>,
+        node_limit: usize,
+        mut edge_budget: usize,
+        allowed: impl Fn(&FiveCellNode) -> bool,
+    ) -> Option<Self> {
+        if node_limit == 0 {
+            return None;
+        }
+        let initial = FiveCellNode {
+            state: 0,
+            scan: 0,
+            sides: [[0; 5]; 2],
+        };
+        let mut extensions = WindowOverlapTable::new(instrs);
+        for side in 0..2 {
+            extensions.row(side, [0; 4]).colors.push(0);
+        }
+
+        let mut seen = Set::new();
+        seen.insert(initial);
+        let mut pending = vec![initial];
+        while let Some(node) = pending.pop() {
+            let Some((print, right, state)) =
+                instrs.get(node.state, node.scan)
+            else {
+                continue;
+            };
+            let pull = usize::from(right);
+            let push = 1 - pull;
+            let mut emit =
+                |mut next: FiveCellNode, side: usize, color| {
+                    edge_budget = edge_budget.checked_sub(1)?;
+                    next.sides[side][4] = color;
+                    if seen.insert(next) {
+                        if seen.len() > node_limit {
+                            return None;
+                        }
+                        pending.push(next);
+                    }
+                    Some(())
+                };
+
+            let [prefix @ .., hidden] = node.sides[push];
+            let [scan, overlap @ ..] = node.sides[pull];
+            let mut next = FiveCellNode {
+                state,
+                scan: usize::from(scan),
+                sides: node.sides,
+            };
+            next.sides[push][1..].copy_from_slice(&prefix);
+            next.sides[push][0] = Color::try_from(print).ok()?;
+            next.sides[pull][..4].copy_from_slice(&overlap);
+            // Both inner neighbors on each side are known before choosing
+            // the fifth cell. Every concrete source has a concrete successor,
+            // so a forbidden inner window also rules out its push fact.
+            if !allowed(&next) {
+                continue;
+            }
+
+            // Pushing hides the fifth old cell. Publish it under the
+            // preceding four old cells and replay any earlier matching pops.
+            let pushed = extensions.row(push, prefix);
+            if !pushed.colors.contains(&hidden) {
+                pushed.colors.push(hidden);
+                for &next in &pushed.waiting {
+                    emit(next, push, hidden)?;
+                }
+            }
+
+            // emit supplies the last cell before inserting the node.
+            let pulled = extensions.row(pull, overlap);
+            for &color in &pulled.colors {
+                emit(next, pull, color)?;
+            }
+            pulled.waiting.push(next);
+        }
+
+        // Only a completed closure can be used to reject a configuration.
+        let mut by_slot = Dict::<_, Vec<_>>::new();
+        for node in seen {
+            by_slot
+                .entry((node.state, node.scan))
+                .or_default()
+                .push(node.sides);
+        }
+        for windows in by_slot.values_mut() {
+            if windows.len() >= WINDOW_SORT_THRESHOLD {
+                windows.sort_unstable();
+            }
+        }
+        Some(Self { by_slot })
+    }
+
+    fn allows(&self, state: State, tape: &Tape) -> bool {
+        let slot = (usize::from(state), usize::from(tape.scan));
+        let Some(windows) = self.by_slot.get(&slot) else {
+            return false;
+        };
+        let (left, nl) = Self::known_prefix(&tape.lspan);
+        let (right, nr) = Self::known_prefix(&tape.rspan);
+        if windows.len() >= WINDOW_SORT_THRESHOLD && nl != 0 {
+            // Unknown suffixes are zero in known_prefix. This is the
+            // smallest joint word that could match the requested prefixes.
+            let lower =
+                [left, if nl == left.len() { right } else { [0; 5] }];
+            let start = windows.partition_point(|word| word < &lower);
+            let mut candidates = windows[start..]
+                .iter()
+                .take_while(|sides| sides[0][..nl] == left[..nl]);
+            return candidates
+                .any(|sides| sides[1][..nr] == right[..nr]);
+        }
+        windows.iter().any(|sides| {
+            sides[0][..nl] == left[..nl]
+                && sides[1][..nr] == right[..nr]
+        })
+    }
+
+    fn known_prefix(span: &Span) -> (FiveCells, usize) {
+        let mut cells = [0; 5];
+        let mut len = 0;
+        for block in span.span.iter() {
+            let (minimum, stride) = phase_repetitions(block);
+            for _ in 0..minimum {
+                for &color in block.word() {
+                    cells[len] = color;
+                    len += 1;
+                    if len == cells.len() {
+                        return (cells, len);
+                    }
+                }
+            }
+            // Beyond the minimum, different legal counts can put different
+            // cells at the next position. Leave the rest unconstrained.
+            if stride.is_some() {
+                return (cells, len);
+            }
+        }
+        if span.end == TapeEnd::Blanks {
+            len = cells.len();
+        }
+        (cells, len)
+    }
+}
+
+// The center block executes exactly until the head leaves it. All five
+// blocks are in physical left-to-right order.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct BlockWindow<const W: usize, const D: usize> {
+    state: usize,
+    head: usize,
+    blocks: [[Color; W]; 5],
+    outside: [[bool; D]; 2],
+}
+
+#[derive(Default)]
+struct BlockExtensions<const W: usize, const D: usize> {
+    tails: Vec<([Color; W], [bool; D])>,
+    waiting: Vec<BlockWindow<W, D>>,
+}
+
+struct BlockTarget {
+    blank_sides: [bool; 2],
+    left: (FiveCells, usize),
+    right: (FiveCells, usize),
+}
+
+impl BlockTarget {
+    fn blank_sides(tape: &Tape) -> [bool; 2] {
+        [&tape.lspan, &tape.rspan]
+            .map(|span| span.end == TapeEnd::Blanks && span.blank())
+    }
+
+    fn matches<
+        const W: usize,
+        const D: usize,
+        const TAGGED: bool,
+        const WRITER_PAIR: bool,
+    >(
+        &self,
+        node: &BlockWindow<W, D>,
+        radix: usize,
+    ) -> bool {
+        let cell = |index: usize| {
+            window_color::<TAGGED, WRITER_PAIR>(
+                node.blocks[index / W][index % W],
+                radix,
+            )
+        };
+        if self.blank_sides == [true; 2] {
+            return !node.outside.iter().flatten().any(|&dirty| dirty)
+                && (0..5 * W).all(|i| i == node.head || cell(i) == 0);
+        }
+        // The exterior belongs to the corresponding half-line. For a
+        // one-sided target the opposite half-line may contain any colors.
+        if (TAGGED || D != 0)
+            && self.blank_sides[0]
+            && (node.outside[0].contains(&true)
+                || (0..node.head).any(|i| cell(i) != 0))
+        {
+            return false;
+        }
+        if (TAGGED || D != 0)
+            && self.blank_sides[1]
+            && (node.outside[1].contains(&true)
+                || (node.head + 1..5 * W).any(|i| cell(i) != 0))
+        {
+            return false;
+        }
+        let (left, nl) = &self.left;
+        let (right, nr) = &self.right;
+        let nl = (*nl).min(node.head);
+        let nr = (*nr).min(5 * W - node.head - 1);
+        left[..nl]
+            .iter()
+            .enumerate()
+            .all(|(i, &color)| cell(node.head - 1 - i) == color)
+            && right[..nr]
+                .iter()
+                .enumerate()
+                .all(|(i, &color)| cell(node.head + 1 + i) == color)
+    }
+}
+
+// Zero encodes an untouched blank. Existing tagged modes use a low color
+// nibble. Writer-pair mode uses the actual alphabet radix to fit both writers
+// in the same Color-sized token.
+fn window_color<const TAGGED: bool, const WRITER_PAIR: bool>(
+    token: Color,
+    radix: usize,
+) -> Color {
+    if WRITER_PAIR {
+        if token == 0 {
+            0
+        } else {
+            Color::try_from((usize::from(token) - 1) % radix)
+                .expect("decoded color fits Color")
+        }
+    } else if TAGGED {
+        token & 15
+    } else {
+        token
+    }
+}
+
+// Keep a finite suffix of writer states in base writer_radix. The modulus
+// retains the previous depth-1 writers before prepending the newest writer.
+// Untouched cells use zero. Their missing predecessor is represented by writer
+// zero, a conservative collision; a pair never serves as an unvisited flag.
+fn writer_history_token(
+    token: Color,
+    print: usize,
+    writer: usize,
+    radix: usize,
+    writer_radix: usize,
+    history_modulus: usize,
+) -> Option<Color> {
+    let previous = if token == 0 {
+        0
+    } else {
+        ((usize::from(token) - 1) / radix) % history_modulus
+    };
+    Color::try_from(
+        1 + print + radix * (writer + writer_radix * previous),
+    )
+    .ok()
+}
+
+// Preparation only removes targets after the first probe. A microstep that
+// missed the earlier target set therefore misses the final subset as well.
+// D is zero for local windows and one for the blank-aware retry.
+struct BlockWindowSearch<
+    const W: usize,
+    const D: usize = 0,
+    const TAGGED: bool = false,
+    const FIRST_WRITER: bool = false,
+    const WRITER_PAIR: bool = false,
+> {
+    seen: Set<BlockWindow<W, D>>,
+    pending: Vec<BlockWindow<W, D>>,
+    extensions:
+        Dict<(bool, [Color; W], [bool; D]), BlockExtensions<W, D>>,
+    microsteps: usize,
+    edges: usize,
+    writer_history: u32,
+    // Optional two-state far-tail DFA: (reset colors, toggle colors).
+    // State zero includes every blank tail; state one excludes blankness.
+    tail_automaton: Option<(u64, u64)>,
+}
+
+impl<
+    const W: usize,
+    const D: usize,
+    const TAGGED: bool,
+    const FIRST_WRITER: bool,
+    const WRITER_PAIR: bool,
+> BlockWindowSearch<W, D, TAGGED, FIRST_WRITER, WRITER_PAIR>
+{
+    fn new(offset: usize) -> Self {
+        assert!(offset < W);
+        assert!(!FIRST_WRITER || TAGGED);
+        assert!(!WRITER_PAIR || (TAGGED && !FIRST_WRITER));
+        let initial = BlockWindow {
+            state: 0,
+            head: 2 * W + offset,
+            blocks: [[0; W]; 5],
+            outside: [[false; D]; 2],
+        };
+        let mut seen = Set::new();
+        seen.insert(initial);
+        let mut extensions: Dict<_, BlockExtensions<W, D>> =
+            Dict::new();
+        for side in [false, true] {
+            extensions
+                .entry((side, [0; W], [false; D]))
+                .or_default()
+                .tails
+                .push(([0; W], [false; D]));
+        }
+        Self {
+            seen,
+            pending: vec![initial],
+            extensions,
+            microsteps: 0,
+            edges: 0,
+            writer_history: 2,
+            tail_automaton: None,
+        }
+    }
+
+    // Stop a short probe only at a resumable instruction boundary. A
+    // matched target is also left pending: preparation can later remove it.
+    fn refutes<const S: usize, const C: usize>(
+        &mut self,
+        instrs: &BkwInstrs<S, C>,
+        configs: &[Config],
+        short_probe: bool,
+        node_limit: usize,
+    ) -> bool {
+        if self.edges > 4096
+            || self.seen.len() > node_limit
+            || self.microsteps > 4096
+        {
+            return false;
+        }
+        // Use actual printed colors and actual writer indices, not padded
+        // Prog dimensions. The encoding is identical for an embedded program.
+        let radix = if WRITER_PAIR {
+            1 + instrs
+                .writers
+                .iter()
+                .rposition(|writers| !writers.is_empty())
+                .unwrap_or(0)
+        } else {
+            16
+        };
+        #[expect(clippy::disallowed_names)]
+        let writer_radix = if WRITER_PAIR {
+            1 + instrs
+                .instrs
+                .iter()
+                .rposition(|row| row.iter().any(Option::is_some))
+                .unwrap_or(0)
+        } else {
+            1
+        };
+        let history_modulus = if WRITER_PAIR {
+            debug_assert!(self.writer_history >= 2);
+            let Some(modulus) =
+                writer_radix.checked_pow(self.writer_history - 1)
+            else {
+                self.microsteps = 4097;
+                return false;
+            };
+            modulus
+        } else {
+            1
+        };
+        let mut targets: Dict<(usize, usize), Vec<BlockTarget>> =
+            Dict::new();
+        let mut has_defined_target = false;
+        for config in configs {
+            let tape = &config.tape;
+            let state = usize::from(config.state);
+            let scan = usize::from(tape.scan);
+            has_defined_target |= instrs.get(state, scan).is_some();
+            targets.entry((state, scan)).or_default().push(
+                BlockTarget {
+                    blank_sides: BlockTarget::blank_sides(tape),
+                    left: FiveCellWindows::known_prefix(&tape.lspan),
+                    right: FiveCellWindows::known_prefix(&tape.rspan),
+                },
+            );
+        }
+
+        let (seen, pending, edges) =
+            (&mut self.seen, &mut self.pending, &mut self.edges);
+        'worklist: while let Some(mut node) = pending.pop() {
+            let right = loop {
+                if short_probe
+                    && (seen.len() > 64
+                        || self.microsteps >= 160
+                        || *edges >= 256)
+                {
+                    pending.push(node);
+                    return false;
+                }
+                let index = node.head - 2 * W;
+                let scan =
+                    usize::from(window_color::<TAGGED, WRITER_PAIR>(
+                        node.blocks[2][index],
+                        radix,
+                    ));
+                let instr = instrs.get(node.state, scan);
+                if (has_defined_target || instr.is_none())
+                    && targets.get(&(node.state, scan)).is_some_and(
+                        |slot| {
+                            slot.iter().any(|target| {
+                                target.matches::<W, D, TAGGED, WRITER_PAIR>(&node, radix)
+                            })
+                        },
+                    )
+                {
+                    pending.push(node);
+                    return false;
+                }
+                let Some((print, right, state)) = instr else {
+                    continue 'worklist;
+                };
+                self.microsteps += 1;
+                if self.microsteps > 4096 {
+                    return false;
+                }
+                node.blocks[2][index] = if WRITER_PAIR {
+                    let Some(token) = writer_history_token(
+                        node.blocks[2][index],
+                        print,
+                        node.state,
+                        radix,
+                        writer_radix,
+                        history_modulus,
+                    ) else {
+                        self.microsteps = 4097;
+                        return false;
+                    };
+                    token
+                } else if TAGGED {
+                    // Decline this optional certificate if a reachable write
+                    // exceeds the encoding. Padded, unused slots cost nothing.
+                    if print >= 16 {
+                        self.microsteps = 4097;
+                        return false;
+                    }
+                    let tag = if FIRST_WRITER {
+                        let original =
+                            usize::from(node.blocks[2][index]) >> 4;
+                        if original == 0 {
+                            node.state + 1
+                        } else {
+                            original
+                        }
+                    } else {
+                        scan + 1
+                    };
+                    let Ok(token) = Color::try_from((tag << 4) | print)
+                    else {
+                        self.microsteps = 4097;
+                        return false;
+                    };
+                    token
+                } else {
+                    Color::try_from(print)
+                        .expect("instruction color fits Color")
+                };
+                node.state = state;
+                node.head =
+                    if right { node.head + 1 } else { node.head - 1 };
+                if !(2 * W..3 * W).contains(&node.head) {
+                    break right;
+                }
+            };
+
+            // Save the outgoing block under its neighbor. Restore a block
+            // with the opposite overlap when moving the window.
+            let (anchor, hidden, needed) = if right {
+                (node.blocks[1], node.blocks[0], node.blocks[4])
+            } else {
+                (node.blocks[3], node.blocks[4], node.blocks[0])
+            };
+            // On a push, the hidden block joins the old exterior. On a
+            // pop, only extensions with the current exterior status apply.
+            // The saved old status restores the exterior beyond that block.
+            let push = usize::from(!right);
+            let pull = usize::from(right);
+            let beyond_hidden = node.outside[push];
+            if D != 0 {
+                let outside = if let Some((reset, toggle)) =
+                    self.tail_automaton
+                {
+                    let mut state = beyond_hidden.contains(&true);
+                    // The automaton reads from infinity toward the head.
+                    // Left blocks use storage order; right blocks reverse it.
+                    for i in 0..W {
+                        let token =
+                            hidden[if right { i } else { W - 1 - i }];
+                        let color = window_color::<TAGGED, WRITER_PAIR>(
+                            token, radix,
+                        );
+                        let bit = 1_u64 << color;
+                        if reset & bit != 0 {
+                            state = false;
+                        } else if toggle & bit != 0 {
+                            state = !state;
+                        }
+                    }
+                    state
+                } else {
+                    beyond_hidden.contains(&true)
+                        || hidden.iter().any(|&c| {
+                            window_color::<TAGGED, WRITER_PAIR>(
+                                c, radix,
+                            ) != 0
+                        })
+                };
+                node.outside[push] = [outside; D];
+            }
+            let pushed_status = node.outside[push];
+            let pulled_status = node.outside[pull];
+            if right {
+                node.blocks.copy_within(1.., 0);
+                node.head = 2 * W;
+            } else {
+                node.blocks.copy_within(..4, 1);
+                node.head = 3 * W - 1;
+            }
+
+            let mut emit = |mut next: BlockWindow<W, D>,
+                            side: bool,
+                            (tail, outside): (
+                [Color; W],
+                [bool; D],
+            )| {
+                *edges += 1;
+                if *edges > 4096 {
+                    return false;
+                }
+                next.outside[usize::from(side)] = outside;
+                next.blocks[if side { 4 } else { 0 }] = tail;
+                if seen.insert(next) {
+                    if seen.len() > node_limit {
+                        return false;
+                    }
+                    pending.push(next);
+                }
+                true
+            };
+
+            let hidden = (hidden, beyond_hidden);
+            let pushed = self
+                .extensions
+                .entry((!right, anchor, pushed_status))
+                .or_default();
+            if !pushed.tails.contains(&hidden) {
+                pushed.tails.push(hidden);
+                for &waiting in &pushed.waiting {
+                    if !emit(waiting, !right, hidden) {
+                        return false;
+                    }
+                }
+            }
+            let pulled = self
+                .extensions
+                .entry((right, needed, pulled_status))
+                .or_default();
+            for &tail in &pulled.tails {
+                if !emit(node, right, tail) {
+                    return false;
+                }
+            }
+            pulled.waiting.push(node);
+        }
+        true
+    }
+}
+
 fn cant_reach<const s: usize, const c: usize, T: Ord, F>(
     prog: &Prog<s, c>,
     steps: Steps,
@@ -4153,7 +4975,7 @@ where
     // The common path is still one ordinary BKW pass: no cycle-edge history
     // is built unless a real u8 count overflow is encountered.
     let instrs = instrs.unwrap_or_else(|| BkwInstrs::new(prog));
-    let Some(prepared) =
+    let Some(mut prepared) =
         prepare_bkw(prog, &instrs, &slots, &get_configs, window_seed)
     else {
         return Refuted(0);
@@ -4162,37 +4984,341 @@ where
         &prepared,
         steps,
         &entrypoints,
+        &instrs,
         use_exact_seen,
     );
 
-    match first {
-        CountLimit => {},
-        other => return other,
+    if !matches!(first, StepLimit | DepthLimit | CountLimit) {
+        return first;
     }
-
-    // Certificate-only fallback. Count overflow is only the trigger for the
-    // expensive cycle pass. The retry keeps the original single-color run
-    // counts exact and records recurring predecessor edges. Repeated-word
-    // widening is the separate sound abstraction used in both passes. When one particular edge would
-    // overflow after a stable increasing recurrence, only that edge is cut;
-    // sibling exits and unrelated frontier branches remain live. Thus cycle
-    // handling cannot invent a new predecessor entrance.
-    //
-    // This pass has its own budget.  Cutting one overflowing lineage can leave
-    // finite sibling/exit cones that need more predecessor layers than the
-    // caller's cheap-pass budget.  Restoring the larger overflow-only budget
-    // cannot affect programs that did not first hit CountLimit.
-    let cycle_steps = steps.max(4_096);
-
-    match cant_reach_once::<s, c, true>(
-        &prepared,
-        cycle_steps,
-        &entrypoints,
-        use_exact_seen,
+    // Resume the preparation probe with the surviving targets and full budget.
+    if prepared.pair_search.refutes(
+        &instrs,
+        &prepared.configs,
+        false,
+        512,
     ) {
-        Refuted(step) => Refuted(step),
-        _ => CountLimit,
+        return Refuted(0);
     }
+
+    if matches!(first, CountLimit) {
+        // Certificate-only fallback. Count overflow is only the trigger for the
+        // expensive cycle pass. The retry keeps the original single-color run
+        // counts exact and records recurring predecessor edges. Repeated-word
+        // widening is the separate sound abstraction used in both passes. When one particular edge would
+        // overflow after a stable increasing recurrence, only that edge is cut;
+        // sibling exits and unrelated frontier branches remain live. Thus cycle
+        // handling cannot invent a new predecessor entrance.
+        //
+        // This pass has its own budget.  Cutting one overflowing lineage can leave
+        // finite sibling/exit cones that need more predecessor layers than the
+        // caller's cheap-pass budget.  Restoring the larger overflow-only budget
+        // cannot affect programs that did not first hit CountLimit.
+        let cycle_steps = steps.max(4_096);
+        if let Refuted(step) = cant_reach_once::<s, c, true>(
+            &prepared,
+            cycle_steps,
+            &entrypoints,
+            &instrs,
+            use_exact_seen,
+        ) {
+            return Refuted(step);
+        }
+    }
+
+    // A translated block boundary keeps different reversals exact. Widen
+    // the block only when both pair alignments have failed to certify.
+    if BlockWindowSearch::<2>::new(1).refutes(
+        &instrs,
+        &prepared.configs,
+        false,
+        512,
+    ) {
+        return Refuted(0);
+    }
+    // A blank half-tape is part of spinout targets too. Preserve the distant
+    // blank/nonblank bit in the existing width-four pass whenever a target
+    // constrains either side. This replaces the untracked pass without adding another search.
+    let has_blank_side = prepared
+        .configs
+        .iter()
+        .any(|cfg| BlockTarget::blank_sides(&cfg.tape).contains(&true));
+    let wide_refuted = if has_blank_side {
+        BlockWindowSearch::<4, 1>::new(0).refutes(
+            &instrs,
+            &prepared.configs,
+            false,
+            768,
+        )
+    } else {
+        BlockWindowSearch::<4>::new(0).refutes(
+            &instrs,
+            &prepared.configs,
+            false,
+            768,
+        )
+    };
+    if wide_refuted {
+        return Refuted(0);
+    }
+    // Erase targets have a blank exterior on both sides. Keep the remote
+    // nonblank information only for searches that can use it.
+    if prepared
+        .configs
+        .iter()
+        .all(|cfg| BlockTarget::blank_sides(&cfg.tape) == [true; 2])
+        && BlockWindowSearch::<2, 1>::new(0).refutes(
+            &instrs,
+            &prepared.configs,
+            false,
+            512,
+        )
+    {
+        return Refuted(0);
+    }
+
+    // Preserve the cheaper certificates first. A matching overlap must now
+    // agree on both the current colors and the reads that preceded the writes.
+    let configs = &prepared.configs;
+    if BlockWindowSearch::<2, 1, true>::new(0)
+        .refutes(&instrs, configs, false, 1024)
+        || BlockWindowSearch::<3, 1, true>::new(0)
+            .refutes(&instrs, configs, false, 1024)
+    {
+        return Refuted(0);
+    }
+    if has_blank_side
+        && BlockWindowSearch::<8, 1, true>::new(0)
+            .refutes(&instrs, configs, false, 512)
+    {
+        return Refuted(0);
+    }
+    // The first writer is an immutable cell annotation. Matching it across
+    // an overlap prevents joining regions produced by different origins.
+    if BlockWindowSearch::<1, 1, true, true>::new(0)
+        .refutes(&instrs, configs, false, 512)
+        || BlockWindowSearch::<2, 1, true, true>::new(0)
+            .refutes(&instrs, configs, false, 1024)
+    {
+        return Refuted(0);
+    }
+    if has_blank_side
+        && BlockWindowSearch::<3, 1, true, true>::new(0)
+            .refutes(&instrs, configs, false, 1024)
+    {
+        return Refuted(0);
+    }
+    if (has_blank_side && tail_automata_refute(&instrs, configs))
+        || two_writer_history_refutes(&instrs, configs)
+        || deeper_writer_history_refutes(&instrs, configs)
+    {
+        return Refuted(0);
+    }
+    first
+}
+
+// A finite-state summary retains order across arbitrarily long tails:
+// toggle selected colors until a reset color is encountered. The same DFA
+// state participates in extension matching, so it is not merely a target
+// filter. No new block representation or wider local window is needed.
+fn tail_automata_refute<const S: usize, const C: usize>(
+    instrs: &BkwInstrs<S, C>,
+    configs: &[Config],
+) -> bool {
+    let radix = 1 + instrs
+        .writers
+        .iter()
+        .rposition(|writers| !writers.is_empty())
+        .unwrap_or(0);
+    // Bound candidate construction as well as the searches themselves.
+    if !(2..=8).contains(&radix) {
+        return false;
+    }
+    let Some((first, _, _)) = instrs.get(0, 0) else {
+        return false;
+    };
+    // Initial blank must be a fixed point. Never toggle blank or reset to one.
+    if first == 0 {
+        return false;
+    }
+    let nonzero = (1_u64 << radix) - 2;
+    let mut target_writes = 0_u64;
+    for config in configs {
+        if let Some((print, _, _)) = instrs
+            .get(config.state.into(), usize::from(config.tape.scan))
+        {
+            target_writes |= 1_u64 << print;
+        }
+    }
+    let mut candidates = Vec::new();
+    let mut add = |reset: u64, toggle: u64| {
+        let candidate = (reset, toggle);
+        if toggle != 0 && !candidates.contains(&candidate) {
+            candidates.push(candidate);
+        }
+    };
+    // Try the initial marker first, then complements of target write colors,
+    // then alternative separators. This ordering depends on instructions,
+    // not padded Prog dimensions or any particular machine string.
+    add(1, 1_u64 << first);
+    for color in 1..radix {
+        let bit = 1_u64 << color;
+        if target_writes & bit != 0 {
+            add(1, nonzero ^ bit);
+        }
+    }
+    for color in 1..radix {
+        let bit = 1_u64 << color;
+        if color != first && target_writes & bit == 0 {
+            add(bit, 1_u64 << first);
+        }
+    }
+    for color in 1..radix {
+        add(1, 1_u64 << color);
+        add(1, nonzero ^ (1_u64 << color));
+    }
+    for color in 1..radix {
+        for reset in 1..radix {
+            if color != reset {
+                add(1_u64 << reset, 1_u64 << color);
+            }
+        }
+    }
+    let mut microsteps = 0;
+    let mut edges = 0;
+    for automaton in candidates {
+        if microsteps >= 4096 || edges >= 4096 {
+            break;
+        }
+        let mut search = BlockWindowSearch::<1, 1>::new(0);
+        search.tail_automaton = Some(automaton);
+        search.microsteps = microsteps;
+        search.edges = edges;
+        if search.refutes(instrs, configs, false, 512) {
+            return true;
+        }
+        microsteps = search.microsteps;
+        edges = search.edges;
+    }
+    false
+}
+
+// Optional retry after the existing certificates fail. All block sizes share
+// one microstep and emission allowance, rather than each getting a fresh cap.
+fn two_writer_history_refutes<const S: usize, const C: usize>(
+    instrs: &BkwInstrs<S, C>,
+    configs: &[Config],
+) -> bool {
+    let mut microsteps = 0;
+    let mut edges = 0;
+    macro_rules! attempt {
+        ($width:literal, $limit:literal) => {{
+            if microsteps >= 4096 || edges >= 4096 {
+                return false;
+            }
+            let mut search =
+                BlockWindowSearch::<$width, 1, true, false, true>::new(
+                    0,
+                );
+            search.microsteps = microsteps;
+            search.edges = edges;
+            let refuted =
+                search.refutes(instrs, configs, false, $limit);
+            (refuted, search.microsteps, search.edges)
+        }};
+    }
+    let (refuted, used, emitted) = attempt!(1, 256);
+    if refuted {
+        return true;
+    }
+    microsteps = used;
+    edges = emitted;
+    let (refuted, used, emitted) = attempt!(2, 768);
+    if refuted {
+        return true;
+    }
+    microsteps = used;
+    edges = emitted;
+    let (refuted, _, _) = attempt!(3, 768);
+    refuted
+}
+
+// Deeper histories are a fallback after the established two-writer retry.
+// Select depths using actual alphabet/writer indices, so padding does not
+// change the schedule. All attempts share one additional bounded work budget.
+fn deeper_writer_history_refutes<const S: usize, const C: usize>(
+    instrs: &BkwInstrs<S, C>,
+    configs: &[Config],
+) -> bool {
+    let radix = 1 + instrs
+        .writers
+        .iter()
+        .rposition(|writers| !writers.is_empty())
+        .unwrap_or(0);
+    #[expect(clippy::disallowed_names)]
+    let writers = 1 + instrs
+        .instrs
+        .iter()
+        .rposition(|row| row.iter().any(Option::is_some))
+        .unwrap_or(0);
+    let fits = |depth| {
+        writers
+            .checked_pow(depth)
+            .and_then(|histories| radix.checked_mul(histories))
+            .is_some_and(|tokens| tokens <= usize::from(Color::MAX))
+    };
+    let mut microsteps = 0;
+    let mut edges = 0;
+    macro_rules! attempt {
+        ($depth:literal, $width:literal, $limit:literal) => {{
+            if microsteps >= 4096 || edges >= 4096 {
+                return false;
+            }
+            if fits($depth) {
+                let mut search = BlockWindowSearch::<
+                    $width,
+                    1,
+                    true,
+                    false,
+                    true,
+                >::new(0);
+                search.writer_history = $depth;
+                search.microsteps = microsteps;
+                search.edges = edges;
+                let refuted =
+                    search.refutes(instrs, configs, false, $limit);
+                (refuted, search.microsteps, search.edges)
+            } else {
+                (false, microsteps, edges)
+            }
+        }};
+    }
+    let (refuted, used, emitted) = attempt!(3, 1, 768);
+    if refuted {
+        return true;
+    }
+    microsteps = used;
+    edges = emitted;
+    let (refuted, used, emitted) = attempt!(5, 1, 512);
+    if refuted {
+        return true;
+    }
+    microsteps = used;
+    edges = emitted;
+    let (refuted, used, emitted) = attempt!(4, 1, 512);
+    if refuted {
+        return true;
+    }
+    microsteps = used;
+    edges = emitted;
+    let (refuted, used, emitted) = attempt!(4, 2, 768);
+    if refuted {
+        return true;
+    }
+    microsteps = used;
+    edges = emitted;
+    let (refuted, _, _) = attempt!(3, 2, 768);
+    refuted
 }
 
 /// Reused by blank and two-step-like one-sided target filters. They require
@@ -4346,6 +5472,8 @@ impl<const S: usize, const C: usize> PhaseFilters<S, C> {
 /// but none is reconstructed when CountLimit triggers the cycle retry.
 #[expect(clippy::struct_excessive_bools)]
 struct BkwPrepared<const s: usize, const c: usize> {
+    pair_search: BlockWindowSearch<2>,
+    wide_windows: OnceCell<Option<FiveCellWindows>>,
     configs: Configs,
     phase_filters: PhaseFilters<s, c>,
     win_possible: WinPossible<s, c>,
@@ -6556,6 +7684,11 @@ where
         return None;
     }
 
+    let mut pair_search = BlockWindowSearch::<2>::new(0);
+    if pair_search.refutes(instrs, &configs, true, 512) {
+        return None;
+    }
+
     let phase_filters = PhaseFilters::prepare(instrs, &mut configs)?;
 
     // Optional *sound* adjacency reachability filter.
@@ -6899,6 +8032,8 @@ where
     }
 
     Some(BkwPrepared {
+        pair_search,
+        wide_windows: OnceCell::new(),
         configs,
         phase_filters,
         win_possible,
@@ -6930,6 +8065,7 @@ fn cant_reach_once<
     prepared: &BkwPrepared<s, c>,
     steps: Steps,
     entrypoints: &Entrypoints,
+    instrs: &BkwInstrs<s, c>,
     use_exact_seen: bool,
 ) -> BackwardResult {
     let mut configs = prepared.configs.clone();
@@ -6994,6 +8130,62 @@ fn cant_reach_once<
                     && tape.rspan.end == TapeEnd::Blanks;
 
                 !blank_ends || seen.insert((*state, tape.hash()))
+            });
+        }
+
+        let cache = &prepared.wide_windows;
+        let activate = configs.len() >= 8 && cache.get().is_none();
+        let cached = if activate {
+            Some(cache.get_or_init(|| {
+                FiveCellWindows::from_blank(
+                    instrs,
+                    1024,
+                    8192,
+                    |node| {
+                        let [left, right] = &node.sides;
+                        let near_left = usize::from(left[0]);
+                        let near_right = usize::from(right[0]);
+                        let rights = prepared.win_possible.right
+                            [node.state][node.scan][near_left];
+                        (near_right >= 64
+                            || rights & (1_u64 << near_right) != 0)
+                            && prepared.radius2_possible.compatible(
+                                node.state,
+                                node.scan,
+                                near_left,
+                                near_right,
+                                Some(usize::from(left[1])),
+                                Some(usize::from(right[1])),
+                            )
+                    },
+                )
+            }))
+        } else {
+            cache.get()
+        };
+        // A local check cannot recover constraints on ancestors that were
+        // discarded before the table existed. Restart at the original targets
+        // with fresh widening and repeat histories so those branches are
+        // rejected at their first incompatible configuration.
+        //
+        // The completed table is cached before this call. Consequently this
+        // recursion happens at most once, including across the cycle retry.
+        if activate && matches!(cached, Some(Some(_))) {
+            return cant_reach_once::<s, c, CYCLE_ANALYSIS>(
+                prepared,
+                steps,
+                entrypoints,
+                instrs,
+                use_exact_seen,
+            );
+        }
+        // Children are filtered during backstepping. The initial frontier
+        // also needs a sweep when a completed table is already cached.
+        if step == 1
+            && let Some(Some(windows)) = cached
+        {
+            configs.retain(|config| {
+                windows.allows(config.state, &config.tape)
             });
         }
 
@@ -7397,6 +8589,8 @@ fn step_instrs<
     let right_fresh_zero = prepared.right_fresh_zero;
     let left_forced_blank = prepared.left_forced_blank;
     let right_forced_blank = prepared.right_forced_blank;
+    let wide_windows =
+        prepared.wide_windows.get().and_then(Option::as_ref);
     for (color, shift, state) in instrs {
         let instr = (color, shift, state);
         let growth = CYCLE_ANALYSIS
@@ -7456,6 +8650,12 @@ fn step_instrs<
             continue;
         }
 
+        if wide_windows
+            .is_some_and(|windows| !windows.allows(state, &tape))
+        {
+            continue;
+        }
+
         if !prepared.phase_filters.compatible(state, &tape) {
             continue;
         }
@@ -7476,12 +8676,19 @@ fn step_instrs<
             continue;
         }
 
+        let mut triple_requirements =
+            TripleMatchRequirements::default();
         if !tape.obeys_state_side(state, win_possible, side_possible)
             || !window_radius2_possible(state, &tape, radius2_possible)
-            || !tape.obeys_state_triples(state, side_triple_possible)
-            || !tape.obeys_joint_state_triples(
+            || !tape.obeys_state_triples_cached(
+                state,
+                side_triple_possible,
+                &mut triple_requirements,
+            )
+            || !tape.obeys_joint_state_triples_cached(
                 state,
                 joint_side_triple_possible,
+                &mut triple_requirements,
             )
             || !tape
                 .obeys_blank_side_possible(state, blank_side_possible)
@@ -12571,161 +13778,26 @@ impl Tape {
     /// cross-block suffix pair, because its concrete length may be one or more.
     /// This keeps the filter an under-approximation of the backward
     /// requirements and therefore sound for pruning.
-    #[expect(
-        clippy::excessive_nesting,
-        clippy::missing_asserts_for_indexing
-    )]
     fn obeys_state_triples<const S: usize, const C: usize>(
         &self,
         state: State,
         possible: &SideTriplePossible<S, C>,
     ) -> bool {
+        self.obeys_state_triples_cached(
+            state,
+            possible,
+            &mut TripleMatchRequirements::default(),
+        )
+    }
+
+    fn obeys_state_triples_cached<const S: usize, const C: usize>(
+        &self,
+        state: State,
+        possible: &SideTriplePossible<S, C>,
+        requirements: &mut TripleMatchRequirements<C>,
+    ) -> bool {
         if !possible.enabled {
             return true;
-        }
-
-        struct TripleRequirements<const C: usize> {
-            masks: [[u64; C]; C],
-        }
-
-        impl<const C: usize> TripleRequirements<C> {
-            const fn add(&mut self, a: usize, b: usize, c: usize) {
-                self.masks[a][b] |= 1_u64 << c;
-            }
-        }
-
-        #[derive(Clone, Copy)]
-        struct BlockBoundary {
-            first: usize,
-            last: usize,
-            prefix2: Option<(usize, usize)>,
-            suffix2: Option<(usize, usize)>,
-            exactly_one_cell: bool,
-        }
-
-        fn compile_span<const C: usize>(
-            span: &Span,
-        ) -> TripleRequirements<C> {
-            let mut req = TripleRequirements { masks: [[0; C]; C] };
-            let mut previous_last: Option<usize> = None;
-            let mut previous_suffix2: Option<(usize, usize)> = None;
-
-            for block in span.span.iter() {
-                let boundary = match block {
-                    Block::Run { color, count } => {
-                        let color = *color as usize;
-                        let minimum = usize::from(count.minimum());
-                        if minimum >= 3 {
-                            req.add(color, color, color);
-                        }
-
-                        BlockBoundary {
-                            first: color,
-                            last: color,
-                            prefix2: (minimum >= 2)
-                                .then_some((color, color)),
-                            suffix2: (minimum >= 2)
-                                .then_some((color, color)),
-                            exactly_one_cell: matches!(
-                                *count,
-                                BlockCount::Exact(1)
-                            ),
-                        }
-                    },
-                    Block::Word { word, count } => {
-                        let first = word[0] as usize;
-                        let last = *word.last().unwrap() as usize;
-                        let minimum = count.minimum();
-
-                        // Every concrete member contains at least `minimum`
-                        // whole copies.  Three copies suffice to expose every
-                        // possible length-3 window of a periodic word.
-                        let copies = minimum.min(3);
-                        let mut a = None;
-                        let mut b = None;
-                        for _ in 0..copies {
-                            for &color in word.iter() {
-                                let color = color as usize;
-                                if let (Some(a), Some(b)) = (a, b) {
-                                    req.add(a, b, color);
-                                }
-                                a = b;
-                                b = Some(color);
-                            }
-                        }
-
-                        let prefix2 = if word.len() >= 2 {
-                            Some((word[0] as usize, word[1] as usize))
-                        } else if minimum >= 2 {
-                            Some((first, first))
-                        } else {
-                            None
-                        };
-                        let suffix2 = if word.len() >= 2 {
-                            Some((
-                                word[word.len() - 2] as usize,
-                                word[word.len() - 1] as usize,
-                            ))
-                        } else if minimum >= 2 {
-                            Some((last, last))
-                        } else {
-                            None
-                        };
-
-                        BlockBoundary {
-                            first,
-                            last,
-                            prefix2,
-                            suffix2,
-                            exactly_one_cell: word.len() == 1
-                                && matches!(
-                                    *count,
-                                    WordCount::Exact(1)
-                                ),
-                        }
-                    },
-                };
-
-                // Triples crossing the block boundary are required only when
-                // the necessary two-cell suffix/prefix is fixed for every
-                // concretization of the adjacent blocks.
-                if let Some((a, b)) = previous_suffix2 {
-                    req.add(a, b, boundary.first);
-                }
-                if let (Some(a), Some((b, c))) =
-                    (previous_last, boundary.prefix2)
-                {
-                    req.add(a, b, c);
-                }
-
-                let combined_suffix2 = boundary.suffix2.map_or_else(
-                    || {
-                        if boundary.exactly_one_cell {
-                            previous_last.map(|a| (a, boundary.last))
-                        } else {
-                            None
-                        }
-                    },
-                    Some,
-                );
-
-                previous_last = Some(boundary.last);
-                previous_suffix2 = combined_suffix2;
-            }
-
-            if matches!(&span.end, &TapeEnd::Blanks) {
-                // The infinite blank suffix guarantees every boundary triple
-                // that can be formed from the fixed explicit suffix, plus 000.
-                if let Some((a, b)) = previous_suffix2 {
-                    req.add(a, b, 0);
-                }
-                if let Some(a) = previous_last {
-                    req.add(a, 0, 0);
-                }
-                req.add(0, 0, 0);
-            }
-
-            req
         }
 
         fn side_ok<const S: usize, const C: usize>(
@@ -12758,15 +13830,14 @@ impl Tape {
 
         let st = state as usize;
         let sc = self.scan as usize;
-        let left_req = compile_span::<C>(&self.lspan);
-        let right_req = compile_span::<C>(&self.rspan);
+        let [left_req, right_req] = requirements.sides(self);
         let known_left = self.left_neighbor_color().map(usize::from);
         let known_right = self.right_neighbor_color().map(usize::from);
 
         let matches_window = |left: usize, right: usize| {
-            side_ok(&left_req, possible, st, sc, left, right, LEFT_SIDE)
+            side_ok(left_req, possible, st, sc, left, right, LEFT_SIDE)
                 && side_ok(
-                    &right_req, possible, st, sc, left, right,
+                    right_req, possible, st, sc, left, right,
                     RIGHT_SIDE,
                 )
         };
@@ -12790,147 +13861,34 @@ impl Tape {
     /// every required right triple in at least one forward execution of the
     /// same exact local window. If either side forces no triple, this reduced
     /// product contributes no extra pruning.
-    #[expect(
-        clippy::excessive_nesting,
-        clippy::missing_asserts_for_indexing
-    )]
     fn obeys_joint_state_triples<const S: usize, const C: usize>(
         &self,
         state: State,
         possible: &JointSideTriplePossible<S, C>,
     ) -> bool {
+        self.obeys_joint_state_triples_cached(
+            state,
+            possible,
+            &mut TripleMatchRequirements::default(),
+        )
+    }
+
+    fn obeys_joint_state_triples_cached<
+        const S: usize,
+        const C: usize,
+    >(
+        &self,
+        state: State,
+        possible: &JointSideTriplePossible<S, C>,
+        requirements: &mut TripleMatchRequirements<C>,
+    ) -> bool {
         if !possible.enabled {
             return true;
         }
 
-        fn compile_span<const C: usize>(span: &Span) -> u64 {
-            debug_assert!(C * C * C <= 64);
-            let mut bits = 0_u64;
-            let mut add = |a: usize, b: usize, c: usize| {
-                let id = (a * C + b) * C + c;
-                bits |= 1_u64 << id;
-            };
-
-            #[derive(Clone, Copy)]
-            struct BlockBoundary {
-                first: usize,
-                last: usize,
-                prefix2: Option<(usize, usize)>,
-                suffix2: Option<(usize, usize)>,
-                exactly_one_cell: bool,
-            }
-
-            let mut previous_last: Option<usize> = None;
-            let mut previous_suffix2: Option<(usize, usize)> = None;
-
-            for block in span.span.iter() {
-                let boundary = match block {
-                    Block::Run { color, count } => {
-                        let color = *color as usize;
-                        let minimum = usize::from(count.minimum());
-                        if minimum >= 3 {
-                            add(color, color, color);
-                        }
-                        BlockBoundary {
-                            first: color,
-                            last: color,
-                            prefix2: (minimum >= 2)
-                                .then_some((color, color)),
-                            suffix2: (minimum >= 2)
-                                .then_some((color, color)),
-                            exactly_one_cell: matches!(
-                                *count,
-                                BlockCount::Exact(1)
-                            ),
-                        }
-                    },
-                    Block::Word { word, count } => {
-                        let first = word[0] as usize;
-                        let last = *word.last().unwrap() as usize;
-                        let minimum = count.minimum();
-                        let copies = minimum.min(3);
-                        let mut a = None;
-                        let mut b = None;
-                        for _ in 0..copies {
-                            for &color in word.iter() {
-                                let color = color as usize;
-                                if let (Some(a), Some(b)) = (a, b) {
-                                    add(a, b, color);
-                                }
-                                a = b;
-                                b = Some(color);
-                            }
-                        }
-
-                        let prefix2 = if word.len() >= 2 {
-                            Some((word[0] as usize, word[1] as usize))
-                        } else if minimum >= 2 {
-                            Some((first, first))
-                        } else {
-                            None
-                        };
-                        let suffix2 = if word.len() >= 2 {
-                            Some((
-                                word[word.len() - 2] as usize,
-                                word[word.len() - 1] as usize,
-                            ))
-                        } else if minimum >= 2 {
-                            Some((last, last))
-                        } else {
-                            None
-                        };
-
-                        BlockBoundary {
-                            first,
-                            last,
-                            prefix2,
-                            suffix2,
-                            exactly_one_cell: word.len() == 1
-                                && matches!(
-                                    *count,
-                                    WordCount::Exact(1)
-                                ),
-                        }
-                    },
-                };
-
-                if let Some((a, b)) = previous_suffix2 {
-                    add(a, b, boundary.first);
-                }
-                if let (Some(a), Some((b, c))) =
-                    (previous_last, boundary.prefix2)
-                {
-                    add(a, b, c);
-                }
-
-                previous_suffix2 = boundary.suffix2.map_or_else(
-                    || {
-                        if boundary.exactly_one_cell {
-                            previous_last.map(|a| (a, boundary.last))
-                        } else {
-                            None
-                        }
-                    },
-                    Some,
-                );
-                previous_last = Some(boundary.last);
-            }
-
-            if matches!(&span.end, &TapeEnd::Blanks) {
-                if let Some((a, b)) = previous_suffix2 {
-                    add(a, b, 0);
-                }
-                if let Some(a) = previous_last {
-                    add(a, 0, 0);
-                }
-                add(0, 0, 0);
-            }
-
-            bits
-        }
-
-        let left_req = compile_span::<C>(&self.lspan);
-        let right_req = compile_span::<C>(&self.rspan);
+        let [left, right] = requirements.sides(self);
+        let left_req = left.packed;
+        let right_req = right.packed;
         if left_req == 0 || right_req == 0 {
             return true;
         }
