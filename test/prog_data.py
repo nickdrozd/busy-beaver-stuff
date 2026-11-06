@@ -2360,8 +2360,11 @@ PROVER_HALT: ProverEst = {
     "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...": "(10 ↑↑ 4)",                           # 2x5 yuan
     "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": "(10 ↑↑ 3)",                  # 3x4 BBi(8) ext
     "1RB ... ... ...  2RC 2RB ... 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...": "(10 ↑↑ 3)", # 4x4 no-A
+    "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (1.2, 443682),                # 3x4 BBi(8) ext
+    "1RB 1LA ... ... ...  1RC 3LB 1RB ... 0LC  2LA 2LC ... 4LC ...": (1.2, 443682),     # 3x5 BBi(8) ext
     "1RB ... 0LD  2RC ... 2RB  2LA ... 0RC  2LD 2LC 0RD": (4.0, 19728),                # 2x5
     "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),                          # 2x5 pavel
+    "1RB ... 2LA ...  1LC 2RC 1LB ...  1LA 2RC 3LC 1LB": (1.9, 2458),                  # 3x4
 
     # 2/5
     "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...": (1.7, 352),
@@ -2403,7 +2406,6 @@ PROVER_HALT: ProverEst = {
     "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(10 ↑↑ 2049)",
     "1RB ... 1LA 2RB  2RC 3RC 3LB 2RA  2LB 3RB 3LC 1LA": "(10 ↑↑ 189)",
     "1RB 2LC 1RC 2RA  1LA 3RA 2RB ...  3LB 2LC 1RA 0LB": "(10 ↑↑ 130)",
-    "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (1.2, 443682),
     "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC": (3.7, 6518),
     "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": (2.2, 2372),
     "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB": (1.7, 1301),
@@ -2594,6 +2596,7 @@ SUSPECTED_RULES = {
     "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ...",
     "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...",
 
+    "1RB ... 2LA ...  1LC 2RC 1LB ...  1LA 2RC 3LC 1LB",
     "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD",
     "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
     "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...",
@@ -2613,11 +2616,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 361790,
-    "divs": 52282,
+    "adds": 361801,
+    "divs": 52293,
     "exps": 231547,
-    "muls": 164769,
-    "totl": 810388,
+    "muls": 164772,
+    "totl": 810413,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -2793,6 +2796,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ** 443682)",
             "((-17 + (13 * (5 ** 634766))) // 4)",
             "((1905225 + (39 * (5 ** 634764))) // 2)",
+        ),
+        "1RB 1LA ... ... ...  1RC 3LB 1RB ... 0LC  2LA 2LC ... 4LC ...": (
+            486,
+            "(10 ** 443682)",
+            "((-17 + (13 * (5 ** 634766))) // 4)",
+            "((3818523 + (13 * (5 ** 634765))) // 4)",
         ),
         "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": (
             683,
