@@ -160,7 +160,7 @@ class TuringTest(TestCase):
 ########################################
 
 class Simple(TuringTest):
-    machine: MachineResult  # ty: ignore[invalid-mutable-override]
+    machine: MachineResult  # ty: ignore[incompatible-mutable-override]
 
     def run_bb(
             self,
@@ -344,7 +344,7 @@ class SimpleSlow(Simple):
 
 class Recur(TuringTest):
     prog: str
-    machine: Machine | StrictLinRecMachine | LinRecSampler  # ty: ignore[invalid-mutable-override]
+    machine: Machine | StrictLinRecMachine | LinRecSampler  # ty: ignore[incompatible-mutable-override]
 
     def assert_spinout(self) -> None:
         self.assertIsNotNone(
@@ -574,7 +574,7 @@ class Recur(TuringTest):
 ########################################
 
 class RunProver(TuringTest):
-    machine: Machine  # ty: ignore[invalid-mutable-override]
+    machine: Machine  # ty: ignore[incompatible-mutable-override]
 
     def assert_spinout(self) -> None:
         self.assertIsNotNone(
@@ -1090,7 +1090,7 @@ class Prover(RunProver):
                             if isinstance(marks, int) else
                             marks.estimate())
                         if marks != -1 else
-                        str(self.machine.rulapp.estimate())  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
+                        str(self.machine.rulapp.estimate())  # type: ignore[union-attr]  # ty: ignore[missing-union-attribute]
                     )
                 except NotImplementedError as err:
                     estimate = err.args[0]
