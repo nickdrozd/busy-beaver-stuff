@@ -222,7 +222,13 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     }
 
     pub fn prover_settled(&self, steps: Steps) -> bool {
-        self.run_prover(steps).is_settled()
+        let result = self.run_prover(steps);
+
+        // if result.is_mult() {
+        //     self.print();
+        // }
+
+        result.is_settled()
     }
 
     pub fn check_inf(&self, steps: Steps) -> bool {
@@ -615,6 +621,22 @@ fn test_mult_rule() {
         Prog::<3, 3>::from("1RB 1RC 2RA  0RC 2RA 0RB  2LC 2LB 0LA")
             .run_prover(400)
             .is_mult()
+    );
+
+    assert!(
+        Prog::<2, 6>::from(
+            "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA",
+        )
+        .run_prover(2_100)
+        .is_mult()
+    );
+
+    assert!(
+        Prog::<2, 6>::from(
+            "1RB 2LA ... 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB",
+        )
+        .run_prover(2_100)
+        .is_mult()
     );
 }
 
