@@ -738,6 +738,21 @@ fn test_enum_p() {
 
 /**************************************/
 
+fn quick_check() {
+    fn _2_6_0(prog: &Prog<2, 6>, _: &mut PassConfig<'_>) -> bool {
+        prog.bkw_cant_halt(10).is_refuted()
+            || prog.prover_settled(10_000)
+    }
+
+    assert_holdouts![
+        (2, 6) => [
+            0 => (_2_6_0, TREE_LIM, (0, 0)),
+        ],
+    ];
+}
+
+/**************************************/
+
 const FAST: &[fn()] = &[test_bkw, test_deciders, test_enum_8];
 
 const SLOW: &[fn()] = &[test_enum_p, test_enum_9, test_pipeline_8];
