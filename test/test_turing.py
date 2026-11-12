@@ -633,14 +633,14 @@ class Macro(RunProver):
             self.machine.infrul)
 
         self.run_bb(
-            "1RB ...  1LB 0RC  1RB 1RD  0RE 0LD  1LF 1RA  1LC ...",
+            "1RB ---  1LB 0RC  1RB 1RD  0RE 0LD  1LF 1RA  1LC ---",
             opt_macro = 2_000,
         )
 
         self.assert_undefined((4470, 'A1'))
 
         self.run_bb(
-            "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF",
+            "1RB 0LC  0RD 1RA  --- 0LD  1LE 1LA  0LF 1LA  0RE 1LF",
             opt_macro = 200)
 
         self.assertEqual(
@@ -670,13 +670,13 @@ class Macro(RunProver):
 
     def test_show_state_overflow(self):
         self.run_bb(
-            "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
+            "1RB 2LA 3RA 0LA  1LA 2RA 0RB ---",
             opt_macro = 4_000)
 
         self.assert_macro_cells(41)
 
         self.run_bb(
-            "1RB 2LA 3RA 0LA  1LA 2RA 0RB ...",
+            "1RB 2LA 3RA 0LA  1LA 2RA 0RB ---",
             opt_macro = 4_000,
             watch_tape = True)
 
@@ -688,7 +688,7 @@ class Macro(RunProver):
 
     def test_backsym_overflow(self):
         self.run_bb(
-            "1RB 1LA ... 0RB  2LA 3RB 1LB 0RA",
+            "1RB 1LA --- 0RB  2LA 3RB 1LB 0RA",
             backsym = 1,
             sim_lim = 2422,
         )
@@ -699,7 +699,7 @@ class Macro(RunProver):
 
     @expectedFailure
     def test_wrong_block(self):
-        prog = "1RB 0LA  1RC ...  1LD 0RC  0LA 1LD"
+        prog = "1RB 0LA  1RC ---  1LD 0RC  0LA 1LD"
 
         self.run_bb(
             prog,
@@ -816,16 +816,16 @@ class Prover(RunProver):
         )
 
         self.run_bb(
-            "1RB 0LC  1RD 1RA  ... 0LD  1LA 0LB",
+            "1RB 0LC  1RD 1RA  --- 0LD  1LA 0LB",
             analyze = False,
         )
 
         self.run_bb(
-            "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC",
+            "1RB 2RA 2RC  1LC --- 1LA  1RA 2LB 1LC",
         )
 
         self.run_bb(
-            "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...",
+            "1RB 2LA 1RA 1RA  1LB 1LA 3RB ---",
             backsym = 2,
         )
 
@@ -996,7 +996,7 @@ class Prover(RunProver):
             print(self.machine)
 
     def test_prover_false_positive(self):
-        prog = "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE"
+        prog = "1RB 0LD  1RC 0RF  1LC 1LA  0LE ---  1LA 0RB  0RC 0RE"
 
         for backsym in range(7):
             self.run_bb(

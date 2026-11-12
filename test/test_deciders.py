@@ -425,8 +425,8 @@ class FarSolves(DeciderTest):
         far_missed = set()
 
         cps_expect = {
-            "1RB 0LB ...  1LA 0RC 0RB  2LC 1LA 1RB",
-            "1RB 0LC 0LA  1LA 0RA ...  2RC 1RB 1LA",
+            "1RB 0LB ---  1LA 0RC 0RB  2LC 1LA 1RB",
+            "1RB 0LC 0LA  1LA 0RA ---  2RC 1RB 1LA",
         }
 
         for prog in FAR_SOLVES['spinout']:

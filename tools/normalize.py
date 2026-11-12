@@ -19,7 +19,7 @@ def expand(prog: str) -> str:
 
     return '  '.join([
         ' '.join([
-            '...'
+            '---'
             if 'Z' in (instr := state[i:i+3]) or '-' in instr else
             instr
             for i in range(0, len(state), 3)
@@ -37,7 +37,7 @@ def compact(prog: str) -> str:
 
 def init_prog(states: int, colors: int) -> str:
     prog = [
-        ["..." for _ in range(colors)]
+        ["---" for _ in range(colors)]
         for _ in range(states)
     ]
 

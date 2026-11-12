@@ -3,7 +3,7 @@ from unittest import TestCase
 from tm.macro import BacksymbolLogic, make_macro, opt_block
 
 MACROS = {
-    ("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD", 2): {
+    ("0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  --- 0LD", 2): {
         (0, 0): (1, 1, 1),
         (1, 0): (2, 0, 2),
         (2, 1): (2, 0, 3),
@@ -36,7 +36,7 @@ class TestMacro(TestCase):
 
 
 BLOCKS = {
-    "1RB 0LC 0LC  2LA 0RA 1RB  1LA 2LB ...": {
+    "1RB 0LC 0LC  2LA 0RA 1RB  1LA 2LB ---": {
         500: 8,
         1000: 1,
         2000: 45,

@@ -131,7 +131,7 @@ class TestEnum(TestCase):
             self.tape.edges)
 
     def test_offsets_1(self):
-        # 1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...
+        # 1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ---
 
         #  158 | B0 | 2 3^11 4 1^11 [0]
         #  159 | A1 | 2 3^11 4 1^10 [1]
@@ -192,7 +192,7 @@ class TestEnum(TestCase):
             (3, 0), (0, 1))
 
     def test_offsets_2(self):
-        # 1RB ... 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC
+        # 1RB --- 2RC  2LC 2RD 0LC  1RA 2RB 0LB  1LB 0LD 2RC
 
         #  927 | |0 | 3^6 2^414422565 [0]
         #  928 | 2 | 3^6 2^414422564 [2] 5

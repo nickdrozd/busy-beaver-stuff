@@ -39,7 +39,7 @@ class TestLinRado(TestCase):
         self.progs_strict, self.progs_loose = set(), set()
 
         for prog in yield_programs(states, colors, bool(halt), rejects):
-            prog = prog.replace('1R_', '...')  # ruff:ignore[redefined-loop-name]
+            prog = prog.replace('1R_', '---')  # ruff:ignore[redefined-loop-name]
 
             if not term_or_rec(prog, loose):
                 self.progs_loose.add(prog)
@@ -184,7 +184,7 @@ def lr_convert(rado_string: int) -> str:
     return bin_to_prog(
         oct_to_bin(
             rado_string)
-    ).replace('1R_', '...')
+    ).replace('1R_', '---')
 
 LIN_HOLDOUTS = set(map(lr_convert, LR_HOLDOUTS))
 
@@ -200,9 +200,9 @@ LR_NOT_BRADY = read_progs('not_brady')
 BRADY_HOLDOUTS = read_progs('brady_holdouts')
 
 LIN_EXAMPLES = {
-    "1RB ...  0RC 1LB  1LA 0RB",  # total recurrence (blank)
-    "1RB ...  1LB 0LC  1LA 1RA",  # left barrier
-    "1RB ...  1LC 1RA  1LA 0LC",  # right barrier
+    "1RB ---  0RC 1LB  1LA 0RB",  # total recurrence (blank)
+    "1RB ---  1LB 0LC  1LA 1RA",  # left barrier
+    "1RB ---  1LC 1RA  1LA 0LC",  # right barrier
 }
 
 

@@ -15,130 +15,130 @@ type BasicTermData = dict[str, tuple[int, int]]
 
 HALT: BasicTermData = {
     # 2/2 BB
-    "1RB 1LB  1LA ...": (4, 6),
-    "1RB 0LB  1LA ...": (3, 6),
-    "1RB ...  1LB 1LA": (3, 6),
-    "1RB ...  0LB 1LA": (2, 6),
-    "1RB ...  1LB 1RA": (2, 4),
-    "1RB ...  1LB 0RA": (1, 4),
+    "1RB 1LB  1LA ---": (4, 6),
+    "1RB 0LB  1LA ---": (3, 6),
+    "1RB ---  1LB 1LA": (3, 6),
+    "1RB ---  0LB 1LA": (2, 6),
+    "1RB ---  1LB 1RA": (2, 4),
+    "1RB ---  1LB 0RA": (1, 4),
 
     # 3/2 BB
-    "1RB ...  1LB 0RC  1LC 1LA": (5, 21),  # shift
-    "1RB ...  0LC 0RC  1LC 1LA": (5, 20),
-    "1RB 1LA  0RC ...  1LC 0LA": (5, 20),
-    "1RB 1RA  0RC ...  1LC 0LA": (5, 19),
-    "1RB 0RA  0RC ...  1LC 0LA": (4, 19),
-    "1RB ...  0RC 1RB  1LC 1LA": (6, 14),
-    "1RB 1LC  1RC ...  1LA 0LB": (6, 11),  # sigma
-    "1RB 0LB  1LA 0RC  1LC ...": (4,  9),
+    "1RB ---  1LB 0RC  1LC 1LA": (5, 21),  # shift
+    "1RB ---  0LC 0RC  1LC 1LA": (5, 20),
+    "1RB 1LA  0RC ---  1LC 0LA": (5, 20),
+    "1RB 1RA  0RC ---  1LC 0LA": (5, 19),
+    "1RB 0RA  0RC ---  1LC 0LA": (4, 19),
+    "1RB ---  0RC 1RB  1LC 1LA": (6, 14),
+    "1RB 1LC  1RC ---  1LA 0LB": (6, 11),  # sigma
+    "1RB 0LB  1LA 0RC  1LC ---": (4,  9),
 
     # 2/3 BB
-    "1RB 0RB ...  2LA ... 0LB": (1,  8),
-    "1RB 2LB ...  2LA 2RB 1LB": (9, 38),
-    "1RB 0LB ...  2LA 1RB 1RA": (8, 29),
-    "1RB 1LA 1LB  0LA 2RA ...": (6, 26),
-    "1RB 2LA ...  1LB 1LA 0RA": (6, 26),
-    "1RB 2RB ...  2LA 1LA 2LB": (5, 14),
-    "1RB 1RA ...  1LB 2LA 0RB": (4, 13),
-    "1RB 1LA ...  2LA 1LB 2RA": (5, 11),
+    "1RB 0RB ---  2LA --- 0LB": (1,  8),
+    "1RB 2LB ---  2LA 2RB 1LB": (9, 38),
+    "1RB 0LB ---  2LA 1RB 1RA": (8, 29),
+    "1RB 1LA 1LB  0LA 2RA ---": (6, 26),
+    "1RB 2LA ---  1LB 1LA 0RA": (6, 26),
+    "1RB 2RB ---  2LA 1LA 2LB": (5, 14),
+    "1RB 1RA ---  1LB 2LA 0RB": (4, 13),
+    "1RB 1LA ---  2LA 1LB 2RA": (5, 11),
 
     # 4/2 BB
-    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": (13, 107),  # shift
-    "1RB 1LC  1LD 0RB  ... 0LD  1RA 1LA": ( 9,  97),
-    "1RB 0RC  1LA 1RA  ... 1RD  1LD 0LB": (13,  96),  # sigma
-    "1RB 1LB  0LC 0RD  ... 1LA  1RA 0LA": ( 6,  96),
-    "1RB 1LC  0LD 0RD  ... 0LA  1LD 1LA": (11,  84),
-    "1RB ...  1LC 1LB  0RD 1RD  1LA 1RC": ( 9,  40),
-    "1RB 1RC  0LA 1LD  1LB 0RC  0RA ...": ( 4,  25),
-    "1RB 0LC  1LD 1RB  ... 0RB  1LC 1LA": ( 4,  13),
-    "1RB 1LA  1RC 0RD  1LA 1RD  ... 0LA": ( 4,  12),
-    "1RB 0LA  0RC 1LD  0RD ...  1LA 1RD": ( 4,  20),
-    "1RB ...  1LC 1RA  1LD 1RC  0RB 0LD": ( 3,  13),
-    "1RB 0LA  0RC 0LD  0RD ...  1LA 1RD": ( 3,  12),
-    "1RB ...  1LC 0RA  1LD 1RC  0RB 0LD": ( 2,  13),
+    "1RB 1LB  1LA 0LC  --- 1LD  1RD 0RA": (13, 107),  # shift
+    "1RB 1LC  1LD 0RB  --- 0LD  1RA 1LA": ( 9,  97),
+    "1RB 0RC  1LA 1RA  --- 1RD  1LD 0LB": (13,  96),  # sigma
+    "1RB 1LB  0LC 0RD  --- 1LA  1RA 0LA": ( 6,  96),
+    "1RB 1LC  0LD 0RD  --- 0LA  1LD 1LA": (11,  84),
+    "1RB ---  1LC 1LB  0RD 1RD  1LA 1RC": ( 9,  40),
+    "1RB 1RC  0LA 1LD  1LB 0RC  0RA ---": ( 4,  25),
+    "1RB 0LC  1LD 1RB  --- 0RB  1LC 1LA": ( 4,  13),
+    "1RB 1LA  1RC 0RD  1LA 1RD  --- 0LA": ( 4,  12),
+    "1RB 0LA  0RC 1LD  0RD ---  1LA 1RD": ( 4,  20),
+    "1RB ---  1LC 1RA  1LD 1RC  0RB 0LD": ( 3,  13),
+    "1RB 0LA  0RC 0LD  0RD ---  1LA 1RD": ( 3,  12),
+    "1RB ---  1LC 0RA  1LD 1RC  0RB 0LD": ( 2,  13),
 
     # 2/4
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (2050, 3932964),  # BB
-    "1RB 2LA 1RA 1LA  3LA ... 2RB 2RA": (  90,    7195),
-    "1RB 2LA 1RA 1LA  3LA ... 2RB 2LA": (  84,    6445),
-    "1RB 2LA 1RA 1LA  3LA ... 2RB 3RA": (  84,    6445),
-    "1RB 2RB 3LA 2RA  1LA 3RB ... 1LB": (  60,    2351),
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ---": (2050, 3932964),  # BB
+    "1RB 2LA 1RA 1LA  3LA --- 2RB 2RA": (  90,    7195),
+    "1RB 2LA 1RA 1LA  3LA --- 2RB 2LA": (  84,    6445),
+    "1RB 2LA 1RA 1LA  3LA --- 2RB 3RA": (  84,    6445),
+    "1RB 2RB 3LA 2RA  1LA 3RB --- 1LB": (  60,    2351),
 
     # 5/2 BB
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (4098, 47176870),
-    "1RB 1RC  1LD 0LE  1RE ...  0RA 0LB  1LD 1RD": (1471,  2358064),
-    "1RB 1LC  0LA 0LD  1LA ...  1LB 1RE  0RD 0RB": (1915,  2133492),
-    "1RB 1LA  1RC 1LD  1RE 1RD  ... 0LB  0LA 1RC": ( 164,    15589),
-    "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  ... 1LB": (  23,      152),
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  --- 0LA": (4098, 47176870),
+    "1RB 1RC  1LD 0LE  1RE ---  0RA 0LB  1LD 1RD": (1471,  2358064),
+    "1RB 1LC  0LA 0LD  1LA ---  1LB 1RE  0RD 0RB": (1915,  2133492),
+    "1RB 1LA  1RC 1LD  1RE 1RD  --- 0LB  0LA 1RC": ( 164,    15589),
+    "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  --- 1LB": (  23,      152),
 
     # 5/5 block-compiled from 5/2
-    "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (4097, 15721562),
+    "1RB --- --- --- ---  2LC --- --- --- ---  3RD 3LC --- 1LC ---  --- 1RD 1RB 1LE ---  4RD 1LE --- 1RD 1LC": (4097, 15721562),
 
     # 3/3
-    "1RB 2LA 1RC  1LA 1LC 2RB  ... 0LA 1RB": (5, 40),
-    "1RB 1RC 2LA  1LA 2RB 1LC  ... 0RB 1LA": (6, 44),
-    "1RB 2LA 0RC  2LA ... 1RC  1LA 0LB 2RC": (5, 52),
-    "1RB 2RB 1LC  1LA 2RB 1LB  ... 2RB 2LA": (256, 39253),
-    "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC": (36089, 310341163),
-    "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
-    "1RB 2LA 1RA  1RC 2RB 0RC  1LA ... 1LA": (1525688, 987522842126),
-    "1RB ... 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
+    "1RB 2LA 1RC  1LA 1LC 2RB  --- 0LA 1RB": (5, 40),
+    "1RB 1RC 2LA  1LA 2RB 1LC  --- 0RB 1LA": (6, 44),
+    "1RB 2LA 0RC  2LA --- 1RC  1LA 0LB 2RC": (5, 52),
+    "1RB 2RB 1LC  1LA 2RB 1LB  --- 2RB 2LA": (256, 39253),
+    "1RB 2RA 2RC  1LC --- 1LA  1RA 2LB 1LC": (36089, 310341163),
+    "1RB --- 2RB  1LC 0LB 1RA  1RA 2LC 1RC": (107900, 4939345068),
+    "1RB 2LA 1RA  1RC 2RB 0RC  1LA --- 1LA": (1525688, 987522842126),
+    "1RB --- 2LC  1LC 2RB 1LB  1LA 2RC 2LA": (2950149, 4144465135614),
 
     # 2/5
-    "1RB 0LB ... 1RB 2LB  3LA 4LB 1RB 2RA 0RA": (62, 3179),
-    "1RB 2LB 1RB 3LB ...  2LA 4LB 3RB 0RA 1RB": (67, 3294),
+    "1RB 0LB --- 1RB 2LB  3LA 4LB 1RB 2RA 0RA": (62, 3179),
+    "1RB 2LB 1RB 3LB ---  2LA 4LB 3RB 0RA 1RB": (67, 3294),
 
     # Copy of 2/4 BB
-    "1RB 1LC ...  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
+    "1RB 1LC ---  1LA 1LC 2RB  1RB 2LC 1RC": (2050, 3932964),
     # Surprise-in-a-box
-    "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC": (31, 2315619),
+    "1RB 2LB 1LC  1LA 2RB 1RB  --- 2LA 0LC": (31, 2315619),
     # R. Blodgett
-    "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA ...": (9, 57),
+    "1RB 1LB 2LB  1RC 1LA 0RA  1LA 2RA ---": (9, 57),
     # David Jefferson
-    "1RB 1RA ...  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
+    "1RB 1RA ---  1LC 1LC 2LA  2RA 1LB 1LA": (12, 44),
 
     # Milton Green (1964)
-    "1RB ...  ... ...": (1, 2),
-    "1RB ...  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
-    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD": (22961, 197_700_005),
+    "1RB ---  --- ---": (1, 2),
+    "1RB ---  0RC 1RC  0RD 0RC  1RE 1LA  0RF 0RE  1LF 1LD": (35, 436),
+    "1RB 1RC  0RD 0RB  --- 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1LG 1LD": (22961, 197_700_005),
 
     # Lynn (1971)
-    "1RB 1RA  1LC 0LD  0RA 1LB  ... 0LE  1RC 1RB": (15, 435),
-    "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  ... 1RD": (22, 292),
-    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB ...": (22, 217),
-    "1RB 0LB  1LC ...  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": (42, 521),  # Lynn reports 522
+    "1RB 1RA  1LC 0LD  0RA 1LB  --- 0LE  1RC 1RB": (15, 435),
+    "1RB 1RC  1LC 1LD  0RA 1LB  1RE 0LB  --- 1RD": (22, 292),
+    "1RB 0RC  1LC 0LB  1RD 1LB  1RE 0RA  0RB ---": (22, 217),
+    "1RB 0LB  1LC ---  0LD 0LC  1LE 0RA  0LF 0LE  1RF 1RD": (42, 521),  # Lynn reports 522
 
     # Uwe (1981)
 
     # Castor diligentissimus et primus et perpetuus (Castor schultis)
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": (501, 134467),
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ---  1LC 1RA": (501, 134467),
 
     # Castor ministerialis: the Civil Servant Beaver, who
     # cares most for his progress, but does not produce anything.
-    "1RB 1RA  1RC 0RD  1LE 0RA  ... 0RB  1LB 1LE": (0, 52),
+    "1RB 1RA  1RC 0RD  1LE 0RA  --- 0RB  1LB 1LE": (0, 52),
 
     # Castor scientificus: the Scientific Beaver, who does
     # not produce anything either, but with more effort and
     # less effect on his position.
-    "0RB 0LA  0RC ...  1RD 1LE  1LA 0LD  1RC 1RE": (0, 187),
+    "0RB 0LA  0RC ---  1RD 1LE  1LA 0LD  1RC 1RE": (0, 187),
 
     # Castor exflippus: the Beaver Freak, who tries to
     # survive as long as possible without producing
     # anything, moving on the tape, and changing his state.
-    "0RB 0LA  1RC ...  0LC 1RD  0LD 1RE  1LA 0LE": (0, 67),
+    "0RB 0LA  1RC ---  0LC 1RD  0LD 1RE  1LA 0LE": (0, 67),
 }
 
 HALT_SLOW = {
     # 3/3
-    "1RB 0LA 1LA  2RC 1RC ...  2LC 1RA 0RC": (20240, 408114977),
-    "1RB 2RC 1LA  2LA 1RB ...  2RB 2RA 1LC": (95524079, 4345166620336565),
-    "1RB 2LA 1LC  0LA 2RB 1LB  ... 1RA 1RC": (374676383, 119112334170342540),
+    "1RB 0LA 1LA  2RC 1RC ---  2LC 1RA 0RC": (20240, 408114977),
+    "1RB 2RC 1LA  2LA 1RB ---  2RB 2RA 1LC": (95524079, 4345166620336565),
+    "1RB 2LA 1LC  0LA 2RB 1LB  --- 1RA 1RC": (374676383, 119112334170342540),
 
     # 3/4
-    "1RB ... ... ...  0RC 2LB 3LB 1RB  1LA ... 2RB 3RC": (32, 663941479),
+    "1RB --- --- ---  0RC 2LB 3LB 1RB  1LA --- 2RB 3RC": (32, 663941479),
 
     # 4/4
-    "1RB ... ... ...  2RC ... ... ...  3LC 1RD 0RC 2LC  ... ... 2RD 3RC": (34, 3545123826),  # D0
+    "1RB --- --- ---  2RC --- --- ---  3LC 1RD 0RC 2LC  --- --- 2RD 3RC": (34, 3545123826),  # D0
 }
 
 SPINOUT: dict[str, tuple[int, int]] = {
@@ -148,7 +148,7 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1LB  0LB 1LA": (2, 6),
     "1RB 0LB  0LB 1LA": (1, 6),
     "1RB 1LB  1LB 0RA": (1, 4),
-    "1RB ...  0LB 1LB": (1, 3),
+    "1RB ---  0LB 1LB": (1, 3),
 
     # 3/2
     "1RB 0LB  1LA 0RC  1LC 1LA": (6, 55),  # BBB(3, 2)
@@ -157,12 +157,12 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 0LC  0LC 0RC  1LC 1LA": (5, 51),
     "1RB 0LC  1LA 0RC  1RC 1RB": (5, 49),
     "1RB 0LC  0RC 0RC  1LC 1LA": (5, 48),
-    "1RB 1LC  0RC ...  1LC 0LA": (5, 27),
+    "1RB 1LC  0RC ---  1LC 0LA": (5, 27),
     "1RB 1LA  0RC 0LB  1LC 1RA": (2, 11),
     "1RB 1LB  0LC 0LA  0LC 1LA": (1,  7),
-    "1RB 0LC  0RC ...  1LC 0RA": (1,  6),
+    "1RB 0LC  0RC ---  1LC 0RA": (1,  6),
     "1RB 1LA  0LA 0LC  0LC 1LC": (1,  6),
-    "1RB ...  1LC ...  0LC 0LB": (2,  4),
+    "1RB ---  1LC ---  0LC 0LB": (2,  4),
 
     # 2/3
     "1RB 2LB 1LA  2LB 2RA 0RA": ( 8, 59),  # BBB(2, 3)
@@ -171,11 +171,11 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 2RA 2LB  2LB 2LA 0LA": ( 5, 40),
     "1RB 1LB 1RA  2LB 2LA 0RA": ( 6, 23),
     "1RB 2RA 2LB  0LB 1LA 1RA": ( 4, 23),
-    "1RB 2LB ...  1LB 2LA 1RB": ( 5, 17),
+    "1RB 2LB ---  1LB 2LA 1RB": ( 5, 17),
     "1RB 0LA 0RB  1LB 2RB 2RA": ( 1, 13),
-    "1RB ... 2LB  2LB 2RA 0RA": ( 1,  6),
-    "1RB 1LB ...  1LB 2RA 0RA": ( 1,  6),
-    "1RB ... 1LB  2LB 2RA 0LB": ( 1,  5),
+    "1RB --- 2LB  2LB 2RA 0RA": ( 1,  6),
+    "1RB 1LB ---  1LB 2RA 0RA": ( 1,  6),
+    "1RB --- 1LB  2LB 2RA 0LB": ( 1,  5),
 
     # 4/2
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": (69, 2819),  # BBB sigma
@@ -187,17 +187,17 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": (32,  581),
     "1RB 0LC  0RD 1LC  0LA 1LB  1LD 0RB": (22,  536),
     "1RB 0LB  1LB 1LC  1RD 0LB  1RA 0RD": (12,  444),
-    "1RB ...  0LB 1LC  1RD 1LD  1LD 0RC": ( 3,   13),
+    "1RB ---  0LB 1LC  1RD 1LD  1LD 0RC": ( 3,   13),
     "1RB 1LC  0RD 1RD  0LC 0RA  1LD 1LA": ( 3,   11),
     "1RB 0RB  1LC 0LC  0RC 0LD  1RA 1LD": ( 2,   45),
     "1RB 1LB  1LA 1RC  1RC 0LD  0RB 1LD": ( 1,   37),
     "1RB 0LB  1LA 1LC  0LD 0RC  0RD 1RA": ( 1,   25),
-    "1RB ...  0RC 1LC  1LC 0RD  0LB 1RD": ( 1,   13),
-    "1RB ...  1RC 1LC  0LB 1RD  0RD 0LC": ( 1,    7),
-    "1RB ...  1LB 0RC  0LD 1RC  ... 1LB": ( 1,    6),
+    "1RB ---  0RC 1LC  1LC 0RD  0LB 1RD": ( 1,   13),
+    "1RB ---  1RC 1LC  0LB 1RD  0RD 0LC": ( 1,    7),
+    "1RB ---  1LB 0RC  0LD 1RC  --- 1LB": ( 1,    6),
 
     # 7/4 block-compiled from 4/2 BBB sigma
-    "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...": (35, 1434),
+    "1RB --- --- ---  0LC 2LC --- ---  0LC 3RD 0RD 2RE  1LF 1LC 1RB ---  --- 3RD --- ---  1LG --- 2RB 1LF  2RE --- 2LC ---": (35, 1434),
 
     # 2/4
     "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": (2747, 2501552),
@@ -223,28 +223,28 @@ SPINOUT: dict[str, tuple[int, int]] = {
     "1RB 1RC 1LA  1LB 2RB 1LC  2RC 2LA 0LA": (1, 737),
     "1RB 1RC 1LA  2LC 2RB 1LB  2RC 2LA 0LA": (1, 723),
     "1RB 2RB 1LA  2LC 1RC 1LB  2RC 0LB 2LA": (1, 565),
-    "1RB 2LB ...  2LA 1RC 1LB  2RC 0LB 1LC": (1, 565),
-    "1RB 2LC ...  2LA 1RC 1LB  2RC 0LB 1LC": (1, 553),
+    "1RB 2LB ---  2LA 1RC 1LB  2RC 0LB 1LC": (1, 565),
+    "1RB 2LC ---  2LA 1RC 1LB  2RC 0LB 1LC": (1, 553),
 
     # 2/5
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 1LB": (1, 9),
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 2LB": (1, 9),
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 3LB": (1, 9),
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 4LB": (1, 9),
-    "1RB ... ... ... ...  0LB 2RB 3RB 4LB ...": (1, 7),
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 1LB": (1, 9),
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 2LB": (1, 9),
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 3LB": (1, 9),
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 4LB": (1, 9),
+    "1RB --- --- --- ---  0LB 2RB 3RB 4LB ---": (1, 7),
 
     # 5/2
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LE 0LA": (7, 57),
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1LE 0LA": (7, 57),
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": (19670, 193023636),
-    "1RB ...  0RC 0RD  1LC 1LA  0RC 0LE  1LD 0RC": (33, 1199),
+    "1RB ---  0RC 0RD  1LC 1LA  0RC 0LE  1LD 0RC": (33, 1199),
 }
 
 SPINOUT_BLANK = {
     # 2/2
-    "1RB ...  0LB 0RB": ({'B'}, 3),
-    "1RB ...  0LB 0LB": ({'B'}, 3),
-    "1RB ...  1LB 0RB": ({'B'}, 4),
+    "1RB ---  0LB 0RB": ({'B'}, 3),
+    "1RB ---  0LB 0LB": ({'B'}, 3),
+    "1RB ---  1LB 0RB": ({'B'}, 4),
     "1RB 0LB  1LB 0RA": ({'B'}, 4),
     "1RB 0RB  1LB 0RA": ({'B'}, 4),
 
@@ -257,24 +257,24 @@ SPINOUT_BLANK = {
     "1RB 1LA  1LA 1RC  1LC 0RC": ({'C'}, 20),
     "1RB 1LA  1LA 1LC  1RC 0LC": ({'C'}, 20),
     "1RB 0LC  1LB 1LA  1RC 0LC": ({'C'}, 20),
-    "1RB ...  1LC 0LC  1RC 0LB": ({'B', 'C'}, 20),
-    "1RB ...  0RC 0LB  0LC 1LA": ({'B', 'C'}, 9),
-    "1RB ...  1LB 0RC  0LB 1RC": ({'B', 'C'}, 7),
+    "1RB ---  1LC 0LC  1RC 0LB": ({'B', 'C'}, 20),
+    "1RB ---  0RC 0LB  0LC 1LA": ({'B', 'C'}, 9),
+    "1RB ---  1LB 0RC  0LB 1RC": ({'B', 'C'}, 7),
     "1RB 0RB  0LB 1RC  1LB 0LA": ({'B'},  7),
     "1RB 0RB  1LB 1RC  0LA 0LB": ({'B'},  7),
     "1RB 0LC  0LB 1LC  1RA 0RB": ({'B'},  6),
-    "1RB 0RB  1LB 1RC  ... 0LA": ({'B'},  5),
-    "1RB 0LC  1LB 1RA  ... 0RB": ({'B'},  5),
-    "1RB 0RB  0LB 1LC  0RA ...": ({'B'},  5),
-    "1RB 0RB  0LB 1RC  0LA ...": ({'B'},  5),
-    "1RB ...  1LB 0RC  ... 0RB": ({'B'},  4),
+    "1RB 0RB  1LB 1RC  --- 0LA": ({'B'},  5),
+    "1RB 0LC  1LB 1RA  --- 0RB": ({'B'},  5),
+    "1RB 0RB  0LB 1LC  0RA ---": ({'B'},  5),
+    "1RB 0RB  0LB 1RC  0LA ---": ({'B'},  5),
+    "1RB ---  1LB 0RC  --- 0RB": ({'B'},  4),
 
     # 2/3
     "1RB 2RA 2RB  2LB 1LA 0RB": ({'B'}, 29),
     "1RB 2RB 2RA  2LB 1LA 0RB": ({'B'}, 24),
     "1RB 0RA 0RB  2LB 0RB 2LA": ({'B'},  8),
-    "1RB ... ...  0LB 2RB 0RB": ({'B'}, 5),
-    "1RB ... ...  2LB 0RB 0RB": ({'B'},  4),
+    "1RB --- ---  0LB 2RB 0RB": ({'B'}, 5),
+    "1RB --- ---  2LB 0RB 0RB": ({'B'},  4),
 
     # 4/2
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": ({'C','D'}, 32779478),
@@ -289,23 +289,23 @@ SPINOUT_BLANK = {
     "1RB 1LA  0LC 0LB  1RC 1RD  1LA 1RB": ({'B','C'},      496),
     "1RB 1LC  0RC 1RB  0RD 0RC  1LD 1LA": ({'C','D'},      456),
     "1RB 1RA  0RC 0RB  1LC 1LD  1RA 1LB": ({'B','C'},      427),
-    "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": ({'B','C','D'},  171),
+    "1RB ---  0RC 0LA  1LC 1LD  0RB 0RD": ({'B','C','D'},  171),
     "1RB 1LC  1RC 1LD  1LA 0LB  1RD 0LD": ({'D'},           77),
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA": ({'C'},           66),
     "1RB 1LC  0LB 1LA  1RC 0LD  0RC 1LD": ({'C', 'D'}, 26),
-    "1RB ...  1RC ...  1LC 0RD  0LC 1RD": ({'D', 'C'}, 22),
-    "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC": ({'D', 'C'}, 20),
-    "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD": ({'D', 'B', 'C'}, 19),
+    "1RB ---  1RC ---  1LC 0RD  0LC 1RD": ({'D', 'C'}, 22),
+    "1RB ---  1LB 1RC  0LD 0RB  1LD 0RC": ({'D', 'C'}, 20),
+    "1RB ---  0RC 1LB  1LC 0RD  0LB 1RD": ({'D', 'B', 'C'}, 19),
     "1RB 0RB  0RC 0LD  1LC 1RD  0RA 1LD": ({'B', 'C'}, 17),
-    "1RB ...  0RC ...  1LC 0RD  0LC 1RD": ({'D', 'C'}, 16),
-    "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC": ({'D', 'C'}, 15),
-    "1RB ...  1LC ...  0LD 1RC  1LD 0RC": ({'D', 'C'}, 13),
-    "1RB ...  1LC ...  0RD 1LC  1RD 0LC": ({'D', 'C'}, 12),
-    "1RB ...  1RC ...  0LD 1RC  1LD 0RC": ({'D', 'C'}, 11),
-    "1RB ...  1LC ...  1RC 0LD  0RC 1LD": ({'D', 'C'}, 10),
-    "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD": ({'D', 'B', 'C'}, 10),
-    "1RB ...  0RC ...  0LD 1RC  1LD 0RC": ({'D', 'C'}, 9),
-    "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB": ({'C', 'D'}, 9),
+    "1RB ---  0RC ---  1LC 0RD  0LC 1RD": ({'D', 'C'}, 16),
+    "1RB ---  1LC 1LC  0RD 0LB  1RD 0LC": ({'D', 'C'}, 15),
+    "1RB ---  1LC ---  0LD 1RC  1LD 0RC": ({'D', 'C'}, 13),
+    "1RB ---  1LC ---  0RD 1LC  1RD 0LC": ({'D', 'C'}, 12),
+    "1RB ---  1RC ---  0LD 1RC  1LD 0RC": ({'D', 'C'}, 11),
+    "1RB ---  1LC ---  1RC 0LD  0RC 1LD": ({'D', 'C'}, 10),
+    "1RB ---  1LB 0RC  0LD 1RC  0RB 1LD": ({'D', 'B', 'C'}, 10),
+    "1RB ---  0RC ---  0LD 1RC  1LD 0RC": ({'D', 'C'}, 9),
+    "1RB ---  0LC 0LC  0RD 1LB  1RD 0LB": ({'C', 'D'}, 9),
 
     # 2/4
     "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": ({'B'}, 1012664081),
@@ -329,8 +329,8 @@ SPINOUT_BLANK = {
     "1RB 2RC 2RA  0LC 1RA 2RB  2LC 1LA 0RB": ({'B', 'C'}, 606),
 
     # 2/5
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB": ({'B'}, 9),
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB": ({'B'}, 9),
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 0LB": ({'B'}, 9),
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 0RB": ({'B'}, 9),
     "1RB 2RA 0RB 2RB 3RB  0LB 4LA 3LA 0RB 1RA": ({'B'}, 21),
     "1RB 2RA 3RA 4RB 0RB  0LB 2LA 4LA 0LA 3LA": ({'B'}, 23),
     "1RB 2RB 3LA 2RA 2RA  2LB 1LA 0RB 4RA 3RA": ({'B'}, 1012664081),
@@ -341,48 +341,48 @@ SPINOUT_BLANK = {
     # 5/2
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RB 0LA": ({'B', 'C', 'D'}, 379),
     "1RB 1LB  1LA 0LC  1RA 0LD  0RE 1LD  1RE 0RB": ({'B', 'D', 'E'}, 734),
-    "1RB 1RA  1RC ...  0RD 0RC  1LD 1LE  1RA 1LC": ({'C', 'D'}, 32738607),
-    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC": ({'C', 'D'}, 32738620),
-    "1RB 1LC  1RD 1RB  0RE 0RC  0RC ...  1LE 1LA": ({'C', 'E'}, 32748802),
-    "1RB 1RC  1LD ...  0LE 0LC  0LC 1LD  1RE 1RA": ({'E', 'C'}, 32748816),
-    "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE": ({'B', 'C'}, 32759028),
-    "1RB 1LA  0LC 0LB  1RC 1RD  1RE 1RB  1LA ...": ({'B', 'C'}, 32759042),
-    "1RB 1RA  1LC ...  1RA 1LD  0RE 0RD  1LE 1LC": ({'E', 'D'}, 32769253),
-    "1RB ...  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC": ({'E', 'D'}, 32769267),
-    "1RB ...  0RC 0RB  1LC 1LD  1RE 1LB  1RC 1RE": ({'B', 'C'}, 32779476),
-    "1RB ...  1RC 1RB  1LC 1LD  1RB 1LE  0RC 0RE": ({'E', 'C'}, 32779478),
-    "1RB 1RA  1RC ...  1LC 1LD  0RA 1LE  0RC 0RE": ({'E', 'C'}, 32779492),
-    "1RB 1RC  1LD ...  0LE 0LC  1RE 1LD  1RE 1RA": ({'E', 'C'}, 32779493),
-    "1RB 1RC  0LD ...  0LE 0LC  1LE 1LD  1RE 1RA": ({'E', 'C'}, 32779508),
-    "1RB ...  1RC 1LD  0RE 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32789703),
-    "1RB ...  1LC 1RD  0LE 1LC  0LE 0LD  1RE 1RB": ({'E', 'D'}, 32789704),
-    "1RB ...  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE": ({'E', 'C'}, 32789706),
-    "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE": ({'B', 'C'}, 32789706),
-    "1RB ...  1LC 1LB  0LD 0LC  1RD 1RE  0LB 1RC": ({'C', 'D'}, 32789716),
-    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  0RB 1LC": ({'C', 'D'}, 32789717),
-    "1RB ...  0LC 1RD  1LD 1LC  0LE 0LD  1RE 1RB": ({'E', 'D'}, 32789719),
-    "1RB ...  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE": ({'B', 'C'}, 32789721),
-    "1RB ...  0RC 1LD  0RD 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32799940),
-    "1RB ...  1LB 1LC  0RD 1LE  0RE 1RD  0RB 0RE": ({'E', 'B'}, 32799946),
-    "1RB ...  1LB 1LC  1RD 1LE  0LE 1RD  0RB 0RE": ({'E', 'B'}, 32799961),
-    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  ... 1RA": ({'C', 'D'}, 32810048),
-    "1RB ...  0RC 1LD  1LD 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32810199),
-    "1RB ...  0RC 0RB  1LC 1LD  0RE 1LB  1LB 1RE": ({'B', 'C'}, 32810203),
-    "1RB ...  0RC 0RB  1LC 1LD  1RE 1LB  0LD 1RE": ({'B', 'C'}, 32810218),
-    "1RB ...  0RC 1LD  1LB 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32820458),
-    "1RB ...  1LB 1LC  1RD 1LE  1LE 0RC  0RB 0RE": ({'E', 'B'}, 32830251),
-    "1RB ...  1RC 1LB  1LD 1RD  0LE 0LD  1RE 0RB": ({'E', 'D'}, 32871346),
-    "1RB ...  1LB 0LC  1LD 1RC  1RE 1LE  0RB 0RE": ({'E', 'B'}, 32871356),
-    "1RB ...  1LC 1RB  1RD 1LD  0RE 0RD  1LE 0LB": ({'E', 'D'}, 32871358),
-    "1RB 1LC  1RD 0LB  0RE 0RC  0RC ...  1LE 1LA": ({'E', 'C'}, 32891764),
-    "1RB ...  1LB 1LC  0LD 1LE  1RD 0LE  0RB 0RE": ({'E', 'B'}, 32891776),
+    "1RB 1RA  1RC ---  0RD 0RC  1LD 1LE  1RA 1LC": ({'C', 'D'}, 32738607),
+    "1RB ---  1RC 1RB  0RD 0RC  1LD 1LE  1LA 1LC": ({'C', 'D'}, 32738620),
+    "1RB 1LC  1RD 1RB  0RE 0RC  0RC ---  1LE 1LA": ({'C', 'E'}, 32748802),
+    "1RB 1RC  1LD ---  0LE 0LC  0LC 1LD  1RE 1RA": ({'E', 'C'}, 32748816),
+    "1RB ---  0LC 0LB  1RC 1RD  1LE 1RB  1LA 1LE": ({'B', 'C'}, 32759028),
+    "1RB 1LA  0LC 0LB  1RC 1RD  1RE 1RB  1LA ---": ({'B', 'C'}, 32759042),
+    "1RB 1RA  1LC ---  1RA 1LD  0RE 0RD  1LE 1LC": ({'E', 'D'}, 32769253),
+    "1RB ---  1LC 1RB  1LA 1LD  0RE 0RD  1LE 1LC": ({'E', 'D'}, 32769267),
+    "1RB ---  0RC 0RB  1LC 1LD  1RE 1LB  1RC 1RE": ({'B', 'C'}, 32779476),
+    "1RB ---  1RC 1RB  1LC 1LD  1RB 1LE  0RC 0RE": ({'E', 'C'}, 32779478),
+    "1RB 1RA  1RC ---  1LC 1LD  0RA 1LE  0RC 0RE": ({'E', 'C'}, 32779492),
+    "1RB 1RC  1LD ---  0LE 0LC  1RE 1LD  1RE 1RA": ({'E', 'C'}, 32779493),
+    "1RB 1RC  0LD ---  0LE 0LC  1LE 1LD  1RE 1RA": ({'E', 'C'}, 32779508),
+    "1RB ---  1RC 1LD  0RE 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32789703),
+    "1RB ---  1LC 1RD  0LE 1LC  0LE 0LD  1RE 1RB": ({'E', 'D'}, 32789704),
+    "1RB ---  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE": ({'E', 'C'}, 32789706),
+    "1RB ---  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE": ({'B', 'C'}, 32789706),
+    "1RB ---  1LC 1LB  0LD 0LC  1RD 1RE  0LB 1RC": ({'C', 'D'}, 32789716),
+    "1RB ---  1RC 1RB  0RD 0RC  1LD 1LE  0RB 1LC": ({'C', 'D'}, 32789717),
+    "1RB ---  0LC 1RD  1LD 1LC  0LE 0LD  1RE 1RB": ({'E', 'D'}, 32789719),
+    "1RB ---  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE": ({'B', 'C'}, 32789721),
+    "1RB ---  0RC 1LD  0RD 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32799940),
+    "1RB ---  1LB 1LC  0RD 1LE  0RE 1RD  0RB 0RE": ({'E', 'B'}, 32799946),
+    "1RB ---  1LB 1LC  1RD 1LE  0LE 1RD  0RB 0RE": ({'E', 'B'}, 32799961),
+    "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  --- 1RA": ({'C', 'D'}, 32810048),
+    "1RB ---  0RC 1LD  1LD 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32810199),
+    "1RB ---  0RC 0RB  1LC 1LD  0RE 1LB  1LB 1RE": ({'B', 'C'}, 32810203),
+    "1RB ---  0RC 0RB  1LC 1LD  1RE 1LB  0LD 1RE": ({'B', 'C'}, 32810218),
+    "1RB ---  0RC 1LD  1LB 1RC  0RE 0RD  1LE 1LB": ({'E', 'D'}, 32820458),
+    "1RB ---  1LB 1LC  1RD 1LE  1LE 0RC  0RB 0RE": ({'E', 'B'}, 32830251),
+    "1RB ---  1RC 1LB  1LD 1RD  0LE 0LD  1RE 0RB": ({'E', 'D'}, 32871346),
+    "1RB ---  1LB 0LC  1LD 1RC  1RE 1LE  0RB 0RE": ({'E', 'B'}, 32871356),
+    "1RB ---  1LC 1RB  1RD 1LD  0RE 0RD  1LE 0LB": ({'E', 'D'}, 32871358),
+    "1RB 1LC  1RD 0LB  0RE 0RC  0RC ---  1LE 1LA": ({'E', 'C'}, 32891764),
+    "1RB ---  1LB 1LC  0LD 1LE  1RD 0LE  0RB 0RE": ({'E', 'B'}, 32891776),
 
     # 5/2 constructed from 4/2 BLB
     "1RB 1LC  1RD 0LE  0RD 0RC  1LD 1LA  1RB 1RE": ({'C', 'D'}, 32810048),
     "1RB 1LC  0LD 1RB  0RE 0RC  1RE 1RD  1LE 1LA": ({'C', 'E'}, 32779508),
 
     # 6/2 inverted from 4/2 BLB
-    "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": ({'C', 'F'}, 32779478),
+    "1RB ---  1RC ---  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF": ({'C', 'F'}, 32779478),
 }
 
 assert not set(SPINOUT) & set(SPINOUT_BLANK)
@@ -400,18 +400,18 @@ SPINOUT_BLANK_SLOW = {
     "1RB 2RA 1RA 2RB  2LB 3LA 0RB 0RA": ({'B'}, 1367361263049),
 
     # 3/4 copycat
-    "1RB 2RC 1RA ...  2LB 3LA 0RB 0RA  ... ... ... 2RB": ({'B'}, 1367361263049),
+    "1RB 2RC 1RA ---  2LB 3LA 0RB 0RA  --- --- --- 2RB": ({'B'}, 1367361263049),
 
     # 2/5 copycat
     "1RB 2RA 3RA 2RA 2RB  2LB 4LA 0RB 4LA 0RA": ({'B'}, 1367361263049),
     "1RB 2RA 1RA 2RB 1RB  2LB 3LA 0RB 4RA 2LB": ({'B'}, 1367361263049),
 
     # 5/2 blank
-    "1RB 1RA  0RC 0RB  1LC 1LD  1RE 1LB  ... 0RA": (
+    "1RB 1RA  0RC 0RB  1LC 1LD  1RE 1LB  --- 0RA": (
         {'B', 'C'}, 348098678511),
-    "1RB ...  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB": (
+    "1RB ---  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB": (
         {'D', 'B', 'C'}, 455790469746),
-    "1RB ...  0LC 0LB  0LD 1LC  1RD 0RE  1LB 1LA": (
+    "1RB ---  0LC 0LB  0LD 1LC  1RD 0RE  1LB 1LA": (
         {'B', 'C', 'D'}, 455790469748),
 
     # 6/2 constructed from 4/2
@@ -423,16 +423,16 @@ TOTAL = True
 _ = not TOTAL
 
 INIT_BLANK: dict[str, tuple[int, bool]] = {
-    "1RB ...  0LB 0RA": (3, _),
-    "1RB ...  0LB 0LA": (3, _),
-    "1RB 0RA  1LA ...": (4, _),
+    "1RB ---  0LB 0RA": (3, _),
+    "1RB ---  0LB 0LA": (3, _),
+    "1RB 0RA  1LA ---": (4, _),
     "1RB 0LA  1LB 1RA": (5, _),
     "1RB 0RA  0LB 1LA": (7, _),
     "1RB 1LA  0LA 0LB": (7, TOTAL),
     "1RB 0RA  1LB 1LA": (8, _),
 
-    "1RB 0LA  1RC ...  0LC 0LA": (5, _),
-    "1RB 1RC  0LA 0RA  0LB ...": (5, _),
+    "1RB 0LA  1RC ---  0LC 0LA": (5, _),
+    "1RB 1RC  0LA 0RA  0LB ---": (5, _),
     "1RC 0RB  0RA 1LA  1LB 0LC": (17, TOTAL),
     "1RB 0RC  1LC 0LB  0RA 1LA": (17, TOTAL),
     "1RB 0LA  0LC 1RA  1LA 1LB": (18, _),
@@ -447,7 +447,7 @@ INIT_BLANK: dict[str, tuple[int, bool]] = {
     "1RB 2RB 0RA  1LB 2LA 1LA": (21, _),
     "1RB 2RB 0RA  2LA 1LA 1LB": (27, _),
 
-    "1RB 0RC  1RC ...  0LD 1RA  0LA 1LD": (21, _),
+    "1RB 0RC  1RC ---  0LD 1RA  0LA 1LD": (21, _),
     "1RB 0LB  1LC 1LD  0LA 1RC  0RC 0RD": (25, TOTAL),
     "1RB 1RA  0LC 0LB  0RD 1LD  0RA 1LB": (40, TOTAL),
     "1RB 1LA  0LA 1RC  0RB 0LD  0RC 1LD": (48, TOTAL),
@@ -458,10 +458,10 @@ INIT_BLANK: dict[str, tuple[int, bool]] = {
     "1RB 0RA  1LC 0RD  1LA 1LB  0LC 1RD": (90, _),
     "1RB 0RA  1LC 0RB  0LD 1LD  1LA 0LA": (121, _),
 
-    "1RB 2RB 0LB ...  1LA 2LB 3RA 0LA": (7, _),
-    "1RB ... 0RB ...  2LB 3RA 0RA 0RA": (9, _),
-    "1RB 3RA 0RB 0LA  2LA ... 3LA ...": (11, _),
-    "1RB 0RA ... 0LA  2LB 3LA 1LA 3RB": (12, _),
+    "1RB 2RB 0LB ---  1LA 2LB 3RA 0LA": (7, _),
+    "1RB --- 0RB ---  2LB 3RA 0RA 0RA": (9, _),
+    "1RB 3RA 0RB 0LA  2LA --- 3LA ---": (11, _),
+    "1RB 0RA --- 0LA  2LB 3LA 1LA 3RB": (12, _),
     "1RB 2RB 3RB 3LA  0LA 0LB 1LA 2LA": (23, TOTAL),
     "1RB 2RB 3RB 3LA  0LA 0LB 1RA 1LA": (28, TOTAL),
     "1RB 3RB 0LA 2RA  2LB 0RB 3LA 1LA": (136, _),
@@ -491,23 +491,23 @@ INIT_BLANK: dict[str, tuple[int, bool]] = {
 }
 
 TWOSTEPPERS = {
-    "1RB ...  0LB 1RB",
+    "1RB ---  0LB 1RB",
     "1RB 1LB  1LA 1RA",
     "1RB 1LB  1LB 1RA",
-    "1RB 1RB  0LA ...",
+    "1RB 1RB  0LA ---",
     "1RB 1RB  0LB 1LA",
     "1RB 1RB  1LA 1LA",
     "1RB 1RB  1LB 1LA",
-    "1RB ... 2RB  1LB 2RB 2LA",
-    "1RB ... 2RB  2LB 2RB 2LA",
-    "1RB 0RA 2RB  2LA ... 2LA",
+    "1RB --- 2RB  1LB 2RB 2LA",
+    "1RB --- 2RB  2LB 2RB 2LA",
+    "1RB 0RA 2RB  2LA --- 2LA",
     "1RB 1LA 2RA  2LA 2LB 2RB",
-    "1RB 1RA 2RB  2LA ... 2LA",
-    "1RB 1RB ...  2LA 1LA 0LB",
-    "1RB 1RB ...  2LA 1LA 1LB",
-    "1RB 1RB ...  2LA 1LA 2LB",
+    "1RB 1RA 2RB  2LA --- 2LA",
+    "1RB 1RB ---  2LA 1LA 0LB",
+    "1RB 1RB ---  2LA 1LA 1LB",
+    "1RB 1RB ---  2LA 1LA 2LB",
     "1RB 2LA 2RB  1LB 1LA 1RA",
-    "1RB 2RA 2RB  2LA ... 2LA",
+    "1RB 2RA 2RB  2LA --- 2LA",
     "1RB 1RC  1LC 0LB  1RA 1LA",
     "1RB 1RC  1LC 1RA  1RA 1LA",
     "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB",
@@ -530,11 +530,11 @@ ZLOOPERS = {
     "1RB 1RA  1LC 0RD  1LB 1LD  1RA 0RB",
     "1RB 0RD  0RC 1RA  1LD 1LA  0LC 0LA",
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE",
-    "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
+    "1RB ---  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA",
 }
 
 ZLOOPY = {
-    "1RB 1LB  1LA 0RC  0LD 0RB  0LC ...",
+    "1RB 1LB  1LA 0RC  0LD 0RB  0LC ---",
 }
 
 MULTISPIN = {
@@ -550,7 +550,7 @@ MULTISPIN = {
     "1RB 0RA 0RB 2RB  2LB 1RB 3LA 0RB",
     "1RB 0LD  1LC 1LA  0RB 1RD  1LD 0RC",
     "1RB 1LB  0RC 1LD  1LA 1RC  1LD 0RC",
-    "1RB 4LB 1LB 1RA 3LA  2LB 2RA 3RA 3RA ...",
+    "1RB 4LB 1LB 1RA 3LA  2LB 2RA 3RA 3RA ---",
     "1RB 1RC  1LA 0LE  0LD 0RC  0LA 1LB  0LE 1RE",
     "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB",
 }
@@ -559,15 +559,15 @@ QUASIHALT_FAST = {
     # 3/2
     "1RB 1RC  1LC 0LB  1RA 1LA": (22,  2),  # center, >BB
     "1RB 1RC  1LC 1RA  1RA 1LA": ( 9,  2),  # center, >BB sigma
-    "1RB ...  1LB 0LC  1RC 1RB": ( 5, 13),
-    "1RB ...  1LB 1RC  0LC 0RB": ( 2, 14),
-    "1RB ...  1LB 1LC  1RC 0RB": ( 2, 13),
-    "1RB ...  1LC 0RB  1LB 1RC": ( 2, 10),
+    "1RB ---  1LB 0LC  1RC 1RB": ( 5, 13),
+    "1RB ---  1LB 1RC  0LC 0RB": ( 2, 14),
+    "1RB ---  1LB 1LC  1RC 0RB": ( 2, 13),
+    "1RB ---  1LC 0RB  1LB 1RC": ( 2, 10),
 
     # 2/3
     "1RB 1LA 2RA  2LA 2LB 2RB": (17, 2),
     "1RB 2LA 1RA  2LB 1LA 2RB": (16, 3),
-    "1RB ... ...  2LB 1RB 1LB": ( 1, 5),
+    "1RB --- ---  2LB 1RB 1LB": ( 1, 5),
 
     # 4/2
     "1RB 1RC  1RD 0LC  1LD 0LD  1LB 0RA": (2332, (3, 1)),
@@ -577,11 +577,11 @@ QUASIHALT_FAST = {
     "1RB 1LC  1LD 0RA  1RC 0LD  0LC 1LA": ( 108, 8),
     "1RB 0LC  0RD 1RC  1LA 1RD  1LD 0RB": ( 105, 8),
     "1RB 1LA  1RC 1LD  1RD 0RC  1LB 0LA": ( 101, 8),
-    "1RB ...  1RC 0LD  1LD 0RD  1RA 0LB": ( 28, 3),
-    "1RB 1LA  0LA 0RC  1RD 0LA  1RA ...": ( 20, 7),
+    "1RB ---  1RC 0LD  1LD 0RD  1RA 0LB": ( 28, 3),
+    "1RB 1LA  0LA 0RC  1RD 0LA  1RA ---": ( 20, 7),
     "1RB 0LB  1RC 0LD  1LA 0RB  0RC 1LD": ( 12, 3),
     "1RB 0RB  1LC 0LD  1LB 1RA  0RD 0LC": ( 10, 2),
-    "1RB ...  1LB 0LC  1RC 0RD  1LD 1LC": (5, 13),
+    "1RB ---  1LB 0LC  1RC 0RD  1LD 1LC": (5, 13),
 
     # 5/2
     "1RB 1LC  1LC 1RA  1LB 0LD  1LA 0RE  1RD 1RE": (221032, (2, 1)),
@@ -589,13 +589,13 @@ QUASIHALT_FAST = {
     "1RB 1LC  1RD 1RA  1LB 0LA  1RE 0RC  1RC 0LE": (  3247, (3, 1)),
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RA 0LA": ( 56, 2),
     "1RB 1LD  0RC 1LA  0LD 1RC  0RE 0LA  1LA 0RB": ( 22, 6),
-    "1RB 0RE  0RC 0LA  1RD 1LA  1LE ...  1RE 0LC": ( 17, 3),
+    "1RB 0RE  0RC 0LA  1RD 1LA  1LE ---  1RE 0LC": ( 17, 3),
     "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB": ( 10, 3),
-    "0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  ... 0LD": ( 11, 8),
-    "1RB 0RB  0RC 1LA  0RD 0LE  1LB ...  1LE 0RA": (9, 4),
-    "1RB 0RD  1RC 1LE  0LA ...  1LD 0RE  1LA 0RB": (7, 5),
-    "1RB 0LD  1RC 0RD  1RD ...  1LE 0LB  0LE 1RA": (7, 5),
-    "1RB 0LC  1LA ...  0RD 0LD  1RD 1RE  1LE 0LA": (5, 21),
+    "0RB 0LC  1LA 1RB  1RD 0RE  1LC 1LA  --- 0LD": ( 11, 8),
+    "1RB 0RB  0RC 1LA  0RD 0LE  1LB ---  1LE 0RA": (9, 4),
+    "1RB 0RD  1RC 1LE  0LA ---  1LD 0RE  1LA 0RB": (7, 5),
+    "1RB 0LD  1RC 0RD  1RD ---  1LE 0LB  0LE 1RA": (7, 5),
+    "1RB 0LC  1LA ---  0RD 0LD  1RD 1RE  1LE 0LA": (5, 21),
 
     # 2/4
     "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB": (21485, (2,   1)),
@@ -607,9 +607,9 @@ QUASIHALT_FAST = {
 
 RECUR = {
     # 2/2
-    "1RB ...  1LB 0LA": (0, 3),
-    "1RB 0LA  1LA ...": (0, 3),
-    "1RB 1RB  0LA ...": (1, 2),
+    "1RB ---  1LB 0LA": (0, 3),
+    "1RB 0LA  1LA ---": (0, 3),
+    "1RB 1RB  0LA ---": (1, 2),
     "1RB 0LB  1LA 0RB": (9, 3),
     "1RB 1LA  0LA 1RA": (7, 5),
     "1RB 1LB  1LA 0RB": (7, 3),
@@ -625,23 +625,23 @@ RECUR = {
     "1RB 1LC  1LA 1RB  1RB 0LA": ( 50, 12),
     "1RB 0LC  1LC 1RB  1RB 1LA": ( 50, 12),
     "1RB 0LB  1LC 0RC  1RA 1LA": ( 38, 21),
-    "1RB ...  1LC 0RC  1RA 0LC": ( 18,  5),
+    "1RB ---  1LC 0RC  1RA 0LC": ( 18,  5),
     "1RB 1LA  0RC 0RA  1LC 0LA": ( 17, 36),
-    "1RB ...  1LC 0RB  1LA 1LC": ( 16,  5),
-    "1RB ...  1LC 1RA  1LA 0LC": ( 12,  8),
-    "1RB ...  1LB 0LC  1LA 1RA": ( 12,  7),
+    "1RB ---  1LC 0RB  1LA 1LC": ( 16,  5),
+    "1RB ---  1LC 1RA  1LA 0LC": ( 12,  8),
+    "1RB ---  1LB 0LC  1LA 1RA": ( 12,  7),
     "1RB 1LB  0LC 0RC  1LC 1LA": (  7, 17),
     "1RB 1LB  0RC 0RB  1LC 0LA": (  4, 38),
-    "1RB 1LB  1RC 1RB  0LA ...": (  4,  5),
+    "1RB 1LB  1RC 1RB  0LA ---": (  4,  5),
     "1RB 0RB  1LC 0RC  0LA 1RA": (  2, 30),
     "1RB 0LA  0RC 1LA  1LC 0RB": (  0, 92),
     "1RB 0LA  1LB 0RC  1LC 1LA": (  0, 56),
     "1RB 0LA  0RC 0RC  1LC 1LA": (  0, 48),
     "1RB 1LB  0RC 1RC  1LA 0LA": (  0, 15),
-    "1RB 0LA  0RC 1RC  1LA ...": (  0,  9),
+    "1RB 0LA  0RC 1RC  1LA ---": (  0,  9),
     "1RB 0LB  1LA 1RC  0RC 0RA": (  0,  8),
     "1RB 1LC  1RC 1RA  0LA 1LA": (10, 11),
-    "1RB ...  1LB 0LC  1RA 0RB": (2, 7),
+    "1RB ---  1LB 0LC  1RA 0RB": (2, 7),
     "1RB 0LC  0LB 1LA  1RC 0RB": (4, 7),
     "1RB 0LC  1LB 1LA  1RC 0RB": (2, 14),
     "1RB 0RB  0LB 1LC  1LA 0RA": (2, 6),
@@ -652,7 +652,7 @@ RECUR = {
     "1RB 1RC  1LB 1RA  1LC 1LB": (2, 7),
 
     # 2/3
-    "1RB 0LA ...  1LB 2LA 0RB": (165, 54),
+    "1RB 0LA ---  1LB 2LA 0RB": (165, 54),
     "1RB 1LB 2LA  1LA 2RB 0RA": (101, 26),
     "1RB 2RB 1LB  1LA 2RB 0LA": ( 97, 14),
     "1RB 2LA 0RB  1LA 1RB 1RA": ( 94, 20),
@@ -668,41 +668,41 @@ RECUR = {
     "1RB 2LA 0RB  1LB 1RA 1RA": ( 55, 10),
     "1RB 0RB 0LB  2LA 2RA 1LB": ( 54, 40),
     "1RB 2LA 2RB  1LB 1LA 1RA": ( 39,  2),
-    "1RB 2LA 0RB  2LA ... 1RA": ( 35,  8),
+    "1RB 2LA 0RB  2LA --- 1RA": ( 35,  8),
     "1RB 2LA 1RB  1LB 1LA 2RA": ( 24, 46),
-    "1RB 1LB 0RB  1LA 2RB ...": ( 23,  3),
+    "1RB 1LB 0RB  1LA 2RB ---": ( 23,  3),
     "1RB 1LA 2LB  1LA 2RA 0LB": ( 20, 48),
-    "1RB 0LB 0RB  1LA 2RB ...": ( 15,  3),
+    "1RB 0LB 0RB  1LA 2RB ---": ( 15,  3),
     "1RB 2RB 2LA  1LB 1RA 0LA": ( 14, 54),
-    "1RB 0LB ...  2LA 1LA 1RA": ( 11,  8),
-    "1RB 2LA ...  0LB 1LA 0LA": ( 11,  3),
+    "1RB 0LB ---  2LA 1LA 1RA": ( 11,  8),
+    "1RB 2LA ---  0LB 1LA 0LA": ( 11,  3),
     "1RB 2LA 1RB  1LB 1LA 0RA": (  7, 46),
     "1RB 0RA 1LB  2LA 2RB 0LA": (  6, 48),
     "1RB 0RA 2LB  2LA 0LA 1RA": (  5, 28),
-    "1RB ... 0LB  2LB 2RA 1LA": (  5,  9),
-    "1RB 2LB 0RB  2LA ... 2RA": (  5,  6),
+    "1RB --- 0LB  2LB 2RA 1LA": (  5,  9),
+    "1RB 2LB 0RB  2LA --- 2RA": (  5,  6),
     "1RB 1RA 0RB  2LB 1LA 1LB": (  4, 23),
-    "1RB ... 0RB  0LB 2LA 2RA": (  4,  5),
-    "1RB ... 2RB  2LB 2LA 0RA": (  4,  3),
-    "1RB ... ...  2LB 0LA ...": (  4,  3),
+    "1RB --- 0RB  0LB 2LA 2RA": (  4,  5),
+    "1RB --- 2RB  2LB 2LA 0RA": (  4,  3),
+    "1RB --- ---  2LB 0LA ---": (  4,  3),
     "1RB 2LA 0LB  1LA 2RA 2RB": (  3, 35),
-    "1RB 0RB ...  1LB 2RA 0LA": (  2,  9),
+    "1RB 0RB ---  1LB 2RA 0LA": (  2,  9),
     "1RB 2LB 2LA  1LA 2RB 0RA": (  1, 35),
     "1RB 2LB 0RA  1LA 2RB 2RA": (  0, 60),
     "1RB 2LB 0RA  1LA 1RB 2RA": (  0, 48),
     "1RB 2LA 1LB  0LA 0RB 1RA": (  0, 47),
-    "1RB 0RB ...  2LB 0RB 2LA": (3, 4),
-    "1RB 0RB ...  1LB 2LA 0RB": (2, 11),
-    "1RB ... 2RB  1LB 2RB 1LA": (2, 5),
-    "1RB ... 2RB  1LB 2RB 2LA": (5, 2),
-    "1RB 0RA 2RB  2LA ... 2LA": (5, 2),
-    "1RB 1RA 2RB  2LA ... 2LA": (5, 2),
-    "1RB 1RB ...  2LA 1LA 0LB": (6, 2),
-    "1RB 1RB ...  2LA 1LA 1LB": (6, 2),
-    "1RB 1RB ...  2LA 1LA 2LB": (6, 2),
-    "1RB 2RA 2RB  2LA ... 2LA": (5, 2),
-    "1RB ... 2RB  2LB 2RB 1LA": (2, 7),
-    "1RB ... 2RB  2LB 2RB 2LA": (3, 2),
+    "1RB 0RB ---  2LB 0RB 2LA": (3, 4),
+    "1RB 0RB ---  1LB 2LA 0RB": (2, 11),
+    "1RB --- 2RB  1LB 2RB 1LA": (2, 5),
+    "1RB --- 2RB  1LB 2RB 2LA": (5, 2),
+    "1RB 0RA 2RB  2LA --- 2LA": (5, 2),
+    "1RB 1RA 2RB  2LA --- 2LA": (5, 2),
+    "1RB 1RB ---  2LA 1LA 0LB": (6, 2),
+    "1RB 1RB ---  2LA 1LA 1LB": (6, 2),
+    "1RB 1RB ---  2LA 1LA 2LB": (6, 2),
+    "1RB 2RA 2RB  2LA --- 2LA": (5, 2),
+    "1RB --- 2RB  2LB 2RB 1LA": (2, 7),
+    "1RB --- 2RB  2LB 2RB 2LA": (3, 2),
     "1RB 0RB 1RA  1LB 2RB 0LA": (4, 14),
     "1RB 0RB 2RA  1LB 2RB 0LA": (22, 16),
 
@@ -782,24 +782,24 @@ RECUR = {
     "1RB 0LD  0LC 1RA  1LA 1LD  1LB 0RA": ( 33, 93),
     "1RB 0RC  1LC 0RA  0LC 0LD  1RD 1RB": ( 28, 33),
     "1RB 0LD  1LB 1LC  1RD 0LA  0RC 0RB": ( 28, 65),
-    "1RB ...  0LC 1RA  1LD 1RC  0RB 0LD": ( 20, 11),
+    "1RB ---  0LC 1RA  1LD 1RC  0RB 0LD": ( 20, 11),
     "1RB 0LC  1RC 0LD  1LD 0RB  0LA 0LA": ( 19, 6),
     "1RB 1LC  1RC 0LD  1LA 0RB  0RC 1LD": ( 18, 28),
     "1RB 1LC  0LA 1RC  1LA 0RD  0LA 0RB": ( 11, 116),
     "1RB 1LB  1LA 0RC  0LD 1RC  0RB 0LB": ( 10, 5),
     "1RB 0LC  1RC 0LD  1LA 0RB  0RC 1LD": ( 10, 9),
     "1RB 0RB  1LB 1LC  1RA 0LD  1LC 0LA": ( 7, 33),
-    "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC": ( 5, 19),
+    "1RB ---  0RC 0LD  1RD 0LA  1LB 0LC": ( 5, 19),
     "1RB 0RA  1LC 1RA  1LD 0LC  1LA 0RB": (     5, 244),
     "1RB 1LA  1LC 0RA  1LD 0LC  1RA 0LA": (     5, 385),
-    "1RB 0LD  1LC ...  1RD 1RC  1LD 1RA": (0, 9),
+    "1RB 0LD  1LC ---  1RD 1RC  1LD 1RA": (0, 9),
     "1RB 1LC  1LA 1RC  0RD 0LA  1RA 0RB": ( 3, 42),
     "1RB 0RC  1RC 1LD  1LB 0LD  0RA 0LB": ( 3, 10),
     "1RB 1LD  1LB 0RC  0LA 1RC  1RD 1LB": ( 2, 6),
-    "1RB 0RC  1LB 1RC  0LD 0RB  ... 1LA": ( 2, 20),
-    "1RB ...  0LC 0LD  0RC 1LD  1LA 0RB": ( 2, 8),
+    "1RB 0RC  1LB 1RC  0LD 0RB  --- 1LA": ( 2, 20),
+    "1RB ---  0LC 0LD  0RC 1LD  1LA 0RB": ( 2, 8),
     "1RB 0RD  1LC 0LC  0RA 1LB  1RA 0LB": ( 1, 64),
-    "1RB 0LB  1LA 0LC  0RA 0LD  1RC ...": ( 1, 11),
+    "1RB 0LB  1LA 0LC  0RA 0LD  1RC ---": ( 1, 11),
     "1RB 1LC  1LA 1RC  0LD 0RB  1RD 0LA": ( 0, 12),
     "1RB 1LC  1LA 1RC  0LD 0RB  1RA 0LA": ( 0, 96),
     "1RB 1LC  1LA 1RC  0LD 0RB  1LB 0LA": ( 0, 42),
@@ -808,15 +808,15 @@ RECUR = {
     "1RB 1LB  1RC 0RC  0RD 0LD  1LD 0RA": ( 0, 30),
     "1RB 0RB  1RC 0LD  1LD 0LB  0RA 1LC": ( 0, 31),
     "1RB 0RB  0RC 0RD  1LC 1LA  0LC 0LA": ( 0, 19),
-    "1RB 0LD  1RC 0RD  0LA ...  0RA 1LA": ( 0, 8),
+    "1RB 0LD  1RC 0RD  0LA ---  0RA 1LA": ( 0, 8),
     "1RB 0LD  1LC 0RA  1RA 0LB  0RB 1LD": ( 0, 9),
     "1RB 0LD  0RC 1LD  1RD 1RA  1LB 0RA": ( 0, 93),
     "1RB 0LD  0RC 0LD  1LC 1LA  0RA 1LD": ( 0, 27),
     "1RB 0LD  0LC 1RA  1RC 1LD  1LB 0RA": ( 0, 14),
     "1RB 0LD  0LC 1RA  1RA 1LD  1LB 0RA": ( 0, 202),
-    "1RB 0LA  0RC 1RC  1RD 1LA  1LB ...": ( 0, 21),
-    "1RB 0LA  0RC 1RC  1RD 1LA  1LA ...": ( 0, 17),
-    "1RB ...  0RC 0LA  1RD 0LD  1LC 0LB": ( 0, 11),
+    "1RB 0LA  0RC 1RC  1RD 1LA  1LB ---": ( 0, 21),
+    "1RB 0LA  0RC 1RC  1RD 1LA  1LA ---": ( 0, 17),
+    "1RB ---  0RC 0LA  1RD 0LD  1LC 0LB": ( 0, 11),
     "1RB 0LA  1LB 0RC  1RD 1RC  1LA 1LD": (     0, 228),
     "1RB 1LA  1LB 0RC  1LC 1LD  0RA 0LD": (     0, 238),
     "1RB 0LC  1LD 1LC  1RD 0LA  0RA 1LB": (     0, 294),
@@ -891,18 +891,18 @@ RECUR = {
     "1RB 0RB 1RA 3LA  2LB 2RB 3RB 0LA": ( 33, 51),
     "1RB 2LA 3RB 0RB  0LB 1LA 1RA 0RB": ( 30, 19),
     "1RB 2LB 1RA 2LA  2LB 3LA 0RA 2RA": ( 24, 34),
-    "1RB 1RA 3LA 0RB  2LB 0RB 2LA ...": (  3, 17),
+    "1RB 1RA 3LA 0RB  2LB 0RB 2LA ---": (  3, 17),
     "1RB 2LA 3LA 0RB  0LA 2RB 1LB 3RB": ( 1, 20),
     "1RB 2RA 3RB 2LB  2LB 3LA 0LA 2LA": ( 0, 10),
     "1RB 3RA 0RB 0RA  0LB 2LA 1LA 2RB": (15, 9),
-    "1RB 0RA 3RB 0LA  2LA ... 3LA 2LA": (5, 12),
-    "1RB 0RA 3RB 0LA  2LA ... 3LA 3LA": (11, 6),
-    "1RB 1RB 0RB ...  2LA 2RB 3LA 1LB": (5, 7),
-    "1RB 3RB 1LA 2RA  2LA 0LA 2LA ...": (4, 7),
-    "1RB 3RB ... ...  2LA 0RB 3LB 1LA": (6, 7),
-    "1RB 2RB ... 1RB  2LB 3LA 3RB 0LA": (10, 13),
-    "1RB 2RB ... 1RB  2LB 3RB 1LA 0LA": (12, 13),
-    "1RB ... 2RB 2RB  2LB 3RB 1LA 0LA": (12, 13),
+    "1RB 0RA 3RB 0LA  2LA --- 3LA 2LA": (5, 12),
+    "1RB 0RA 3RB 0LA  2LA --- 3LA 3LA": (11, 6),
+    "1RB 1RB 0RB ---  2LA 2RB 3LA 1LB": (5, 7),
+    "1RB 3RB 1LA 2RA  2LA 0LA 2LA ---": (4, 7),
+    "1RB 3RB --- ---  2LA 0RB 3LB 1LA": (6, 7),
+    "1RB 2RB --- 1RB  2LB 3LA 3RB 0LA": (10, 13),
+    "1RB 2RB --- 1RB  2LB 3RB 1LA 0LA": (12, 13),
+    "1RB --- 2RB 2RB  2LB 3RB 1LA 0LA": (12, 13),
     "1RB 3RA 0RB 0RA  0LB 2LA 1LA 1LA": (15, 7),
     "1RB 0RB 1LA 1RA  1LB 2LA 3RB 0LA": (19, 29),
     "1RB 1RA 3RB 0RB  1LB 2RB 0LA 2LA": (33, 17),
@@ -914,20 +914,20 @@ RECUR = {
     "1RB 1LB 2RB  1LC 0LA 0RA  1RC 2LC 0RB": (25, 29),
     "1RB 0LB 2RC  1LA 1LC 2RC  1RC 2LA 0LA": (15, 59),
     "1RB 1LB 0LB  1RC 0RC 2LA  1LA 2RC 0LA": (11, 54),
-    "1RB ... 1LB  1LB 1RC 0RC  2LA 2RC 0LB": (9, 3),
-    "1RB 2RC 0RC  2LA 0LA ...  0LC 2RB 1LA": (8, 5),
+    "1RB --- 1LB  1LB 1RC 0RC  2LA 2RC 0LB": (9, 3),
+    "1RB 2RC 0RC  2LA 0LA ---  0LC 2RB 1LA": (8, 5),
     "1RB 0RC 0LC  1LB 2RB 0LA  1LA 1RA 2LA": (7, 29),
-    "1RB 0RB 2RB  2LC ... 0LA  0LC 1RA 1RB": (6, 6),
-    "1RB 2RC 0RC  1LA ... 0LA  0LC 2LA 2RB": (5, 8),
-    "1RB 0RB 2RB  2LC ... 0LA  0LC 2RA 1RB": (3, 12),
+    "1RB 0RB 2RB  2LC --- 0LA  0LC 1RA 1RB": (6, 6),
+    "1RB 2RC 0RC  1LA --- 0LA  0LC 2LA 2RB": (5, 8),
+    "1RB 0RB 2RB  2LC --- 0LA  0LC 2RA 1RB": (3, 12),
     "1RB 0RB 2LA  2LB 2RC 0RC  0LB 1RC 1LA": (2, 72),
     "1RB 1RC 0RC  1LC 1RC 2LA  2RC 2LB 0LB": (1, 23),
     "1RB 1LA 0RB  1RC 0RC 1LB  2LA 2RB 0LB": (1, 29),
-    "1RB 2RC ...  1LB 2RB 0RC  2LB 1RC 0LA": (0, 19),
-    "1RB 2RB 1LA  1LB 2LA 0RC  ... 0LA 0LB": (0, 24),
+    "1RB 2RC ---  1LB 2RB 0RC  2LB 1RC 0LA": (0, 19),
+    "1RB 2RB 1LA  1LB 2LA 0RC  --- 0LA 0LB": (0, 24),
     "1RB 0RB 2LC  1LC 2RB 0LC  1RA 1LA 0LA": (0, 54),
     "1RB 0RB 1LA  2LC 2RA 0LA  1RA 1LC 0RA": (0, 29),
-    "1RB 0RB ...  1LC 2LC 0LA  0LC 2RA 1RB": (0, 17),
+    "1RB 0RB ---  1LC 2LC 0LA  0LC 2RA 1RB": (0, 17),
 
     # 2/5
     "1RB 2RB 0RB 2RA 4LA  1LA 3LB 3RB 4RB 0LA": (228, 4),
@@ -940,74 +940,74 @@ RECUR = {
     "1RB 4LA 0RB 3RB 2RB  0LB 2LA 3LA 0RB 4RA": (2, 22),
 
     # 5/2
-    "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC": (0, 8_468_569_863),  # skelet 1
+    "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  --- 1RC": (0, 8_468_569_863),  # skelet 1
     "1RB 1RC  1LC 0RC  1RA 0LD  0LE 1LD  1LA 0RA": ( 77, 180),
-    "1RB 1LB  1LA 0RC  ... 0RD  1RD 0RE  1LE 0LA": ( 63, 37),
+    "1RB 1LB  1LA 0RC  --- 0RD  1RD 0RE  1LE 0LA": ( 63, 37),
     "1RB 0RE  0LC 1RA  1LC 1LD  1RE 0RE  0LB 0RB": ( 43, 17),
-    "1RB 0RB  0RC 0RD  1LC 1LA  0LE 1RD  ... 0LA": ( 33, 13),
+    "1RB 0RB  0RC 0RD  1LC 1LA  0LE 1RD  --- 0LA": ( 33, 13),
     "1RB 0RD  1LC 0LA  0RA 1LB  1RE 0LB  1LE 1RD": ( 28, 62),
     "1RB 0RB  0LC 1RD  1LA 1LC  0LE 1RA  1LE 0RD": ( 26, 523),
     "1RB 0RD  1LC 0LA  0RA 1LB  1RE 0LB  0LB 1RD": ( 24, 54),
-    "1RB 0RB  1RC ...  1LD 0LE  1RD 1LE  0RA 0LD": ( 24, 14),
-    "1RB 0LE  1RC 0RD  1LC 1RD  0LA 0RC  1LB ...": ( 24, 14),
-    "1RB 0LE  1RC ...  1LD 0LA  1RD 1LE  0RA 0LD": ( 24, 24),
+    "1RB 0RB  1RC ---  1LD 0LE  1RD 1LE  0RA 0LD": ( 24, 14),
+    "1RB 0LE  1RC 0RD  1LC 1RD  0LA 0RC  1LB ---": ( 24, 14),
+    "1RB 0LE  1RC ---  1LD 0LA  1RD 1LE  0RA 0LD": ( 24, 24),
     "1RB 0LD  1RC 1RA  1LA 0RA  0LE 1LD  1LB 0RB": ( 22, 46),
-    "1RB 0RD  0LC 1RD  1LC 1LA  0LE 0RB  ... 0RC": ( 21, 61),
-    "1RB ...  1RC 1LC  1LD 0RE  0RA 0LD  0LB 1RE": ( 18, 10),
-    "1RB 0RD  1RC 0LC  1LA ...  0LB 0RE  1LE 1RD": ( 14, 14),
-    "1RB 0LC  1RC 0RD  1LB ...  0LA 0RE  1LE 1RD": ( 14, 14),
+    "1RB 0RD  0LC 1RD  1LC 1LA  0LE 0RB  --- 0RC": ( 21, 61),
+    "1RB ---  1RC 1LC  1LD 0RE  0RA 0LD  0LB 1RE": ( 18, 10),
+    "1RB 0RD  1RC 0LC  1LA ---  0LB 0RE  1LE 1RD": ( 14, 14),
+    "1RB 0LC  1RC 0RD  1LB ---  0LA 0RE  1LE 1RD": ( 14, 14),
     "1RB 1LC  0LA 0RD  1LA 1RB  0LE 1RC  1LE 0RB": ( 13, 62),
     "1RB 0LD  1RC 1RA  0LA 1RB  0RA 1LE  1LD 0RA": ( 12, 28),
     "1RB 0LB  1LC 0RD  1LA 1LB  0RE 1RD  1RC 0LC": ( 12, 180),
     "1RB 0LD  1RC 1RA  0LA 0LB  0RA 1LE  1LD 0RA": ( 10, 30),
-    "1RB 0LD  1RC 1LE  1LD 0LA  ... 0RB  0LE 1RA": ( 10, 12),
+    "1RB 0LD  1RC 1LE  1LD 0LA  --- 0RB  0LE 1RA": ( 10, 12),
     "1RB 0LB  1LC 1LD  1RD 0LD  1LB 0RE  0RA 1RE": ( 10, 46),
-    "1RB 0LD  1RC ...  1LA 0LA  0RA 0LE  1RE 1LD": ( 8, 24),
-    "1RB 0LC  1LC 1RA  ... 0LD  1RD 1LE  0RB 1LE": ( 8, 11),
+    "1RB 0LD  1RC ---  1LA 0LA  0RA 0LE  1RE 1LD": ( 8, 24),
+    "1RB 0LC  1LC 1RA  --- 0LD  1RD 1LE  0RB 1LE": ( 8, 11),
     "1RB 0RB  1RC 0LD  1LC 1RB  0RA 1LE  1LD 1LA": ( 7, 30),
-    "1RB 0RD  1LC 0RE  0LC 1RA  0RB 1LE  0LB ...": ( 5, 18),
+    "1RB 0RD  1LC 0RE  0LC 1RA  0RB 1LE  0LB ---": ( 5, 18),
     "1RB 0RB  1RC 0LD  0LD 1RB  0RA 1LE  1LD 1LA": ( 5, 28),
-    "1RB ...  1LC 0LC  0RA 0LD  1RD 0LE  0RC 1RA": ( 5, 48),
-    "1RB 1LC  0LA ...  0RD 0RE  0LD 1RE  1RA 0LC": ( 4, 10),
-    "1RB 0RD  1LC 0LE  0LC 1RA  0RB 1LC  ... 0LA": ( 3, 16),
-    "1RB 0RD  1LC 0LE  0LC 1RA  0RB 1LA  ... 0LA": ( 3, 14),
+    "1RB ---  1LC 0LC  0RA 0LD  1RD 0LE  0RC 1RA": ( 5, 48),
+    "1RB 1LC  0LA ---  0RD 0RE  0LD 1RE  1RA 0LC": ( 4, 10),
+    "1RB 0RD  1LC 0LE  0LC 1RA  0RB 1LC  --- 0LA": ( 3, 16),
+    "1RB 0RD  1LC 0LE  0LC 1RA  0RB 1LA  --- 0LA": ( 3, 14),
     "1RB 0RC  1RC 0RA  1LB 0RD  0LE 1RD  1LE 1LB": ( 3, 33),
-    "1RB 0RC  1RC ...  1LD 0LE  0LB 0RA  1LE 1RD": ( 3, 12),
-    "1RB 0RC  1RC ...  1LC 0RD  0LE 1LB  1LE 0RA": ( 3, 17),
-    "1RB 0RC  1LA 1LD  0LC 1RD  0RE 0LA  0RB ...": ( 3, 16),
-    "1RB 0RB  0RC 0LD  1LA ...  1LE 1RC  0LE 1RA": ( 3, 20),
+    "1RB 0RC  1RC ---  1LD 0LE  0LB 0RA  1LE 1RD": ( 3, 12),
+    "1RB 0RC  1RC ---  1LC 0RD  0LE 1LB  1LE 0RA": ( 3, 17),
+    "1RB 0RC  1LA 1LD  0LC 1RD  0RE 0LA  0RB ---": ( 3, 16),
+    "1RB 0RB  0RC 0LD  1LA ---  1LE 1RC  0LE 1RA": ( 3, 20),
     "1RB 0RD  1LC 0RC  0LE 1RD  1RA 0RB  1LE 1LA": ( 2, 318),
-    "1RB 0RC  1LC 0LD  0RB 1RC  1LE ...  1LE 0RA": ( 2, 18),
-    "1RB 0RB  0LB 1RC  1RD 0RD  1LB 0LE  ... 0LA": ( 2, 14),
-    "1RB 0LB  0LB 1RC  1RD 0RD  1LB 0LE  ... 0LA": ( 2, 12),
-    "1RB ...  1LC 1RD  0RB 1LA  0LE 0RC  1LE 0RD": ( 2, 16),
-    "1RB ...  0RC 0RE  1LD 1RE  0LD 1RA  1LB 0LC": ( 2, 11),
-    "1RB ...  0LC 0LE  0RC 1LD  1LA 0RB  0RD 1LE": ( 2, 10),
-    "1RB ...  0LC 0LD  0RC 1LD  0LE 0RB  1RD 1LA": ( 2, 12),
-    "1RB 1LA  1LC 0RC  0RD 0LB  ... 0LE  1RE 0LA": ( 1, 15),
+    "1RB 0RC  1LC 0LD  0RB 1RC  1LE ---  1LE 0RA": ( 2, 18),
+    "1RB 0RB  0LB 1RC  1RD 0RD  1LB 0LE  --- 0LA": ( 2, 14),
+    "1RB 0LB  0LB 1RC  1RD 0RD  1LB 0LE  --- 0LA": ( 2, 12),
+    "1RB ---  1LC 1RD  0RB 1LA  0LE 0RC  1LE 0RD": ( 2, 16),
+    "1RB ---  0RC 0RE  1LD 1RE  0LD 1RA  1LB 0LC": ( 2, 11),
+    "1RB ---  0LC 0LE  0RC 1LD  1LA 0RB  0RD 1LE": ( 2, 10),
+    "1RB ---  0LC 0LD  0RC 1LD  0LE 0RB  1RD 1LA": ( 2, 12),
+    "1RB 1LA  1LC 0RC  0RD 0LB  --- 0LE  1RE 0LA": ( 1, 15),
     "1RB 0RE  1RC 1RB  1LD 1LE  0LD 0RA  1LB 1LD": ( 1, 13),
-    "1RB 0RD  1RC 0RC  1LD 0LE  0LD 1RB  ... 0LA": ( 1, 14),
-    "1RB 0LD  1RC 0RC  1LD 0LE  0LD 1RB  ... 0LA": ( 1, 12),
-    "1RB 0LD  0LC 1LB  1RC 1LD  0LB 0RE  ... 0RA": ( 1, 48),
-    "1RB 0LC  1LA 0RD  1LB 0RA  ... 1RE  1RE 0LA": ( 1, 15),
-    "1RB 0LC  1LA 0RD  0LB 0RA  1RE ...  1RE 0LA": ( 1, 15),
-    "1RB ...  0RC 0LA  0LD 0RE  1LB 0LB  1LE 1RC": ( 1, 21),
+    "1RB 0RD  1RC 0RC  1LD 0LE  0LD 1RB  --- 0LA": ( 1, 14),
+    "1RB 0LD  1RC 0RC  1LD 0LE  0LD 1RB  --- 0LA": ( 1, 12),
+    "1RB 0LD  0LC 1LB  1RC 1LD  0LB 0RE  --- 0RA": ( 1, 48),
+    "1RB 0LC  1LA 0RD  1LB 0RA  --- 1RE  1RE 0LA": ( 1, 15),
+    "1RB 0LC  1LA 0RD  0LB 0RA  1RE ---  1RE 0LA": ( 1, 15),
+    "1RB ---  0RC 0LA  0LD 0RE  1LB 0LB  1LE 1RC": ( 1, 21),
     "1RB 1RE  1LC 0LA  1LA 0RD  0LB 1LB  0RE 0LD": ( 0, 13),
-    "1RB 1RC  1LC 0RB  0RC 0LD  1LA 0LE  0LA ...": ( 0, 14),
-    "1RB 0RE  1LC 0LC  1LA 0LD  1RD 0LA  0RB ...": ( 0, 14),
+    "1RB 1RC  1LC 0RB  0RC 0LD  1LA 0LE  0LA ---": ( 0, 14),
+    "1RB 0RE  1LC 0LC  1LA 0LD  1RD 0LA  0RB ---": ( 0, 14),
     "1RB 0RE  0LC 1RD  1LC 1LD  1RE 0RA  0LA 0RB": ( 0, 21),
-    "1RB 0RB  1RC 0RD  1LA 0LE  1LD 0RC  0LA ...": ( 0, 19),
-    "1RB 0RB  0RC 1RD  1LC 0RD  0LA 0LE  1LA ...": ( 0, 14),
-    "1RB 0RB  0RC 0LE  0RD 1LA  1LD 1RC  0LA ...": ( 0, 19),
+    "1RB 0RB  1RC 0RD  1LA 0LE  1LD 0RC  0LA ---": ( 0, 19),
+    "1RB 0RB  0RC 1RD  1LC 0RD  0LA 0LE  1LA ---": ( 0, 14),
+    "1RB 0RB  0RC 0LE  0RD 1LA  1LD 1RC  0LA ---": ( 0, 19),
     "1RB 0LC  1LC 0RD  0RE 1LA  0LA 1RD  0RB 1LB": ( 0, 31),
     "1RB 0LC  1LC 0LA  0RA 0LD  0RE 1LB  1RE 1RB": ( 0, 17),
-    "1RB 0LA  1RC ...  0RD 1LE  1LC 1RD  0RA 1LA": ( 0, 194),
-    "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LB ...": ( 0, 33),
-    "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": ( 0, 37),
-    "1RB 0LA  0RC 1LA  1RD 1RE  1RE ...  1LB 1LA": ( 0, 58),
-    "1RB ...  1LC 0RE  1RD 0LD  0LB 0RA  1RE 0LC": ( 0, 17),
-    "1RB ...  1LC 0LC  0RA 0LD  0LE 0RB  1RE 1LD": ( 0, 19),
-    "1RB ...  1LC 0LC  0LE 1LD  0RB 0RA  1RE 0LD": ( 0, 19),
+    "1RB 0LA  1RC ---  0RD 1LE  1LC 1RD  0RA 1LA": ( 0, 194),
+    "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LB ---": ( 0, 33),
+    "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ---": ( 0, 37),
+    "1RB 0LA  0RC 1LA  1RD 1RE  1RE ---  1LB 1LA": ( 0, 58),
+    "1RB ---  1LC 0RE  1RD 0LD  0LB 0RA  1RE 0LC": ( 0, 17),
+    "1RB ---  1LC 0LC  0RA 0LD  0LE 0RB  1RE 1LD": ( 0, 19),
+    "1RB ---  1LC 0LC  0LE 1LD  0RB 0RA  1RE 0LD": ( 0, 19),
 }
 
 RECUR_BLANK_IN_PERIOD = {
@@ -1016,7 +1016,7 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 1RB  1LA 0LB": (None, 4),
 
     # 3/2
-    "1RB ...  0RC 1LB  1LA 0RB": (None, 10),
+    "1RB ---  0RC 1LB  1LA 0RB": (None, 10),
     "1RB 0LB  1LA 1LC  0RC 0RB": (None,  7),
 
     # 2/3
@@ -1024,10 +1024,10 @@ RECUR_BLANK_IN_PERIOD = {
     "1RB 2LA 0RB  1LA 0LB 1RA": (None,  4),
 
     # 4/2
-    "1RB ...  0LC 0RB  1LD 1LA  0RB 1LC": (None, 4),
-    "1RB 1LB  1LA 0RC  0LD 0RB  0LC ...": (None, 6),
-    "1RB 1LB  1LA 1RC  0LD 0RB  ... 0LC": (None, 6),
-    "1RB 1LC  1LA 0RD  1LA ...  0LD 0RB": (None, 5),
+    "1RB ---  0LC 0RB  1LD 1LA  0RB 1LC": (None, 4),
+    "1RB 1LB  1LA 0RC  0LD 0RB  0LC ---": (None, 6),
+    "1RB 1LB  1LA 1RC  0LD 0RB  --- 0LC": (None, 6),
+    "1RB 1LC  1LA 0RD  1LA ---  0LD 0RB": (None, 5),
 
     # 2/4
     "1RB 2LA 0RA 1LA  3LA 0LB 1RA 2LA": (None, 52),
@@ -1037,11 +1037,11 @@ RECUR_BLANK_IN_PERIOD = {
 }
 
 BLANK_BEFORE_SPINOUT = {
-    "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA",
-    "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA",
+    "1RB 0RB  0RC 1LD  1LD ---  0LD 0RA",
+    "1RB 0RB  1RC 1LD  1LA ---  0LD 0RA",
 
     # 10/2 backsym-compile from 5/2 spaghetti
-    "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
+    "1RB 1RC  1LD ---  0RE 0LF  0LF 1LD  1LF ---  1RG 0LF  1RG 1RA",
 }
 
 RECUR_BLANK_BEFORE_PERIOD = {
@@ -1065,489 +1065,489 @@ LR_NEGATIVES = {
     "1RB 0RB  0LB 1RC  1LD 0RC  1LB 1LA",
     "1RB 0RB  0LC 1RD  1LC 1LA  1LB 0RD",
     "1RB 1LD  1LC 1RB  0RC 1LA  0RD 0LC",
-    "1RB ...  1RC 0RA  0LD 0LB  0RB 1LC",
-    "1RB 0LD  1LC 1RA  ... 1LD  0RD 1LA",
-    "1RB 0RC  0LB 1LA  ... 1RD  1LB 0RD",
-    "1RB 0RD  0LC 0LA  1LA 1LB  1RA ...",
-    "1RB 1LA  0LC 0LD  ... 1LD  0RD 1RA",
-    "1RB 1LC  0LA 0RD  1RC 1LB  ... 1RA",
-    "1RB 1LC  0LA 0RD  1RD 1LB  ... 1RA",
+    "1RB ---  1RC 0RA  0LD 0LB  0RB 1LC",
+    "1RB 0LD  1LC 1RA  --- 1LD  0RD 1LA",
+    "1RB 0RC  0LB 1LA  --- 1RD  1LB 0RD",
+    "1RB 0RD  0LC 0LA  1LA 1LB  1RA ---",
+    "1RB 1LA  0LC 0LD  --- 1LD  0RD 1RA",
+    "1RB 1LC  0LA 0RD  1RC 1LB  --- 1RA",
+    "1RB 1LC  0LA 0RD  1RD 1LB  --- 1RA",
 }
 
 type InstrSeqs = dict[str, dict[str, tuple[int, str]]]
 
 INSTR_SEQS: InstrSeqs = {
     # 4/2 blb, sb
-    "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0RC ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  0RC ...  1LC ...  ... ...": ( 4, 'C1'),
-        "1RB ...  0RC ...  1LC 1LD  ... ...": ( 5, 'D0'),
-        "1RB ...  0RC ...  1LC 1LD  0RB ...": ( 6, 'B1'),
-        "1RB ...  0RC 0LA  1LC 1LD  0RB ...": (22, 'D1'),
+    "1RB ---  0RC 0LA  1LC 1LD  0RB 0RD": {
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0RC ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  0RC ---  1LC ---  --- ---": ( 4, 'C1'),
+        "1RB ---  0RC ---  1LC 1LD  --- ---": ( 5, 'D0'),
+        "1RB ---  0RC ---  1LC 1LD  0RB ---": ( 6, 'B1'),
+        "1RB ---  0RC 0LA  1LC 1LD  0RB ---": (22, 'D1'),
     },
 
     # 4/2 BBH
-    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": {
-        "1RB ...  ... ...  ... ...  ... ...": (  1, 'B0'),
-        "1RB ...  1LA ...  ... ...  ... ...": (  2, 'A1'),
-        "1RB 1LB  1LA ...  ... ...  ... ...": (  5, 'B1'),
-        "1RB 1LB  1LA 0LC  ... ...  ... ...": (  6, 'C1'),
-        "1RB 1LB  1LA 0LC  ... 1LD  ... ...": (  7, 'D0'),
-        "1RB 1LB  1LA 0LC  ... 1LD  1RD ...": (  8, 'D1'),
-        "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": (106, 'C0'),
+    "1RB 1LB  1LA 0LC  --- 1LD  1RD 0RA": {
+        "1RB ---  --- ---  --- ---  --- ---": (  1, 'B0'),
+        "1RB ---  1LA ---  --- ---  --- ---": (  2, 'A1'),
+        "1RB 1LB  1LA ---  --- ---  --- ---": (  5, 'B1'),
+        "1RB 1LB  1LA 0LC  --- ---  --- ---": (  6, 'C1'),
+        "1RB 1LB  1LA 0LC  --- 1LD  --- ---": (  7, 'D0'),
+        "1RB 1LB  1LA 0LC  --- 1LD  1RD ---": (  8, 'D1'),
+        "1RB 1LB  1LA 0LC  --- 1LD  1RD 0RA": (106, 'C0'),
     },
 
     # 4/2 BBB / BLB / SB
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RD ...  ... ...  ... ...": ( 2, 'D0'),
-        "1RB ...  1RD ...  ... ...  1LD ...": ( 3, 'D1'),
-        "1RB ...  1RD ...  ... ...  1LD 1LA": ( 4, 'A1'),
-        "1RB 1LC  1RD ...  ... ...  1LD 1LA": ( 5, 'C0'),
-        "1RB 1LC  1RD ...  0RD ...  1LD 1LA": ( 8, 'B1'),
-        "1RB 1LC  1RD 1RB  0RD ...  1LD 1LA": (15, 'C1'),
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RD ---  --- ---  --- ---": ( 2, 'D0'),
+        "1RB ---  1RD ---  --- ---  1LD ---": ( 3, 'D1'),
+        "1RB ---  1RD ---  --- ---  1LD 1LA": ( 4, 'A1'),
+        "1RB 1LC  1RD ---  --- ---  1LD 1LA": ( 5, 'C0'),
+        "1RB 1LC  1RD ---  0RD ---  1LD 1LA": ( 8, 'B1'),
+        "1RB 1LC  1RD 1RB  0RD ---  1LD 1LA": (15, 'C1'),
     },
 
     # 4/2 sigma
     "1RB 1RC  1LC 1RD  1RA 1LD  0RD 0LB": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1LC ...  ... ...  ... ...": ( 2, 'C1'),
-        "1RB ...  1LC ...  ... 1LD  ... ...": ( 3, 'D0'),
-        "1RB ...  1LC ...  ... 1LD  0RD ...": ( 4, 'D1'),
-        "1RB ...  1LC ...  ... 1LD  0RD 0LB": ( 6, 'C0'),
-        "1RB ...  1LC ...  1RA 1LD  0RD 0LB": ( 7, 'A1'),
-        "1RB 1RC  1LC ...  1RA 1LD  0RD 0LB": (15, 'B1'),
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1LC ---  --- ---  --- ---": ( 2, 'C1'),
+        "1RB ---  1LC ---  --- 1LD  --- ---": ( 3, 'D0'),
+        "1RB ---  1LC ---  --- 1LD  0RD ---": ( 4, 'D1'),
+        "1RB ---  1LC ---  --- 1LD  0RD 0LB": ( 6, 'C0'),
+        "1RB ---  1LC ---  1RA 1LD  0RD 0LB": ( 7, 'A1'),
+        "1RB 1RC  1LC ---  1RA 1LD  0RD 0LB": (15, 'B1'),
     },
 
     # 4/2 BBP
     "1RB 0RA  1RC 0RB  1LD 1LC  1RA 0LC": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  1RC ...  1LD ...  ... ...": ( 3, 'D1'),
-        "1RB ...  1RC ...  1LD ...  ... 0LC": ( 4, 'C1'),
-        "1RB ...  1RC ...  1LD 1LC  ... 0LC": ( 6, 'D0'),
-        "1RB ...  1RC ...  1LD 1LC  1RA 0LC": ( 7, 'A1'),
-        "1RB 0RA  1RC ...  1LD 1LC  1RA 0LC": (10, 'B1'),
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RC ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  1RC ---  1LD ---  --- ---": ( 3, 'D1'),
+        "1RB ---  1RC ---  1LD ---  --- 0LC": ( 4, 'C1'),
+        "1RB ---  1RC ---  1LD 1LC  --- 0LC": ( 6, 'D0'),
+        "1RB ---  1RC ---  1LD 1LC  1RA 0LC": ( 7, 'A1'),
+        "1RB 0RA  1RC ---  1LD 1LC  1RA 0LC": (10, 'B1'),
     },
 
     # 4/2 Boyd
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1LB ...  ... ...  ... ...": ( 2, 'B1'),
-        "1RB ...  1LB 1LD  ... ...  ... ...": ( 3, 'D0'),
-        "1RB ...  1LB 1LD  ... ...  1LA ...": ( 6, 'D1'),
-        "1RB ...  1LB 1LD  ... ...  1LA 1RC": ( 7, 'C1'),
-        "1RB ...  1LB 1LD  ... 0LD  1LA 1RC": ( 9, 'C0'),
-        "1RB ...  1LB 1LD  0RA 0LD  1LA 1RC": (10, 'A1'),
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1LB ---  --- ---  --- ---": ( 2, 'B1'),
+        "1RB ---  1LB 1LD  --- ---  --- ---": ( 3, 'D0'),
+        "1RB ---  1LB 1LD  --- ---  1LA ---": ( 6, 'D1'),
+        "1RB ---  1LB 1LD  --- ---  1LA 1RC": ( 7, 'C1'),
+        "1RB ---  1LB 1LD  --- 0LD  1LA 1RC": ( 9, 'C0'),
+        "1RB ---  1LB 1LD  0RA 0LD  1LA 1RC": (10, 'A1'),
     },
 
     # 2/4 BBH
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": {
-        "1RB ... ... ...  ... ... ... ...": ( 1, 'B0'),
-        "1RB ... ... ...  1LB ... ... ...": ( 2, 'B1'),
-        "1RB ... ... ...  1LB 1LA ... ...": ( 5, 'A1'),
-        "1RB 2LA ... ...  1LB 1LA ... ...": ( 7, 'B2'),
-        "1RB 2LA ... ...  1LB 1LA 3RB ...": ( 9, 'A3'),
-        "1RB 2LA ... 1RA  1LB 1LA 3RB ...": (22, 'A2'),
-        "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (3932963, 'B3'),
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ---": {
+        "1RB --- --- ---  --- --- --- ---": ( 1, 'B0'),
+        "1RB --- --- ---  1LB --- --- ---": ( 2, 'B1'),
+        "1RB --- --- ---  1LB 1LA --- ---": ( 5, 'A1'),
+        "1RB 2LA --- ---  1LB 1LA --- ---": ( 7, 'B2'),
+        "1RB 2LA --- ---  1LB 1LA 3RB ---": ( 9, 'A3'),
+        "1RB 2LA --- 1RA  1LB 1LA 3RB ---": (22, 'A2'),
+        "1RB 2LA 1RA 1RA  1LB 1LA 3RB ---": (3932963, 'B3'),
     },
 
     # 2/4 BLB
     "1RB 2RB 3LA 2RA  2LB 1LA 0RB 3RA": {
-        "1RB ... ... ...  ... ... ... ...": ( 1, 'B0'),
-        "1RB ... ... ...  2LB ... ... ...": ( 2, 'B1'),
-        "1RB ... ... ...  2LB 1LA ... ...": ( 5, 'A1'),
-        "1RB 2RB ... ...  2LB 1LA ... ...": ( 7, 'A2'),
-        "1RB 2RB 3LA ...  2LB 1LA ... ...": ( 9, 'B3'),
-        "1RB 2RB 3LA ...  2LB 1LA ... 3RA": (11, 'B2'),
-        "1RB 2RB 3LA ...  2LB 1LA 0RB 3RA": (23, 'A3'),
+        "1RB --- --- ---  --- --- --- ---": ( 1, 'B0'),
+        "1RB --- --- ---  2LB --- --- ---": ( 2, 'B1'),
+        "1RB --- --- ---  2LB 1LA --- ---": ( 5, 'A1'),
+        "1RB 2RB --- ---  2LB 1LA --- ---": ( 7, 'A2'),
+        "1RB 2RB 3LA ---  2LB 1LA --- ---": ( 9, 'B3'),
+        "1RB 2RB 3LA ---  2LB 1LA --- 3RA": (11, 'B2'),
+        "1RB 2RB 3LA ---  2LB 1LA 0RB 3RA": (23, 'A3'),
     },
 
     # 2/4 BBB / SB 10^23
     "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": {
-        "1RB ... ... ...  ... ... ... ...": ( 1, 'B0'),
-        "1RB ... ... ...  0LB ... ... ...": ( 2, 'B1'),
-        "1RB ... ... ...  0LB 2RB ... ...": ( 4, 'B2'),
-        "1RB ... ... ...  0LB 2RB 3RB ...": ( 6, 'B3'),
-        "1RB ... ... ...  0LB 2RB 3RB 1LA": (13, 'A1'),
-        "1RB 2LA ... ...  0LB 2RB 3RB 1LA": (21, 'A3'),
-        "1RB 2LA ... 1LB  0LB 2RB 3RB 1LA": (29, 'A2'),
+        "1RB --- --- ---  --- --- --- ---": ( 1, 'B0'),
+        "1RB --- --- ---  0LB --- --- ---": ( 2, 'B1'),
+        "1RB --- --- ---  0LB 2RB --- ---": ( 4, 'B2'),
+        "1RB --- --- ---  0LB 2RB 3RB ---": ( 6, 'B3'),
+        "1RB --- --- ---  0LB 2RB 3RB 1LA": (13, 'A1'),
+        "1RB 2LA --- ---  0LB 2RB 3RB 1LA": (21, 'A3'),
+        "1RB 2LA --- 1LB  0LB 2RB 3RB 1LA": (29, 'A2'),
     },
 
     # 5/2 BBH
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  1RC ...  1RD ...  ... ...  ... ...": ( 3, 'D0'),
-        "1RB ...  1RC ...  1RD ...  1LA ...  ... ...": ( 4, 'A1'),
-        "1RB 1LC  1RC ...  1RD ...  1LA ...  ... ...": ( 5, 'C1'),
-        "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... ...": ( 6, 'E1'),
-        "1RB 1LC  1RC ...  1RD 0LE  1LA ...  ... 0LA": (10, 'D1'),
-        "1RB 1LC  1RC ...  1RD 0LE  1LA 1LD  ... 0LA": (16, 'B1'),
-        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (47176869, 'E0'),
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  --- 0LA": {
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RC ---  --- ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  1RC ---  1RD ---  --- ---  --- ---": ( 3, 'D0'),
+        "1RB ---  1RC ---  1RD ---  1LA ---  --- ---": ( 4, 'A1'),
+        "1RB 1LC  1RC ---  1RD ---  1LA ---  --- ---": ( 5, 'C1'),
+        "1RB 1LC  1RC ---  1RD 0LE  1LA ---  --- ---": ( 6, 'E1'),
+        "1RB 1LC  1RC ---  1RD 0LE  1LA ---  --- 0LA": (10, 'D1'),
+        "1RB 1LC  1RC ---  1RD 0LE  1LA 1LD  --- 0LA": (16, 'B1'),
+        "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  --- 0LA": (47176869, 'E0'),
     },
 
     # 5/2 Uwe
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  1RC ...  1LA ...  ... ...  ... ...": ( 3, 'A1'),
-        "1RB 0LC  1RC ...  1LA ...  ... ...  ... ...": ( 4, 'C1'),
-        "1RB 0LC  1RC ...  1LA 0RB  ... ...  ... ...": (14, 'B1'),
-        "1RB 0LC  1RC 1RD  1LA 0RB  ... ...  ... ...": (15, 'D0'),
-        "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... ...": (16, 'E1'),
-        "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": (20, 'E0'),
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ---  1LC 1RA": {
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RC ---  --- ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  1RC ---  1LA ---  --- ---  --- ---": ( 3, 'A1'),
+        "1RB 0LC  1RC ---  1LA ---  --- ---  --- ---": ( 4, 'C1'),
+        "1RB 0LC  1RC ---  1LA 0RB  --- ---  --- ---": (14, 'B1'),
+        "1RB 0LC  1RC 1RD  1LA 0RB  --- ---  --- ---": (15, 'D0'),
+        "1RB 0LC  1RC 1RD  1LA 0RB  0RE ---  --- ---": (16, 'E1'),
+        "1RB 0LC  1RC 1RD  1LA 0RB  0RE ---  --- 1RA": (20, 'E0'),
     },
 
     # 5/2 BBB / SB / BLB || 10^14006
     "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
-        "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
-        "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
-        "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
-        "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0LD ---  --- ---  --- ---  --- ---": ( 2, 'D1'),
+        "1RB ---  0LD ---  --- ---  --- 1LD  --- ---": ( 3, 'D0'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  --- ---": ( 4, 'E0'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  1RE ---": ( 6, 'E1'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  1RE 1RA": (17, 'A1'),
+        "1RB 1LC  0LD ---  --- ---  0LE 1LD  1RE 1RA": (18, 'C1'),
+        "1RB 1LC  0LD ---  --- 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
+        "1RB 1LC  0LD 0LB  --- 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
     },
 
     # 5/2 10^14006
     "1RB 1LC  0LD 0LB  0LE 0LA  0LE 1LD  1RE 1RA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
-        "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
-        "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
-        "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
-        "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0LD ---  --- ---  --- ---  --- ---": ( 2, 'D1'),
+        "1RB ---  0LD ---  --- ---  --- 1LD  --- ---": ( 3, 'D0'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  --- ---": ( 4, 'E0'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  1RE ---": ( 6, 'E1'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  1RE 1RA": (17, 'A1'),
+        "1RB 1LC  0LD ---  --- ---  0LE 1LD  1RE 1RA": (18, 'C1'),
+        "1RB 1LC  0LD ---  --- 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
+        "1RB 1LC  0LD 0LB  --- 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
     },
 
     # 5/2 10^12978
     "1RB 1LC  0LD 0LB  1RE 0LA  0LE 1LD  1RE 1RA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
-        "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
-        "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
-        "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
-        "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0LD ---  --- ---  --- ---  --- ---": ( 2, 'D1'),
+        "1RB ---  0LD ---  --- ---  --- 1LD  --- ---": ( 3, 'D0'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  --- ---": ( 4, 'E0'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  1RE ---": ( 6, 'E1'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  1RE 1RA": (17, 'A1'),
+        "1RB 1LC  0LD ---  --- ---  0LE 1LD  1RE 1RA": (18, 'C1'),
+        "1RB 1LC  0LD ---  --- 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
+        "1RB 1LC  0LD 0LB  --- 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
     },
 
     # 5/2 10^12978
     "1RB 1LC  0LD 0LB  1RE 0LA  0LC 1LD  1RE 1RA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
-        "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
-        "1RB ...  0LD ...  ... ...  0LC 1LD  ... ...": ( 4, 'C0'),
-        "1RB ...  0LD ...  1RE ...  0LC 1LD  ... ...": ( 5, 'E0'),
-        "1RB ...  0LD ...  1RE ...  0LC 1LD  1RE ...": ( 6, 'E1'),
-        "1RB ...  0LD ...  1RE ...  0LC 1LD  1RE 1RA": (17, 'A1'),
-        "1RB 1LC  0LD ...  1RE ...  0LC 1LD  1RE 1RA": (18, 'C1'),
-        "1RB 1LC  0LD ...  1RE 0LA  0LC 1LD  1RE 1RA": (29, 'B1'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0LD ---  --- ---  --- ---  --- ---": ( 2, 'D1'),
+        "1RB ---  0LD ---  --- ---  --- 1LD  --- ---": ( 3, 'D0'),
+        "1RB ---  0LD ---  --- ---  0LC 1LD  --- ---": ( 4, 'C0'),
+        "1RB ---  0LD ---  1RE ---  0LC 1LD  --- ---": ( 5, 'E0'),
+        "1RB ---  0LD ---  1RE ---  0LC 1LD  1RE ---": ( 6, 'E1'),
+        "1RB ---  0LD ---  1RE ---  0LC 1LD  1RE 1RA": (17, 'A1'),
+        "1RB 1LC  0LD ---  1RE ---  0LC 1LD  1RE 1RA": (18, 'C1'),
+        "1RB 1LC  0LD ---  1RE 0LA  0LC 1LD  1RE 1RA": (29, 'B1'),
     },
 
     # 5/2 10^4079
     "1RB 1LC  0LD 0LB  0RE 0LA  0LE 1LD  1RE 1RA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0LD ...  ... ...  ... ...  ... ...": ( 2, 'D1'),
-        "1RB ...  0LD ...  ... ...  ... 1LD  ... ...": ( 3, 'D0'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  ... ...": ( 4, 'E0'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE ...": ( 6, 'E1'),
-        "1RB ...  0LD ...  ... ...  0LE 1LD  1RE 1RA": (17, 'A1'),
-        "1RB 1LC  0LD ...  ... ...  0LE 1LD  1RE 1RA": (18, 'C1'),
-        "1RB 1LC  0LD ...  ... 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
-        "1RB 1LC  0LD 0LB  ... 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0LD ---  --- ---  --- ---  --- ---": ( 2, 'D1'),
+        "1RB ---  0LD ---  --- ---  --- 1LD  --- ---": ( 3, 'D0'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  --- ---": ( 4, 'E0'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  1RE ---": ( 6, 'E1'),
+        "1RB ---  0LD ---  --- ---  0LE 1LD  1RE 1RA": (17, 'A1'),
+        "1RB 1LC  0LD ---  --- ---  0LE 1LD  1RE 1RA": (18, 'C1'),
+        "1RB 1LC  0LD ---  --- 0LA  0LE 1LD  1RE 1RA": (29, 'B1'),
+        "1RB 1LC  0LD 0LB  --- 0LA  0LE 1LD  1RE 1RA": (57, 'C0'),
     },
 
     # 5/2 10^1089, complex
     "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RD ...  ... ...  ... ...  ... ...": ( 2, 'D0'),
-        "1RB ...  1RD ...  ... ...  1LA ...  ... ...": ( 3, 'A1'),
-        "1RB 1LC  1RD ...  ... ...  1LA ...  ... ...": ( 4, 'C1'),
-        "1RB 1LC  1RD ...  ... 1LE  1LA ...  ... ...": ( 5, 'E0'),
-        "1RB 1LC  1RD ...  ... 1LE  1LA ...  0LA ...": ( 8, 'D1'),
-        "1RB 1LC  1RD ...  ... 1LE  1LA 0RE  0LA ...": ( 9, 'E1'),
-        "1RB 1LC  1RD ...  ... 1LE  1LA 0RE  0LA 1RB": (10, 'B1'),
-        "1RB 1LC  1RD 0RA  ... 1LE  1LA 0RE  0LA 1RB": (18, 'C0'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RD ---  --- ---  --- ---  --- ---": ( 2, 'D0'),
+        "1RB ---  1RD ---  --- ---  1LA ---  --- ---": ( 3, 'A1'),
+        "1RB 1LC  1RD ---  --- ---  1LA ---  --- ---": ( 4, 'C1'),
+        "1RB 1LC  1RD ---  --- 1LE  1LA ---  --- ---": ( 5, 'E0'),
+        "1RB 1LC  1RD ---  --- 1LE  1LA ---  0LA ---": ( 8, 'D1'),
+        "1RB 1LC  1RD ---  --- 1LE  1LA 0RE  0LA ---": ( 9, 'E1'),
+        "1RB 1LC  1RD ---  --- 1LE  1LA 0RE  0LA 1RB": (10, 'B1'),
+        "1RB 1LC  1RD 0RA  --- 1LE  1LA 0RE  0LA 1RB": (18, 'C0'),
     },
 
     # 5/2 shawn 10^502
     "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RC ...  ... ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  1RC ...  0LB ...  ... ...  ... ...": ( 3, 'B1'),
-        "1RB ...  1RC 0RD  0LB ...  ... ...  ... ...": ( 4, 'D0'),
-        "1RB ...  1RC 0RD  0LB ...  0RE ...  ... ...": ( 5, 'E0'),
-        "1RB ...  1RC 0RD  0LB ...  0RE ...  1LE ...": ( 8, 'E1'),
-        "1RB ...  1RC 0RD  0LB ...  0RE ...  1LE 1LA": (11, 'D1'),
-        "1RB ...  1RC 0RD  0LB ...  0RE 1RD  1LE 1LA": (18, 'A1'),
-        "1RB 1LC  1RC 0RD  0LB ...  0RE 1RD  1LE 1LA": (19, 'C1'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RC ---  --- ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  1RC ---  0LB ---  --- ---  --- ---": ( 3, 'B1'),
+        "1RB ---  1RC 0RD  0LB ---  --- ---  --- ---": ( 4, 'D0'),
+        "1RB ---  1RC 0RD  0LB ---  0RE ---  --- ---": ( 5, 'E0'),
+        "1RB ---  1RC 0RD  0LB ---  0RE ---  1LE ---": ( 8, 'E1'),
+        "1RB ---  1RC 0RD  0LB ---  0RE ---  1LE 1LA": (11, 'D1'),
+        "1RB ---  1RC 0RD  0LB ---  0RE 1RD  1LE 1LA": (18, 'A1'),
+        "1RB 1LC  1RC 0RD  0LB ---  0RE 1RD  1LE 1LA": (19, 'C1'),
     },
 
     # 5/2 10^83
     "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  1RA 1LD": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": (  1, 'B0'),
-        "1RB ...  0LC ...  ... ...  ... ...  ... ...": (  2, 'C1'),
-        "1RB ...  0LC ...  ... 1RD  ... ...  ... ...": (  3, 'D0'),
-        "1RB ...  0LC ...  ... 1RD  1LA ...  ... ...": (  4, 'A1'),
-        "1RB 0RE  0LC ...  ... 1RD  1LA ...  ... ...": (  5, 'E1'),
-        "1RB 0RE  0LC ...  ... 1RD  1LA ...  ... 1LD": (  8, 'B1'),
-        "1RB 0RE  0LC 0LB  ... 1RD  1LA ...  ... 1LD": ( 11, 'C0'),
-        "1RB 0RE  0LC 0LB  1RC 1RD  1LA ...  ... 1LD": ( 41, 'D1'),
-        "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  ... 1LD": (310, 'E0'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": (  1, 'B0'),
+        "1RB ---  0LC ---  --- ---  --- ---  --- ---": (  2, 'C1'),
+        "1RB ---  0LC ---  --- 1RD  --- ---  --- ---": (  3, 'D0'),
+        "1RB ---  0LC ---  --- 1RD  1LA ---  --- ---": (  4, 'A1'),
+        "1RB 0RE  0LC ---  --- 1RD  1LA ---  --- ---": (  5, 'E1'),
+        "1RB 0RE  0LC ---  --- 1RD  1LA ---  --- 1LD": (  8, 'B1'),
+        "1RB 0RE  0LC 0LB  --- 1RD  1LA ---  --- 1LD": ( 11, 'C0'),
+        "1RB 0RE  0LC 0LB  1RC 1RD  1LA ---  --- 1LD": ( 41, 'D1'),
+        "1RB 0RE  0LC 0LB  1RC 1RD  1LA 0RA  --- 1LD": (310, 'E0'),
     },
 
     # 5/2 QH Xmas 10^28
     "1RB 1RD  1LC 1LB  1LD 1RA  0RE 0RD  1LB 1RE": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1LC ...  ... ...  ... ...  ... ...": ( 2, 'C1'),
-        "1RB ...  1LC ...  ... 1RA  ... ...  ... ...": ( 3, 'A1'),
-        "1RB 1RD  1LC ...  ... 1RA  ... ...  ... ...": ( 4, 'D0'),
-        "1RB 1RD  1LC ...  ... 1RA  0RE ...  ... ...": ( 5, 'E0'),
-        "1RB 1RD  1LC ...  ... 1RA  0RE ...  1LB ...": ( 9, 'D1'),
-        "1RB 1RD  1LC ...  ... 1RA  0RE 0RD  1LB ...": ( 13, 'C0'),
-        "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB ...": ( 23, 'E1'),
-        "1RB 1RD  1LC ...  1LD 1RA  0RE 0RD  1LB 1RE": ( 27, 'B1'),
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1LC ---  --- ---  --- ---  --- ---": ( 2, 'C1'),
+        "1RB ---  1LC ---  --- 1RA  --- ---  --- ---": ( 3, 'A1'),
+        "1RB 1RD  1LC ---  --- 1RA  --- ---  --- ---": ( 4, 'D0'),
+        "1RB 1RD  1LC ---  --- 1RA  0RE ---  --- ---": ( 5, 'E0'),
+        "1RB 1RD  1LC ---  --- 1RA  0RE ---  1LB ---": ( 9, 'D1'),
+        "1RB 1RD  1LC ---  --- 1RA  0RE 0RD  1LB ---": ( 13, 'C0'),
+        "1RB 1RD  1LC ---  1LD 1RA  0RE 0RD  1LB ---": ( 23, 'E1'),
+        "1RB 1RD  1LC ---  1LD 1RA  0RE 0RD  1LB 1RE": ( 27, 'B1'),
     },
 
     "1RB 1LD  1RC 0RB  0LD 1RA  1LB 1LC": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  1RC ...  0LD ...  ... ...": ( 3, 'D1'),
-        "1RB ...  1RC ...  0LD ...  ... 1LC": ( 4, 'C1'),
-        "1RB ...  1RC ...  0LD 1RA  ... 1LC": ( 5, 'A1'),
-        "1RB 1LD  1RC ...  0LD 1RA  ... 1LC": ( 8, 'D0'),
-        "1RB 1LD  1RC ...  0LD 1RA  1LB 1LC": (12, 'B1'),
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RC ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  1RC ---  0LD ---  --- ---": ( 3, 'D1'),
+        "1RB ---  1RC ---  0LD ---  --- 1LC": ( 4, 'C1'),
+        "1RB ---  1RC ---  0LD 1RA  --- 1LC": ( 5, 'A1'),
+        "1RB 1LD  1RC ---  0LD 1RA  --- 1LC": ( 8, 'D0'),
+        "1RB 1LD  1RC ---  0LD 1RA  1LB 1LC": (12, 'B1'),
     },
 
     "1RB 1LD  0RC 1LA  0LC 1LA  0LA 1LA": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0RC ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  0RC ...  0LC ...  ... ...": ( 4, 'C1'),
-        "1RB ...  0RC ...  0LC 1LA  ... ...": ( 6, 'B1'),
-        "1RB ...  0RC 1LA  0LC 1LA  ... ...": ( 7, 'A1'),
-        "1RB 1LD  0RC 1LA  0LC 1LA  ... ...": ( 8, 'D0'),
-        "1RB 1LD  0RC 1LA  0LC 1LA  0LA ...": (15, 'D1'),
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0RC ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  0RC ---  0LC ---  --- ---": ( 4, 'C1'),
+        "1RB ---  0RC ---  0LC 1LA  --- ---": ( 6, 'B1'),
+        "1RB ---  0RC 1LA  0LC 1LA  --- ---": ( 7, 'A1'),
+        "1RB 1LD  0RC 1LA  0LC 1LA  --- ---": ( 8, 'D0'),
+        "1RB 1LD  0RC 1LA  0LC 1LA  0LA ---": (15, 'D1'),
     },
 
-    "1RB 1LA  1RC 1LB  0LA 1LD  ... 1LA": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  1RC ...  0LA ...  ... ...": ( 3, 'A1'),
-        "1RB 1LA  1RC ...  0LA ...  ... ...": ( 6, 'B1'),
-        "1RB 1LA  1RC 1LB  0LA ...  ... ...": ( 9, 'C1'),
-        "1RB 1LA  1RC 1LB  0LA 1LD  ... ...": (10, 'D1'),
+    "1RB 1LA  1RC 1LB  0LA 1LD  --- 1LA": {
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RC ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  1RC ---  0LA ---  --- ---": ( 3, 'A1'),
+        "1RB 1LA  1RC ---  0LA ---  --- ---": ( 6, 'B1'),
+        "1RB 1LA  1RC 1LB  0LA ---  --- ---": ( 9, 'C1'),
+        "1RB 1LA  1RC 1LB  0LA 1LD  --- ---": (10, 'D1'),
     },
 }
 
 BLANK_AFTER_TREE: InstrSeqs = {
-    "1RB 0RB ...  2LA ... 0LB": {
-        "1RB ... ...  ... ... ...": ( 1, 'B0'),
-        "1RB ... ...  2LA ... ...": ( 2, 'A1'),
-        "1RB 0RB ...  2LA ... ...": ( 3, 'B2'),
-        "1RB 0RB ...  2LA ... 0LB": ( 7, 'B1'),
+    "1RB 0RB ---  2LA --- 0LB": {
+        "1RB --- ---  --- --- ---": ( 1, 'B0'),
+        "1RB --- ---  2LA --- ---": ( 2, 'A1'),
+        "1RB 0RB ---  2LA --- ---": ( 3, 'B2'),
+        "1RB 0RB ---  2LA --- 0LB": ( 7, 'B1'),
     },
-    "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0RC ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  0RC ...  1LD ...  ... ...": ( 3, 'D0'),
-        "1RB ...  0RC ...  1LD ...  0LD ...": ( 4, 'D1'),
-        "1RB ...  0RC ...  1LD ...  0LD 0RA": ( 6, 'B1'),
-        "1RB ...  0RC 1LD  1LD ...  0LD 0RA": ( 8, 'A1'),
+    "1RB 0RB  0RC 1LD  1LD ---  0LD 0RA": {
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0RC ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  0RC ---  1LD ---  --- ---": ( 3, 'D0'),
+        "1RB ---  0RC ---  1LD ---  0LD ---": ( 4, 'D1'),
+        "1RB ---  0RC ---  1LD ---  0LD 0RA": ( 6, 'B1'),
+        "1RB ---  0RC 1LD  1LD ---  0LD 0RA": ( 8, 'A1'),
     },
-    "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1RC ...  ... ...  ... ...": ( 2, 'C0'),
-        "1RB ...  1RC ...  1LA ...  ... ...": ( 3, 'A1'),
-        "1RB 0RB  1RC ...  1LA ...  ... ...": ( 4, 'B1'),
-        "1RB 0RB  1RC 1LD  1LA ...  ... ...": ( 5, 'D0'),
-        "1RB 0RB  1RC 1LD  1LA ...  0LD ...": ( 6, 'D1'),
+    "1RB 0RB  1RC 1LD  1LA ---  0LD 0RA": {
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1RC ---  --- ---  --- ---": ( 2, 'C0'),
+        "1RB ---  1RC ---  1LA ---  --- ---": ( 3, 'A1'),
+        "1RB 0RB  1RC ---  1LA ---  --- ---": ( 4, 'B1'),
+        "1RB 0RB  1RC 1LD  1LA ---  --- ---": ( 5, 'D0'),
+        "1RB 0RB  1RC 1LD  1LA ---  0LD ---": ( 6, 'D1'),
     },
-    "1RB ...  0LC 0RB  0LD 1LC  1RA 0RB": {
-        "1RB ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  0LC ...  ... ...  ... ...": ( 2, 'C1'),
-        "1RB ...  0LC ...  ... 1LC  ... ...": ( 3, 'C0'),
-        "1RB ...  0LC ...  0LD 1LC  ... ...": ( 4, 'D0'),
-        "1RB ...  0LC ...  0LD 1LC  1RA ...": ( 6, 'B1'),
-        "1RB ...  0LC 0RB  0LD 1LC  1RA ...": ( 9, 'D1'),
+    "1RB ---  0LC 0RB  0LD 1LC  1RA 0RB": {
+        "1RB ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  0LC ---  --- ---  --- ---": ( 2, 'C1'),
+        "1RB ---  0LC ---  --- 1LC  --- ---": ( 3, 'C0'),
+        "1RB ---  0LC ---  0LD 1LC  --- ---": ( 4, 'D0'),
+        "1RB ---  0LC ---  0LD 1LC  1RA ---": ( 6, 'B1'),
+        "1RB ---  0LC 0RB  0LD 1LC  1RA ---": ( 9, 'D1'),
     },
-    "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA": {
-        "1RB ...  ... ...  ... ...  ... ...  ... ...": ( 1, 'B0'),
-        "1RB ...  1LC ...  ... ...  ... ...  ... ...": ( 2, 'C1'),
-        "1RB ...  1LC ...  ... 0LB  ... ...  ... ...": ( 4, 'C0'),
-        "1RB ...  1LC ...  0LD 0LB  ... ...  ... ...": ( 5, 'D0'),
-        "1RB ...  1LC ...  0LD 0LB  0LE ...  ... ...": ( 6, 'E0'),
-        "1RB ...  1LC ...  0LD 0LB  0LE ...  1RE ...": ( 9, 'E1'),
-        "1RB ...  1LC ...  0LD 0LB  0LE ...  1RE 1RA": (11, 'B1'),
-        "1RB ...  1LC 0LD  0LD 0LB  0LE ...  1RE 1RA": (12, 'D1'),
+    "1RB ---  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA": {
+        "1RB ---  --- ---  --- ---  --- ---  --- ---": ( 1, 'B0'),
+        "1RB ---  1LC ---  --- ---  --- ---  --- ---": ( 2, 'C1'),
+        "1RB ---  1LC ---  --- 0LB  --- ---  --- ---": ( 4, 'C0'),
+        "1RB ---  1LC ---  0LD 0LB  --- ---  --- ---": ( 5, 'D0'),
+        "1RB ---  1LC ---  0LD 0LB  0LE ---  --- ---": ( 6, 'E0'),
+        "1RB ---  1LC ---  0LD 0LB  0LE ---  1RE ---": ( 9, 'E1'),
+        "1RB ---  1LC ---  0LD 0LB  0LE ---  1RE 1RA": (11, 'B1'),
+        "1RB ---  1LC 0LD  0LD 0LB  0LE ---  1RE 1RA": (12, 'D1'),
     },
 }
 
 LIMITED: dict[Goal, dict[int, dict[str, int]]] = {
     "halt": {
         4: {
-            "1RB ... ...  1LB 2LA 0RB": 11,
-            "1RB 0LB ...  2LA ... 1RA": 11,
-            "1RB 2RA ...  1LB 1LA ...": 11,
-            "1RB 2LA ...  0LA ... 1RA": 12,
-            "1RB ...  0RC ...  1LC 0LA": 16,
+            "1RB --- ---  1LB 2LA 0RB": 11,
+            "1RB 0LB ---  2LA --- 1RA": 11,
+            "1RB 2RA ---  1LB 1LA ---": 11,
+            "1RB 2LA ---  0LA --- 1RA": 12,
+            "1RB ---  0RC ---  1LC 0LA": 16,
         },
         5: {
-            "1RB ... ...  2LB 2RC 0LA  ... ... 0RB": 24,
-            "1RB ... ...  2LC ... ...  2RC 0LC 1RA": 24,
-            "1RB 2LA ...  1LB 1LA 0RA": 25,
-            "1RB 0LB ...  2LA 1RB 1RA": 28,
-            "1RB ... ...  2LB 0RB 1LC  1LA ... ...": 33,
-            "1RB 2LB ...  2LA 2RB 1LB": 37,
+            "1RB --- ---  2LB 2RC 0LA  --- --- 0RB": 24,
+            "1RB --- ---  2LC --- ---  2RC 0LC 1RA": 24,
+            "1RB 2LA ---  1LB 1LA 0RA": 25,
+            "1RB 0LB ---  2LA 1RB 1RA": 28,
+            "1RB --- ---  2LB 0RB 1LC  1LA --- ---": 33,
+            "1RB 2LB ---  2LA 2RB 1LB": 37,
         },
         6: {
-            "1RB ... ... ...  2RC ... ... ...  3RD ... ... ...  3LD ... 3RD 0RD": 28,
-            "1RB ... ... ...  2RC ... ... ...  2LC 0LD 0RC ...  3RB ... ... ...": 29,
-            "1RB ... ... ...  2RC ... ... ...  2RD ... ... ...  2LD 3RD 0RD ...": 30,
-            "1RB ... ...  2LC ... ...  ... 0LD ...  0LE ... ...  2RE ... 0RA": 31,
-            "1RB ... ...  2RC ... ...  2RD ... ...  2RE ... ...  2LE ... 0RE": 32,
-            "1RB ... ... ...  2RC ... ... ...  2RD ... ... ...  3LD ... 3RD 0RD": 38,
-            "1RB 3RB ... 2LB  2LA ... 3RB 0LA": 58,
-            "1RB ... 2RC  2LC ... ...  2RC 0LC 1RA": 58,
-            "1RB ... ... ...  2RC ... 2RB ...  2LC 3RB 0RC ...": 58,
-            "1RB 0RA 3RB 0LB  2LA ... 1RA ...": 59,
-            "1RB ... ...  2LB 0RB 1LC  2LA 1LA ...": 60,
-            "1RB ... ...  1LB 2LC 0RB  2LA 0LC ...": 60,
-            "1RB 2LC ...  2LA 2RB 1LB  2LB ... ...": 61,
-            "1RB ... ...  0RC 2LB ...  1LC 1LA 0LA": 64,
-            "1RB ... ...  1LB 0LC ...  1RC 2RA 1RB": 65,
-            "1RB 2LA 0LA 1RA  3LA ... 3RA ...": 65,
-            "1RB 3LA 1RA 0LA  2LA ... ... 2RA": 65,
-            "1RB ... ...  1LC 0RA ...  2RC 0LC 1RA": 67,
-            "1RB ... 0RC  2LC ... ...  2RC 0LC 1RA": 76,
-            "1RB 2LA 3LA ...  2LA ... 0RA 2RB": 77,
-            "1RB 3LA 1RA 0LA  2LA ... ... 3RA": 123,
+            "1RB --- --- ---  2RC --- --- ---  3RD --- --- ---  3LD --- 3RD 0RD": 28,
+            "1RB --- --- ---  2RC --- --- ---  2LC 0LD 0RC ---  3RB --- --- ---": 29,
+            "1RB --- --- ---  2RC --- --- ---  2RD --- --- ---  2LD 3RD 0RD ---": 30,
+            "1RB --- ---  2LC --- ---  --- 0LD ---  0LE --- ---  2RE --- 0RA": 31,
+            "1RB --- ---  2RC --- ---  2RD --- ---  2RE --- ---  2LE --- 0RE": 32,
+            "1RB --- --- ---  2RC --- --- ---  2RD --- --- ---  3LD --- 3RD 0RD": 38,
+            "1RB 3RB --- 2LB  2LA --- 3RB 0LA": 58,
+            "1RB --- 2RC  2LC --- ---  2RC 0LC 1RA": 58,
+            "1RB --- --- ---  2RC --- 2RB ---  2LC 3RB 0RC ---": 58,
+            "1RB 0RA 3RB 0LB  2LA --- 1RA ---": 59,
+            "1RB --- ---  2LB 0RB 1LC  2LA 1LA ---": 60,
+            "1RB --- ---  1LB 2LC 0RB  2LA 0LC ---": 60,
+            "1RB 2LC ---  2LA 2RB 1LB  2LB --- ---": 61,
+            "1RB --- ---  0RC 2LB ---  1LC 1LA 0LA": 64,
+            "1RB --- ---  1LB 0LC ---  1RC 2RA 1RB": 65,
+            "1RB 2LA 0LA 1RA  3LA --- 3RA ---": 65,
+            "1RB 3LA 1RA 0LA  2LA --- --- 2RA": 65,
+            "1RB --- ---  1LC 0RA ---  2RC 0LC 1RA": 67,
+            "1RB --- 0RC  2LC --- ---  2RC 0LC 1RA": 76,
+            "1RB 2LA 3LA ---  2LA --- 0RA 2RB": 77,
+            "1RB 3LA 1RA 0LA  2LA --- --- 3RA": 123,
         },
         7: {
-            "1RB ...  1RC 1LD  0RD ...  1LE 0LB  1LB ...": 65,
-            "1RB ... ... ...  2RC ... ... ...  2RD ... ... ...  2RE ... ... ...  3LE ... 3RE 0RE": 74,
-            "1RB ... ... ... ...  2RC ... ... 3RB ...  3LC 4RB 3RC 0RC ...": 100,
-            "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": 106,
-            "1RB 3LA 1RA 0LA ...  2LA ... 4LC 3RA ...  ... ... ... ... ...": 124,
-            "1RB ... ... ... ...  0RC ... 2RB ... ...  2LC 3RB 0RC 4RB ...": 140,
-            "1RB ... ... ...  2RC ... 2RB ...  2RD ... ... ...  2LD 3RB 0RD ...": 146,
-            "1RB ... ... ... ...  2RC ... ... 2RB ...  3LC 4RB 3RC 0RC ...": 196,
-            "1RB ... ... ... ...  2RC ... 2RB ... ...  2LC 3RB 0RC 4RB ...": 300,
-            "1RB 0LA 3LA ...  2RC ... ... 1RA  2LA ... ... 1RA": 554,
-            "1RB ... ...  2RC 1RB ...  2LD ... ...  2RB 2RD 1LD": 1929,
-            "1RB 3RC 1RA 0LA  2RC ... ... ...  1LA 3RA ... ...": 2045,
-            "1RB 2RB 2LA  2LA ... 0RC  2LC ... 0LA": 3140,
-            "1RB 2RA 1LA  1LC 1RC ...  2LA 2RB ...": 11081,
-            "1RB 2LA 1RA  1LC 2LA 2RB  ... 1LA ...": 3926833,
-            "1RB 2LA 1RA  1LC 1LA 2RB  ... 1LA ...": 3932963,
-            "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": 3932963,
+            "1RB ---  1RC 1LD  0RD ---  1LE 0LB  1LB ---": 65,
+            "1RB --- --- ---  2RC --- --- ---  2RD --- --- ---  2RE --- --- ---  3LE --- 3RE 0RE": 74,
+            "1RB --- --- --- ---  2RC --- --- 3RB ---  3LC 4RB 3RC 0RC ---": 100,
+            "1RB 1LB  1LA 0LC  --- 1LD  1RD 0RA": 106,
+            "1RB 3LA 1RA 0LA ---  2LA --- 4LC 3RA ---  --- --- --- --- ---": 124,
+            "1RB --- --- --- ---  0RC --- 2RB --- ---  2LC 3RB 0RC 4RB ---": 140,
+            "1RB --- --- ---  2RC --- 2RB ---  2RD --- --- ---  2LD 3RB 0RD ---": 146,
+            "1RB --- --- --- ---  2RC --- --- 2RB ---  3LC 4RB 3RC 0RC ---": 196,
+            "1RB --- --- --- ---  2RC --- 2RB --- ---  2LC 3RB 0RC 4RB ---": 300,
+            "1RB 0LA 3LA ---  2RC --- --- 1RA  2LA --- --- 1RA": 554,
+            "1RB --- ---  2RC 1RB ---  2LD --- ---  2RB 2RD 1LD": 1929,
+            "1RB 3RC 1RA 0LA  2RC --- --- ---  1LA 3RA --- ---": 2045,
+            "1RB 2RB 2LA  2LA --- 0RC  2LC --- 0LA": 3140,
+            "1RB 2RA 1LA  1LC 1RC ---  2LA 2RB ---": 11081,
+            "1RB 2LA 1RA  1LC 2LA 2RB  --- 1LA ---": 3926833,
+            "1RB 2LA 1RA  1LC 1LA 2RB  --- 1LA ---": 3932963,
+            "1RB 2LA 1RA 1RA  1LB 1LA 3RB ---": 3932963,
         },
         8: {
-            "1RB ...  1LC 1RE  0LD 1RC  1RA 0RB  ... 0RC": 793,
+            "1RB ---  1LC 1RE  0LD 1RC  1RA 0RB  --- 0RC": 793,
         },
         9: {
-            "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": 47176869,
+            "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  --- 0LA": 47176869,
         },
     },
 
     "blank": {
         4: {
             "1RB 0RA  1LB 1LA": 8,
-            "1RB ...  1LC ...  1RC 0LC": 8,
-            "1RB ... ...  2LB 2RB 0RB": 9,
-            "1RB ...  1RC ...  1LC 0RC": 12,
+            "1RB ---  1LC ---  1RC 0LC": 8,
+            "1RB --- ---  2LB 2RB 0RB": 9,
+            "1RB ---  1RC ---  1LC 0RC": 12,
         },
         5: {
-            "1RB 2LB ...  2LA 0RB 1LB": 22,
-            "1RB ...  1RC ...  1RD ...  1LD 0RD": 24,
-            "1RB ... ...  2LC ... ...  2RC 2LB 0LC": 25,
-            "1RB ... ...  2RC ... ...  2LC 2LB 0RC": 25,
-            "1RB ... ...  1RC ... ...  2LC 2RC 0RC": 30,
+            "1RB 2LB ---  2LA 0RB 1LB": 22,
+            "1RB ---  1RC ---  1RD ---  1LD 0RD": 24,
+            "1RB --- ---  2LC --- ---  2RC 2LB 0LC": 25,
+            "1RB --- ---  2RC --- ---  2LC 2LB 0RC": 25,
+            "1RB --- ---  1RC --- ---  2LC 2RC 0RC": 30,
         },
         6: {
             "1RB 1LB  1LA 1LC  1RC 0LC": 34,
-            "1RB ... ...  1RC ... ...  1RD ... ...  2LD 2RD 0RD": 63,
-            "1RB ... ... ...  2LC ... ... ...  3RC 2LB 3LC 0LC": 64,
-            "1RB ... ... ...  2RC ... ... ...  3LC 2LB 3RC 0RC": 64,
-            "1RB ... ...  2RC ... 2RB  2LC 2RB 0RC": 68,
-            "1RB ... ...  1LC ... 2LC  2RC 2LB 0LC": 77,
+            "1RB --- ---  1RC --- ---  1RD --- ---  2LD 2RD 0RD": 63,
+            "1RB --- --- ---  2LC --- --- ---  3RC 2LB 3LC 0LC": 64,
+            "1RB --- --- ---  2RC --- --- ---  3LC 2LB 3RC 0RC": 64,
+            "1RB --- ---  2RC --- 2RB  2LC 2RB 0RC": 68,
+            "1RB --- ---  1LC --- 2LC  2RC 2LB 0LC": 77,
             "1RB 2LA 0RB  1LA 0LB 1RA": 77,
         },
         7: {
-            "1RB 2RA 0LB  2LC 0RB 0LA  ... 1LA ...": 14,
-            "1RB ...  0RC 0LA  1LC 1LD  0RB 0RD": 169,
-            "1RB ... ...  1RC ... ...  1LC 2RC 0RD  0RC 2LD ...": 427,
-            "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC": 429,
-            "1RB ... ...  1RC ... ...  0RD 2LC ...  1LD 2RD 0RC": 808,
+            "1RB 2RA 0LB  2LC 0RB 0LA  --- 1LA ---": 14,
+            "1RB ---  0RC 0LA  1LC 1LD  0RB 0RD": 169,
+            "1RB --- ---  1RC --- ---  1LC 2RC 0RD  0RC 2LD ---": 427,
+            "1RB --- --- ---  0RC --- --- 2LB  3LC 3RC 0RB 2RC": 429,
+            "1RB --- ---  1RC --- ---  0RD 2LC ---  1LD 2RD 0RC": 808,
         },
     },
 
     "spinout": {
         4: {
-            "1RB ...  1LC ...  1RC 0LC": 8,
-            "1RB ... ...  2LB 2RB 0RB": 9,
-            "1RB ...  1RC ...  1LC 0RC": 12,
+            "1RB ---  1LC ---  1RC 0LC": 8,
+            "1RB --- ---  2LB 2RB 0RB": 9,
+            "1RB ---  1RC ---  1LC 0RC": 12,
         },
         5: {
-            "1RB ...  1LC 0LC  1RC 0LB": 20,
-            "1RB ... ...  2RC ... ...  2LC 2RC 0RC": 21,
-            "1RB ... ...  1LC ... ...  2RC 2LC 0LC": 22,
-            "1RB ...  1RC ...  1RD ...  1LD 0RD": 24,
-            "1RB ... ...  2LC ... ...  2RC 2LB 0LC": 25,
-            "1RB ... ...  2RC ... ...  2LC 2LB 0RC": 25,
-            "1RB 1LC  0RC ...  1LC 0LA": 27,
-            "1RB ... ...  1RC ... ...  2LC 2RC 0RC": 30,
+            "1RB ---  1LC 0LC  1RC 0LB": 20,
+            "1RB --- ---  2RC --- ---  2LC 2RC 0RC": 21,
+            "1RB --- ---  1LC --- ---  2RC 2LC 0LC": 22,
+            "1RB ---  1RC ---  1RD ---  1LD 0RD": 24,
+            "1RB --- ---  2LC --- ---  2RC 2LB 0LC": 25,
+            "1RB --- ---  2RC --- ---  2LC 2LB 0RC": 25,
+            "1RB 1LC  0RC ---  1LC 0LA": 27,
+            "1RB --- ---  1RC --- ---  2LC 2RC 0RC": 30,
         },
         6: {
-            "1RB ... ...  1RC ... ...  1RD ... ...  2LD 2RD 0RD": 63,
-            "1RB ... ... ...  2LC ... ... ...  3RC 2LB 3LC 0LC": 64,
-            "1RB ... ... ...  2RC ... ... ...  3LC 2LB 3RC 0RC": 64,
-            "1RB ... ...  0RC 0LC ...  1LC 2LB 0LA": 66,
-            "1RB ... ...  2RC ... 2RB  2LC 2RB 0RC": 68,
-            "1RB 0LC ...  0RC ... ...  2LC 0LA 1RC": 76,
-            "1RB ... ...  1LC ... 2LC  2RC 2LB 0LC": 77,
-            "1RB ... ...  2LC ... 0RC  2RC 0LC 1RB": 93,
-            "1RB ... ...  2LB 0RB 1LC  2RB ... 0LB": 96,
+            "1RB --- ---  1RC --- ---  1RD --- ---  2LD 2RD 0RD": 63,
+            "1RB --- --- ---  2LC --- --- ---  3RC 2LB 3LC 0LC": 64,
+            "1RB --- --- ---  2RC --- --- ---  3LC 2LB 3RC 0RC": 64,
+            "1RB --- ---  0RC 0LC ---  1LC 2LB 0LA": 66,
+            "1RB --- ---  2RC --- 2RB  2LC 2RB 0RC": 68,
+            "1RB 0LC ---  0RC --- ---  2LC 0LA 1RC": 76,
+            "1RB --- ---  1LC --- 2LC  2RC 2LB 0LC": 77,
+            "1RB --- ---  2LC --- 0RC  2RC 0LC 1RB": 93,
+            "1RB --- ---  2LB 0RB 1LC  2RB --- 0LB": 96,
         },
         7: {
-            "1RB ... ...  1RC ... ...  1LC 2RC 0RD  0RC 2LD ...": 428,
-            "1RB ... ... ...  0RC ... ... 2LB  3LC 3RC 0RB 2RC": 430,
-            "1RB ... 2LC  2LC ... 0RC  2RC 0LC 1RA": 446,
-            "1RB 0LC ...  1LB 2LA 0RB  1RA 2LB ...": 451,
-            "1RB 2RB ...  1LC 0RC ...  1RC 2RA 0LC": 520,
-            "1RB 2RB 3LA ...  2LB 3LA 1LB 2RB": 555,
-            "1RB ... ...  1RC ... ...  0RD 2LC ...  1LD 2RD 0RC": 809,
-            "1RB ... ...  0RC 2RB 1LB  2LC 1LA 2LC": 1235,
-            "1RB ... ...  2RC 2RB 1LB  2LC 1RB 2LC": 1464,
-            "1RB ... ...  1LB 1RC 2LB  2RB 2RC 1LC": 1478,
+            "1RB --- ---  1RC --- ---  1LC 2RC 0RD  0RC 2LD ---": 428,
+            "1RB --- --- ---  0RC --- --- 2LB  3LC 3RC 0RB 2RC": 430,
+            "1RB --- 2LC  2LC --- 0RC  2RC 0LC 1RA": 446,
+            "1RB 0LC ---  1LB 2LA 0RB  1RA 2LB ---": 451,
+            "1RB 2RB ---  1LC 0RC ---  1RC 2RA 0LC": 520,
+            "1RB 2RB 3LA ---  2LB 3LA 1LB 2RB": 555,
+            "1RB --- ---  1RC --- ---  0RD 2LC ---  1LD 2RD 0RC": 809,
+            "1RB --- ---  0RC 2RB 1LB  2LC 1LA 2LC": 1235,
+            "1RB --- ---  2RC 2RB 1LB  2LC 1RB 2LC": 1464,
+            "1RB --- ---  1LB 1RC 2LB  2RB 2RC 1LC": 1478,
         },
     },
 }
 
 BIGFOOT = {
-    "1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA",
-    "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  ... 1LC",
+    "1RB 2RA 1LC  2LC 1RB 2RB  --- 2LA 1LA",
+    "1RB 1RC  1RE 1RE  1LD 0RA  1RB 1LG  1LG 1RF  0RE 1RE  1LH 0LH  --- 1LC",
 }
 
 HYDRA = {
-    "1RB 3RB ... 3LA 1RA  2LA 3RA 4LB 0LB 0LA",
-    "1RB 3RB ... 3LA 1RA  2LA 3RA 4LB 0LB 1LB",
+    "1RB 3RB --- 3LA 1RA  2LA 3RA 4LB 0LB 0LA",
+    "1RB 3RB --- 3LA 1RA  2LA 3RA 4LB 0LB 1LB",
 }
 
-ANTIHYDRA = "1RB 1RA  0LC 1LE  1LD 1LC  1LA 0LB  1LF 1RE  ... 0RA"
+ANTIHYDRA = "1RB 1RA  0LC 1LE  1LD 1LC  1LA 0LB  1LF 1RE  --- 0RA"
 
-MOONLIGHT = "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  ... 0RA"
+MOONLIGHT = "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  --- 0RA"
 
 CRYPTIDS = BIGFOOT | HYDRA | { ANTIHYDRA, MOONLIGHT }
 
-MOTHER = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  ... 0LA"
+MOTHER = "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  --- 0LA"
 
 GIANT_CHILDREN = {
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LC 0LA",
@@ -1557,16 +1557,16 @@ GIANT_CHILDREN = {
 }
 
 IRREGULAR = {
-    "1RB ...  0LC 1RE  0LD 1LC  1RA 1LB  0RB 0RA",  # skelet 17
-    "1RB 1RE  1LC 1RB  0RA 0LD  1LB 1LD  ... 0RA",  # finned 3
+    "1RB ---  0LC 1RE  0LD 1LC  1RA 1LB  0RB 0RA",  # skelet 17
+    "1RB 1RE  1LC 1RB  0RA 0LD  1LB 1LD  --- 0RA",  # finned 3
 }
 
 SPAGHETTI = {
     # Halt
-    "1RB 2RA 2RC  1LC ... 1LA  1RA 2LB 1LC",  # 310341163
+    "1RB 2RA 2RC  1LC --- 1LA  1RA 2LB 1LC",  # 310341163
 
-    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB",
-    "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA",
+    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC --- 1LB",
+    "1RB 3LA 3RC 1RA  2RC 1LA --- 2RB  1LC 1RB 1LB 2RA",
 
     # Quasihalt
     "1RB 2LC 2RA  1LA 2LB 1RC  1RA 2LC 1RB",  # marks
@@ -1584,52 +1584,52 @@ SPAGHETTI = {
 
 KERNEL = {
     # Halt
-    "1RB 1RC 2LA  1LA 2RB 1LC  ... 0RB 1LA": 3,
-    "1RB 2LA 0RC  2LA ... 1RC  1LA 0LB 2RC": 3,
-    "1RB 2LA 1RC  1LA 1LC 2RB  ... 0LA 1RB": 3,
+    "1RB 1RC 2LA  1LA 2RB 1LC  --- 0RB 1LA": 3,
+    "1RB 2LA 0RC  2LA --- 1RC  1LA 0LB 2RC": 3,
+    "1RB 2LA 1RC  1LA 1LC 2RB  --- 0LA 1RB": 3,
 
-    "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  ... 1LB": 4,
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 3,  # 134467 Uwe
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  ... 1RA": 3,  # partial
+    "1RB 1RC  1LC 1LD  1LD 1RA  0LA 1LE  --- 1LB": 4,
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ---  1LC 1RA": 3,  # 134467 Uwe
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ---  --- 1RA": 3,  # partial
     "1RB 0LD  1RC 1LB  1LA 1RE  1LE 1LA  1RC 0RA": 3,
-    "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA": 3,
+    "1RB ---  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA": 3,
 
-    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC": 3,
-    "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": 3,
-    "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD": 3,
-    "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  0RB 2RA 2RD": 3,
+    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC --- 0LC": 3,
+    "1RB 1LD ---  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": 3,
+    "1RB 1RD 1LC  2LB 1RB 1LC  --- 1LA 1LD  2RB 2RA 2RD": 3,
+    "1RB 1RD 1LC  2LB 1RB 1LC  --- 1LA 1LD  0RB 2RA 2RD": 3,
     "1RB 2LD 2LA  1RC 0RD 2LA  1LA 2LB 0LC  2RD 2RC 0LD": 3,
-    "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  ... 2RB 2LA": 3,
+    "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  --- 2RB 2LA": 3,
 
-    "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": 3,
+    "1RB 1RA 1LB 1RC  2LA 0LB 3LC ---  1LB 0RC 2RA 2RC": 3,
 
-    "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD": 4,
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": 4,  # Pavel, BB6
-    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...": 4,  # Shawn
-    "1RB 0RC  0RC 0LD  1RD 1RA  1RE 0LA  1LF ...  1LB 1LF": 4,
-    "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  1RC 1RF  0RB ...": 4,
-    "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  0LF 1RF  0RB ...": 4,
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE": 3,  # Pavel
-    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD ...": 3,
-    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD ...": 3,
-    "1RB 0RC  0LA 0RD  1RD ...  1LE 0LD  1RF 1LB  1RA 1RE": 3,
-    "1RB 1RF  0RC 0RA  1LD ...  0LE 0LB  1LF 1LD  1RA 1LB": 3,
-    "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": 3,
-    "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0LA  1RA 1LC": 3,
-    "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...": 3,
-    "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0RF  1RA 1LC": 3,
-    "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA": 3,
-    "1RB ...  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD": 3,
-    "1RB 0LE  1RC 1RB  1RD ...  1LA 0RF  0LA 1RD  1RB 0RE": 3,
-    "1RB 0RF  1RC 1RB  1RD ...  1LE 0RA  1RB 0LF  0LE 1RD": 3,
-    "1RB 1RA  1RC ...  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE": 3,
+    "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  --- 1RD": 4,
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ---  1LF 0RB  0RC 0RE": 4,  # Pavel, BB6
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ---": 4,  # Shawn
+    "1RB 0RC  0RC 0LD  1RD 1RA  1RE 0LA  1LF ---  1LB 1LF": 4,
+    "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  1RC 1RF  0RB ---": 4,
+    "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  0LF 1RF  0RB ---": 4,
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ---  1LA 0RB  0RC 0RE": 3,  # Pavel
+    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD ---": 3,
+    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD ---": 3,
+    "1RB 0RC  0LA 0RD  1RD ---  1LE 0LD  1RF 1LB  1RA 1RE": 3,
+    "1RB 1RF  0RC 0RA  1LD ---  0LE 0LB  1LF 1LD  1RA 1LB": 3,
+    "1RB 0LF  1RC 0LE  1RD 0RA  1LE ---  1RC 0LA  1RA 0LB": 3,
+    "1RB 0LD  1RC 1RF  0LA 1LF  --- 1LE  0LF 0LA  1RA 1LC": 3,
+    "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ---": 3,
+    "1RB 0LD  1RC 1RF  0LA 1LF  --- 1LE  0LF 0RF  1RA 1LC": 3,
+    "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  --- 1RA": 3,
+    "1RB ---  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD": 3,
+    "1RB 0LE  1RC 1RB  1RD ---  1LA 0RF  0LA 1RD  1RB 0RE": 3,
+    "1RB 0RF  1RC 1RB  1RD ---  1LE 0RA  1RB 0LF  0LE 1RD": 3,
+    "1RB 1RA  1RC ---  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE": 3,
 
-    "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": 3,
-    "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF": 3,
-    "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": 4,
-    "1RB 1LB  1LC 1RF  1LA 0LD  1RE 0LG  0RC ...  0RB 0RD  0RF 1LG": 4,
+    "1RB ---  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": 3,
+    "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  --- 0LC  1RG 1LD  0RG 0RF": 3,
+    "1RB 0LG  0RC ---  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": 4,
+    "1RB 1LB  1LC 1RF  1LA 0LD  1RE 0LG  0RC ---  0RB 0RD  0RF 1LG": 4,
 
-    "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": 3,
+    "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA --- ---  1RF 0LA 1RD 2LA  2RF 3RF 1LG ---  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH --- 1RB": 3,
 
     # Spinout
     "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB": 3,
@@ -1638,15 +1638,15 @@ KERNEL = {
     "1RB 0RC  1LC 0LD  1RE 0LD  0LC 1LB  0RE 1RA": 3,
     "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB": 3,  # 10^1089
     "1RB 1LD  1RC 0RA  1LA 0RE  0LD 1LE  0LA 1RB": 3,  # 10^1089
-    "1RB 1LC  1RD ...  ... 1LE  1LA 0RE  0LA 1RB": 3,  # partial
-    "1RB 1LC  1RD 0RA  ... 1LE  1LA 0RE  0LA 1RB": 3,  # partial
+    "1RB 1LC  1RD ---  --- 1LE  1LA 0RE  0LA 1RB": 3,  # partial
+    "1RB 1LC  1RD 0RA  --- 1LE  1LA 0RE  0LA 1RB": 3,  # partial
     "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA": 3,  # 10^18
 
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1RE  1LF 0RB  0RC 0RE": 4,
-    "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  ... 0RA": 4,
+    "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  --- 0RA": 4,
 
     # Recur
-    "1RB ...  0RC 0LD  1RD 0LA  1LB 0LC": 3,
+    "1RB ---  0RC 0LD  1RD 0LA  1LB 0LC": 3,
     "1RB 0RC  1LB 1LD  0RA 0LD  1LA 1RC": 3, # 158491, 17620 Boyd
     "1RB 1LC  1LD 0LC  0LB 0RA  1RD 1RA": 3, # 157757, 17620 iso
     "1RB 0LC  1RD 1LD  1LB 1LA  1RC 0RA": 3,
@@ -1662,7 +1662,7 @@ KERNEL = {
     "1RB 0LC  1RD 0RA  0LB 0LA  1LC 0RA": 3,
     "1RB 1RC  0RC 1RA  1LD 0RB  0LD 1LA": 3,
     "1RB 0LD  1LC 0RA  1LA 1LB  1LD 0LC": 3,
-    "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA": 3,
+    "1RB 1RC  1LC 0LD  1RA 0LB  --- 0LA": 3,
     "1RB 1RC  1LC 0RD  1RA 0LB  1RD 0RA": 3,
     "1RB 0RD  0RC 1RA  1LD 1LA  0LC 0LA": 3,
 
@@ -1678,9 +1678,9 @@ KERNEL = {
     "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": 3,  # 1459, 1
     "1RB 1RC  1LD 0RA  0RC 1RD  1RA 0LB": 3,
 
-    "1RB 0RD  1LC 0RA  1LA 1LB  ... 0RC": 3,
+    "1RB 0RD  1LC 0RA  1LA 1LB  --- 0RC": 3,
 
-    "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": 6,
+    "1RB 1LC 2LC 2RA  2LD 3RE 1RB ---  0LC 2RA 2LF 3LD  --- 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": 6,
 
     # infrul
     "1RB 0LC  1RC 0LD  1LD 0RB  0LA 0LA": 3,
@@ -1714,15 +1714,15 @@ KERNEL = {
     "1RB 0LD  1RC 0LA  1LD 0RA  1LE 0RA  0RD 1LC": 3,
     "1RB 0LD  1RC 0LA  1LD 0RA  1LE 0RA  0RC 1LC": 3,
     "1RB 0LC  1LC 0RD  0RE 1LA  0LA 1RD  0RB 1LB": 3,
-    "1RB ...  0RC 0RE  1LD 1RE  0LD 1RA  1LB 0LC": 3,
-    "1RB 0RD  1RC 1LE  0LA ...  1LD 0RE  1LA 0RB": 3,
-    "1RB 0RC  1LA 1LD  0LC 1RD  0RE 0LA  0RB ...": 3,
-    "1RB 0RD  0LC 1RD  1LC 1LA  0LE 0RB  ... 0RC": 3,
+    "1RB ---  0RC 0RE  1LD 1RE  0LD 1RA  1LB 0LC": 3,
+    "1RB 0RD  1RC 1LE  0LA ---  1LD 0RE  1LA 0RB": 3,
+    "1RB 0RC  1LA 1LD  0LC 1RD  0RE 0LA  0RB ---": 3,
+    "1RB 0RD  0LC 1RD  1LC 1LA  0LE 0RB  --- 0RC": 3,
     "1RB 1RD  0RC 0RA  0RD 1RA  1LC 0LE  1LE 0RB": 4,
 }
 
 MODULAR = {
-    "1RB ...  0LB 1LB",
+    "1RB ---  0LB 1LB",
     "1RB 1LA  0LB 1LB",
 
     "1RB 1LB  1LA 1LC  1RC 0LC",  # BLB(3) | 34
@@ -1734,7 +1734,7 @@ MODULAR = {
     "1RB 1LA  1LA 1LC  1RC 0LC",
     "1RB 0LC  1LB 1LA  1RC 0LC",
     "1RB 1LA  0LA 0LC  0LC 1LC",
-    "1RB 0LB  1LA 0RC  1LC ...",
+    "1RB 0LB  1LA 0RC  1LC ---",
 
     "1RB 1LC  0LB 1LA  1RC 0LD  0RC 1LD",
 
@@ -1744,73 +1744,73 @@ MODULAR = {
     "1RB 1LC  1LB 0RD  1RC 0LC  1LD 1LA",
 
     # incomplete
-    "1RB ...  ... ...",
-    "1RB ...  0LB 0LB",
-    "1RB ...  0LB 0RB",
-    "1RB ...  1LB 0RB",
-    "1RB ... ...  0LB 2RB 0RB",
-    "1RB ... ...  2LB 0RB 0RB",
-    "1RB ... ...  2LB 1RB 1LB",
-    "1RB ...  1LB 0RC  ... 0RB",
-    "1RB ...  1LC ...  0LC 0LB",
-    "1RB ...  1LB 0RC  0LB 1RC",
-    "1RB ...  1LB 0LC  1RC 1RB",
-    "1RB ...  1LB 1LC  1RC 0RB",
-    "1RB ...  1LB 1RC  0LC 0RB",
-    "1RB ...  1LC 0LC  1RC 0LB",
-    "1RB ...  1LC 0RB  1LB 1RC",
-    "1RB ...  1LC 0RB  0LC 1RB",
-    "1RB ...  0LC 0LC  0RD 1LB  1RD 0LB",
-    "1RB ...  0RC 1LC  1LC 0RD  0LB 1RD",
-    "1RB ...  0LB 1LC  1RD 1LD  1LD 0RC",
-    "1RB ...  1LB 0LC  1RC 0RD  1LD 1LC",
-    "1RB ...  1RC 1LC  0LB 1RD  0RD 0LC",
-    "1RB ...  1LB 0RC  0LD 1RC  ... 1LB",
-    "1RB ...  1RC ...  1LC 0RD  0LC 1RD",
-    "1RB ...  1LB 1RC  0LD 0RB  1LD 0RC",
-    "1RB ...  0RC 1LB  1LC 0RD  0LB 1RD",
-    "1RB ...  1LC 1LC  0RD 0LB  1RD 0LC",
-    "1RB ...  0RC ...  1LC 0RD  0LC 1RD",
-    "1RB ...  1LC ...  0LD 1RC  1LD 0RC",
-    "1RB ...  1LC ...  0RD 1LC  1RD 0LC",
-    "1RB ...  1RC ...  0LD 1RC  1LD 0RC",
-    "1RB ...  1LB 0RC  0LD 1RC  0RB 1LD",
-    "1RB ...  1LC ...  1RC 0LD  0RC 1LD",
-    "1RB ...  0RC ...  0LD 1RC  1LD 0RC",
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 1LB",
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 2LB",
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 3LB",
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 4LB",
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0LB",
-    "1RB ... ... ... ...  0LB 2RB 3RB 4RB 0RB",
-    "1RB ... ... ... ...  0LB 2RB 3RB 4LB ...",
-    "1RB ...  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE",
-    "1RB ...  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE",
-    "1RB ...  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE",
-    "1RB ...  0LC 1RD  1LD 1LC  0LE 0LD  1RE 1RB",
-    "1RB ...  0RC 0RB  1LC 1LD  0RE 1LB  1LB 1RE",
-    "1RB ...  0RC 0RB  1LC 1LD  1RE 1LB  0LD 1RE",
-    "1RB ...  0RC 0RB  1LC 1LD  1RE 1LB  1RC 1RE",
-    "1RB ...  0RC 1LD  0RD 1RC  0RE 0RD  1LE 1LB",
-    "1RB ...  0RC 1LD  1LB 1RC  0RE 0RD  1LE 1LB",
-    "1RB ...  0RC 1LD  1LD 1RC  0RE 0RD  1LE 1LB",
-    "1RB ...  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB",
-    "1RB ...  1LB 0LC  1LD 1RC  1RE 1LE  0RB 0RE",
-    "1RB ...  1LB 1LC  0LD 1LE  1RD 0LE  0RB 0RE",
-    "1RB ...  1LB 1LC  0RD 1LE  0RE 1RD  0RB 0RE",
-    "1RB ...  1LB 1LC  1RD 1LE  0LE 1RD  0RB 0RE",
-    "1RB ...  1LB 1LC  1RD 1LE  1LE 0RC  0RB 0RE",
-    "1RB ...  1LC 1LB  0LD 0LC  1RD 1RE  0LB 1RC",
-    "1RB ...  1LC 1RB  1RD 1LD  0RE 0RD  1LE 0LB",
-    "1RB ...  1LC 1RD  0LE 1LC  0LE 0LD  1RE 1RB",
-    "1RB ...  1RC 1LB  1LD 1RD  0LE 0LD  1RE 0RB",
-    "1RB ...  1RC 1LD  0RE 1RC  0RE 0RD  1LE 1LB",
-    "1RB ...  1RC 1RB  0RD 0RC  1LD 1LE  0RB 1LC",
-    "1RB ...  1RC 1RB  1LC 1LD  1RB 1LE  0RC 0RE",
-    "1RB ...  1RC ...  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF",
-    "1RB ... ... ...  2RC 2RB ... 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...",
-    "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC",
-    "1RB ... ... ...  0LC 2LC ... ...  0LC 3RD 0RD 2RE  1LF 1LC 1RB ...  ... 3RD ... ...  1LG ... 2RB 1LF  2RE ... 2LC ...",
+    "1RB ---  --- ---",
+    "1RB ---  0LB 0LB",
+    "1RB ---  0LB 0RB",
+    "1RB ---  1LB 0RB",
+    "1RB --- ---  0LB 2RB 0RB",
+    "1RB --- ---  2LB 0RB 0RB",
+    "1RB --- ---  2LB 1RB 1LB",
+    "1RB ---  1LB 0RC  --- 0RB",
+    "1RB ---  1LC ---  0LC 0LB",
+    "1RB ---  1LB 0RC  0LB 1RC",
+    "1RB ---  1LB 0LC  1RC 1RB",
+    "1RB ---  1LB 1LC  1RC 0RB",
+    "1RB ---  1LB 1RC  0LC 0RB",
+    "1RB ---  1LC 0LC  1RC 0LB",
+    "1RB ---  1LC 0RB  1LB 1RC",
+    "1RB ---  1LC 0RB  0LC 1RB",
+    "1RB ---  0LC 0LC  0RD 1LB  1RD 0LB",
+    "1RB ---  0RC 1LC  1LC 0RD  0LB 1RD",
+    "1RB ---  0LB 1LC  1RD 1LD  1LD 0RC",
+    "1RB ---  1LB 0LC  1RC 0RD  1LD 1LC",
+    "1RB ---  1RC 1LC  0LB 1RD  0RD 0LC",
+    "1RB ---  1LB 0RC  0LD 1RC  --- 1LB",
+    "1RB ---  1RC ---  1LC 0RD  0LC 1RD",
+    "1RB ---  1LB 1RC  0LD 0RB  1LD 0RC",
+    "1RB ---  0RC 1LB  1LC 0RD  0LB 1RD",
+    "1RB ---  1LC 1LC  0RD 0LB  1RD 0LC",
+    "1RB ---  0RC ---  1LC 0RD  0LC 1RD",
+    "1RB ---  1LC ---  0LD 1RC  1LD 0RC",
+    "1RB ---  1LC ---  0RD 1LC  1RD 0LC",
+    "1RB ---  1RC ---  0LD 1RC  1LD 0RC",
+    "1RB ---  1LB 0RC  0LD 1RC  0RB 1LD",
+    "1RB ---  1LC ---  1RC 0LD  0RC 1LD",
+    "1RB ---  0RC ---  0LD 1RC  1LD 0RC",
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 1LB",
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 2LB",
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 3LB",
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 4LB",
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 0LB",
+    "1RB --- --- --- ---  0LB 2RB 3RB 4RB 0RB",
+    "1RB --- --- --- ---  0LB 2RB 3RB 4LB ---",
+    "1RB ---  0LC 0LB  1RC 1RD  0LE 1RB  1LB 1LE",
+    "1RB ---  0LC 0LB  1RC 1RD  1LE 1RB  0LC 1LE",
+    "1RB ---  0LC 1LB  1RC 1RD  1LB 1RE  0LC 0LE",
+    "1RB ---  0LC 1RD  1LD 1LC  0LE 0LD  1RE 1RB",
+    "1RB ---  0RC 0RB  1LC 1LD  0RE 1LB  1LB 1RE",
+    "1RB ---  0RC 0RB  1LC 1LD  1RE 1LB  0LD 1RE",
+    "1RB ---  0RC 0RB  1LC 1LD  1RE 1LB  1RC 1RE",
+    "1RB ---  0RC 1LD  0RD 1RC  0RE 0RD  1LE 1LB",
+    "1RB ---  0RC 1LD  1LB 1RC  0RE 0RD  1LE 1LB",
+    "1RB ---  0RC 1LD  1LD 1RC  0RE 0RD  1LE 1LB",
+    "1RB ---  0RC 1RB  1LC 1LD  1RE 0RD  0LE 0RB",
+    "1RB ---  1LB 0LC  1LD 1RC  1RE 1LE  0RB 0RE",
+    "1RB ---  1LB 1LC  0LD 1LE  1RD 0LE  0RB 0RE",
+    "1RB ---  1LB 1LC  0RD 1LE  0RE 1RD  0RB 0RE",
+    "1RB ---  1LB 1LC  1RD 1LE  0LE 1RD  0RB 0RE",
+    "1RB ---  1LB 1LC  1RD 1LE  1LE 0RC  0RB 0RE",
+    "1RB ---  1LC 1LB  0LD 0LC  1RD 1RE  0LB 1RC",
+    "1RB ---  1LC 1RB  1RD 1LD  0RE 0RD  1LE 0LB",
+    "1RB ---  1LC 1RD  0LE 1LC  0LE 0LD  1RE 1RB",
+    "1RB ---  1RC 1LB  1LD 1RD  0LE 0LD  1RE 0RB",
+    "1RB ---  1RC 1LD  0RE 1RC  0RE 0RD  1LE 1LB",
+    "1RB ---  1RC 1RB  0RD 0RC  1LD 1LE  0RB 1LC",
+    "1RB ---  1RC 1RB  1LC 1LD  1RB 1LE  0RC 0RE",
+    "1RB ---  1RC ---  1LC 1LD  1RE 1LF  1RC 1RE  0RC 0RF",
+    "1RB --- --- ---  2RC 2RB --- 0RB  1LD 1RC --- ---  1LB 3RD 1LD ---",
+    "1RB --- --- --- ---  2LC --- --- --- ---  3RD 3LC --- 1LC ---  --- 1RD 1RB 1LE ---  4RD 1LE --- 1RD 1LC",
+    "1RB --- --- ---  0LC 2LC --- ---  0LC 3RD 0RD 2RE  1LF 1LC 1RB ---  --- 3RD --- ---  1LG --- 2RB 1LF  2RE --- 2LC ---",
 }
 
 STRICT_CYCLE = {
@@ -1833,67 +1833,67 @@ STRICT_CYCLE = {
 
 BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
     "halt": {
-        "1RB 0LA  1LA ...": 0,
+        "1RB 0LA  1LA ---": 0,
 
-        "1RB 1RB ...  0LB 2RB 1LA": 0,
+        "1RB 1RB ---  0LB 2RB 1LA": 0,
 
-        "1RB 0LA  0RC 1RC  1LA ...": 0,
+        "1RB 0LA  0RC 1RC  1LA ---": 0,
 
-        "1RB 2LA ... 0LB  2LB 3RB 1LB 1RA": 0,
-        "1RB 0LB 3RB 0LA  2LA 1RA 2LB ...": 0,
-        "1RB 1RA 2LB ...  2LA 3LA 0RA 0RB": 0,
-        "1RB 3LA ... 0RB  2LA 2RA 0RB 3LB": 0,
+        "1RB 2LA --- 0LB  2LB 3RB 1LB 1RA": 0,
+        "1RB 0LB 3RB 0LA  2LA 1RA 2LB ---": 0,
+        "1RB 1RA 2LB ---  2LA 3LA 0RA 0RB": 0,
+        "1RB 3LA --- 0RB  2LA 2RA 0RB 3LB": 0,
 
-        "1RB 1LB  1LA 0RC  0LD 1RC  ... 1LA": 0,
-        "1RB 0LA  0RC ...  1LC 1LD  0RA 0LD": 0,
-        "1RB 0RB  0RC 1LD  1LD ...  0LD 0RA": 0,
-        "1RB 0LA  0RC 1RC  1RD 1LA  1LA ...": 18,
-        "1RB 0RB  1RC 1LD  1LA ...  0LD 0RA": 0,
-        "1RB 0LA  0RC 1RC  1RD 1LA  1LB ...": 22,
+        "1RB 1LB  1LA 0RC  0LD 1RC  --- 1LA": 0,
+        "1RB 0LA  0RC ---  1LC 1LD  0RA 0LD": 0,
+        "1RB 0RB  0RC 1LD  1LD ---  0LD 0RA": 0,
+        "1RB 0LA  0RC 1RC  1RD 1LA  1LA ---": 18,
+        "1RB 0RB  1RC 1LD  1LA ---  0LD 0RA": 0,
+        "1RB 0LA  0RC 1RC  1RD 1LA  1LB ---": 22,
 
-        "1RB 0RC ...  2LC 0RB 0LA  1LA 1LC ...": 0,
-        "1RB 0RC 0LA  2LA ... 0LC  2RB ... 2RC": 0,
-        "1RB 0RC 0LA  2RC ... 2RB  2LA ... 0LB": 0,
-        "1RB 1RA ...  1LC 0LA ...  2RA 0LC 0RB": 0,
-        "1RB 1RA ...  1LC 0LA ...  2RB 0LC 0RA": 0,
-        "1RB 0LC 2LC  1LA 2RB ...  0RA 2RC 0LC": 0,
-        "1RB 2LA ...  1LA 0RC 2RC  0LB 2LC 0RC": 0,
-        "1RB 1LC 2RB  0LA 2LB 0RB  1RA 2LC ...": 0,
-        "1RB 2LA ...  1RC 1LA 2RC  0LB 2LC 0RC": 0,
+        "1RB 0RC ---  2LC 0RB 0LA  1LA 1LC ---": 0,
+        "1RB 0RC 0LA  2LA --- 0LC  2RB --- 2RC": 0,
+        "1RB 0RC 0LA  2RC --- 2RB  2LA --- 0LB": 0,
+        "1RB 1RA ---  1LC 0LA ---  2RA 0LC 0RB": 0,
+        "1RB 1RA ---  1LC 0LA ---  2RB 0LC 0RA": 0,
+        "1RB 0LC 2LC  1LA 2RB ---  0RA 2RC 0LC": 0,
+        "1RB 2LA ---  1LA 0RC 2RC  0LB 2LC 0RC": 0,
+        "1RB 1LC 2RB  0LA 2LB 0RB  1RA 2LC ---": 0,
+        "1RB 2LA ---  1RC 1LA 2RC  0LB 2LC 0RC": 0,
 
-        "1RB 4RB ... 1RB 2RB  2LB 3LA 3RB 0LA 1LA": 0,
-        "1RB 3RA 0RB 0LA 2RB  2LA ... 4LA ... 3LA": 0,
-        "1RB 3RB ... 3LA 0RA  2LB 1LA 0LA 4RB 3LA": 0,
-        "1RB 3LA ... 4RB 0RA  2LB 3LA 0LA 3RB 1LA": 0,
+        "1RB 4RB --- 1RB 2RB  2LB 3LA 3RB 0LA 1LA": 0,
+        "1RB 3RA 0RB 0LA 2RB  2LA --- 4LA --- 3LA": 0,
+        "1RB 3RB --- 3LA 0RA  2LB 1LA 0LA 4RB 3LA": 0,
+        "1RB 3LA --- 4RB 0RA  2LB 3LA 0LA 3RB 1LA": 0,
 
-        "1RB ...  1RC ...  1LD ...  1LE 1RD  0RA 0LE": 0,
-        "1RB 0LA  0RC 1RE  0RD 1LA  1LE ...  1RC ...": 41,
-        "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LA ...": 84,
-        "1RB ...  1RC 1LC  1LD 0RE  0RA 0LD  0LB 1RE": 0,
-        "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LB ...": 90,
-        "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ...": 97,
-        "1RB 0RB  1RC 1LE  1RD 1LA  1LB ...  0LE 0RA": 0,
-        "1RB 0RB  0RC 1LE  1RD 0LC  1LA ...  0LE 0RA": 0,
+        "1RB ---  1RC ---  1LD ---  1LE 1RD  0RA 0LE": 0,
+        "1RB 0LA  0RC 1RE  0RD 1LA  1LE ---  1RC ---": 41,
+        "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LA ---": 84,
+        "1RB ---  1RC 1LC  1LD 0RE  0RA 0LD  0LB 1RE": 0,
+        "1RB 0LA  0RC 1RC  1RD 1LA  1RE 1LB  1LB ---": 90,
+        "1RB 0LA  0RC 1RC  1RD 1LA  0RE 1LB  1LC ---": 97,
+        "1RB 0RB  1RC 1LE  1RD 1LA  1LB ---  0LE 0RA": 0,
+        "1RB 0RB  0RC 1LE  1RD 0LC  1LA ---  0LE 0RA": 0,
 
-        "1RB ... 3LA 2LB  2LC ... 0RB 3LC  0RA 0LC ... ...": 0,
+        "1RB --- 3LA 2LB  2LC --- 0RB 3LC  0RA 0LC --- ---": 0,
 
-        "1RB 1LC ...  2LC ... 0RD  0RA 0LC ...  0LA ... 1RD": 0,
-        "1RB 1LA 1LD  2RC 1RC ...  0LA 0RC ...  ... 0RB ...": 0,
-        "1RB 2LA 2LD  2RC ... 1RC  0LA ... 0RC  ... 0RB ...": 0,
-        "1RB ... ...  0LC ... 1LC  2LD 1RC 0RB  0RA 0LD ...": 0,
-        "1RB 0LA ...  0RC 1RC ...  1RD 2LB 1LA  1LB ... ...": 28,
+        "1RB 1LC ---  2LC --- 0RD  0RA 0LC ---  0LA --- 1RD": 0,
+        "1RB 1LA 1LD  2RC 1RC ---  0LA 0RC ---  --- 0RB ---": 0,
+        "1RB 2LA 2LD  2RC --- 1RC  0LA --- 0RC  --- 0RB ---": 0,
+        "1RB --- ---  0LC --- 1LC  2LD 1RC 0RB  0RA 0LD ---": 0,
+        "1RB 0LA ---  0RC 1RC ---  1RD 2LB 1LA  1LB --- ---": 28,
 
-        "1RB ... 4RB ... 3RA  0LC ... 3RB ... ...  ... 2LA ... 4RA 2LC": 0,
-        "1RB 0RC ... ... 0LA  2LA ... 4RC 4RB ...  0LA ... 3LA ... ...": 0,
+        "1RB --- 4RB --- 3RA  0LC --- 3RB --- ---  --- 2LA --- 4RA 2LC": 0,
+        "1RB 0RC --- --- 0LA  2LA --- 4RC 4RB ---  0LA --- 3LA --- ---": 0,
 
-        "1RB 0LA ...  0RC ... 1RE  0RD ... 2LA  2LE ... ...  1RC ... ...": 41,
-        "1RB ... ...  1LB 2RC 0RC  ... 1RD ...  0LD 0RE ...  0LB ... ...": 0,
+        "1RB 0LA ---  0RC --- 1RE  0RD --- 2LA  2LE --- ---  1RC --- ---": 41,
+        "1RB --- ---  1LB 2RC 0RC  --- 1RD ---  0LD 0RE ---  0LB --- ---": 0,
 
-        "1RB ... ... ...  0LC ... ... ...  2LC 2RC 3RD 0RD  0LC ... 2RB ...": 0,
-        "1RB ... ... ...  2LB 2RB 3RC 0RC  0LB ... 2RD ...  0LB ... ... ...": 0,
-        "1RB ... ... ...  0LC ... 2RD ...  2LC 2RC 3RB 0RB  0LC ... ... ...": 0,
-        "1RB 3LA 3LD ...  2RC ... ... 1RC  0LA ... ... 0RC  ... 0RB ... ...": 0,
-        "1RB 2LA ... 3RC  0LA ... 3RB ...  0RB ... 0LD ...  ... ... ... 1RA": 0,
+        "1RB --- --- ---  0LC --- --- ---  2LC 2RC 3RD 0RD  0LC --- 2RB ---": 0,
+        "1RB --- --- ---  2LB 2RB 3RC 0RC  0LB --- 2RD ---  0LB --- --- ---": 0,
+        "1RB --- --- ---  0LC --- 2RD ---  2LC 2RC 3RB 0RB  0LC --- --- ---": 0,
+        "1RB 3LA 3LD ---  2RC --- --- 1RC  0LA --- --- 0RC  --- 0RB --- ---": 0,
+        "1RB 2LA --- 3RC  0LA --- 3RB ---  0RB --- 0LD ---  --- --- --- 1RA": 0,
     },
 
     "spinout": {
@@ -1904,7 +1904,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1RA 0RB  1LB 2LA 0RB": 0,
         "1RB 2RA 0RB  1LB 2LA 0RB": 0,
         "1RB 0RB 0RA  1LB 2RA 1LA": 0,
-        "1RB 0RB ...  1LB 2LA 0RB": 0,
+        "1RB 0RB ---  1LB 2LA 0RB": 0,
         "1RB 0RA 0RB  2LB 2LA 1RA": 0,
         "1RB 0RA 0RB  1LB 2LA 0RB": 0,
 
@@ -1944,8 +1944,8 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 2RA 0RB  1LC 0LA 2RB  2LC 2LA 1RA": 0,
         "1RB 2LA 1LC  1LA 2RA 0LB  0LC 0RB 2RC": 0,
 
-        "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...": 0,
-        "1RB 4LB 1LB 1RA 3LA  2LB 2RA 3RA 3RA ...": 0,
+        "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ---": 0,
+        "1RB 4LB 1LB 1RA 3LA  2LB 2RA 3RA 3RA ---": 0,
         "1RB 0LA 3LA 4RB 2LA  2LB 0RA 4LA 3LB 0RB": 0,
         "1RB 2RB 3LA 1LA 1RA  0LB 1LA 1LB 4RA 2RA": 23,
         "1RB 2RB 3LA 2RB 2RA  0LB 1LA 1LB 4RA 4RB": 0,
@@ -1995,7 +1995,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
 
         "1RB 0LB  1RC 0RC  1LC 0LA": 0,
         "1RB 0LC  1LC 0LA  0RA 1LB": 0,
-        "1RB ...  1LC 1RC  0RA 0LC": 0,
+        "1RB ---  1LC 1RC  0RA 0LC": 0,
         "1RB 1LB  0LC 0RB  1LA 1LA": 0,
         "1RB 1LB  1RC 1LC  0LA 0RC": 0,
         "1RB 1LC  1LA 0LA  1RC 0RB": 0,
@@ -2022,11 +2022,11 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 3RA 1LB 1LB  2LA 3RB 0LB 0RB":  0,
         "1RB 3RA 3LA 1LB  2LA 0RB 1RB 0LA": 0,
         "1RB 0RB 0LB 0LA  2LB 3LA 3RA 0RB": 0,
-        "1RB 3LB ... 1LA  2LB 3RB 0LA 0RB": 0,
+        "1RB 3LB --- 1LA  2LB 3RB 0LA 0RB": 0,
         "1RB 2LB 0LA 0LB  1LA 0RB 3LA 3RA": 0,
         "1RB 2LA 3LB 1LB  0LA 3RB 2RB 0RB": 0,
-        "1RB 0RA 3LA 0LA  2LA ... 3RA 2RB": 0,
-        "1RB 3LB ... 1LA  2LA 3RB 0LB 0RB": 0,
+        "1RB 0RA 3LA 0LA  2LA --- 3RA 2RB": 0,
+        "1RB 3LB --- 1LA  2LA 3RB 0LB 0RB": 0,
         "1RB 2LB 0LA 0LB  1LA 0RB 3RA 2LA": 0,
         "1RB 2RB 3LB 1LA  2LB 3RB 0LA 0RB": 0,
         "1RB 2LA 2LB 3LB  0LA 2RB 3RB 0RB": 0,
@@ -2114,10 +2114,10 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0RB  1RC 1RA  1LC 0LD  0RA 0LE  1LD 1LE": 1321,
         "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE": 1321,
 
-        "1RB 1LB ...  1LC 0LB 0RD  2RD 0LB ...  0RA 1RD ...": 0,
-        "1RB 1LB ...  1LC 0LB 0RD  2RD 1RA ...  0RA 1RD ...": 128,
-        "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...": 170,
-        "1RB 2RA ...  1RC 0RA ...  1LD 0LC 1RC  0RB 1LC ...": 170,
+        "1RB 1LB ---  1LC 0LB 0RD  2RD 0LB ---  0RA 1RD ---": 0,
+        "1RB 1LB ---  1LC 0LB 0RD  2RD 1RA ---  0RA 1RD ---": 128,
+        "1RB 0RD ---  1LC 0LB 1RB  0RA 1LB ---  1RA 2RD ---": 170,
+        "1RB 2RA ---  1RC 0RA ---  1LD 0LC 1RC  0RB 1LC ---": 170,
 
         "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB": 1148,
         "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA": 1243,
@@ -2153,7 +2153,7 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 0LA 2LC  1LB 2RB 1LC  1LA 0LC 2RA": 0,
         "1RB 0LA 2LC  1LB 2RB 1LC  2LA 0LC 2RA": 0,
         "1RB 0LB 1RA  2LA 2LA 2RC  1RC 1LB 1LA": 0,
-        "1RB 1RC 1LA  1LB 2RC 1LC  0LA 0RB ...": 0,
+        "1RB 1RC 1LA  1LB 2RC 1LC  0LA 0RB ---": 0,
         "1RB 2RC 2RB  2LB 0RC 2LA  1LC 0LA 1LA": 0,
 
         "1RB 2LB 2LA 1RA 3RB  2LA 4RA 3RA 3LB 4RB": 0,
@@ -2175,8 +2175,8 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
     },
 
     "zloop": {
-        "1RB ...  1LC 1LC  0LB 1RC": 0,
-        "1RB ...  1LC 1LC  1LB 1RC": 0,
+        "1RB ---  1LC 1LC  0LB 1RC": 0,
+        "1RB ---  1LC 1LC  1LB 1RC": 0,
         "1RB 0LB  1LC 1RC  0LB 1LA": 0,
         "1RB 0RB  1LC 0RC  1LB 1LA": 0,
         "1RB 0RC  1LC 0RA  1LB 1LA": 0,
@@ -2186,8 +2186,8 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
         "1RB 1RC  1LC 1LC  1LB 1RA": 0,
         "1RB 0RC  1LC 0RA  1LB 1RC": 0,
 
-        "1RB ...  1LC 0RC  1LD 1RC  1LB 0RB": 0,
-        "1RB 0RC  1LC ...  1LD 1RC  1LB 0RA": 0,
+        "1RB ---  1LC 0RC  1LD 1RC  1LB 0RB": 0,
+        "1RB 0RC  1LC ---  1LD 1RC  1LB 0RA": 0,
         "1RB 0LD  1LC 0LA  1RD 0LB  1RC 1LA": 0,
         "1RB 0RD  1LC 0RA  1LB 1RD  1LB 0RC": 0,
         "1RB 1RD  1RC 0RD  1LD 0RB  1LC 0RA": 0,
@@ -2204,49 +2204,49 @@ BACKWARD_STEPS: dict[Goal, dict[str, int]] = {
 ########################################
 
 DO_HALT: set[str] = {
-    "1RB ... ... ...  0RC 2RB 3LB 1LB  2LA 1RC ... 3RB",  # BBi(8) #2 25753636880139151262408664803138
+    "1RB --- --- ---  0RC 2RB 3LB 1LB  2LA 1RC --- 3RB",  # BBi(8) #2 25753636880139151262408664803138
 
     # 3/4
-    "1RB ... 1LA 2RB  1RC 3RC 1LA 2LB  2LB 2RC 1LC 3RB",  # superpowers(10)
-    "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC",  # 2^[15]5 + 14
+    "1RB --- 1LA 2RB  1RC 3RC 1LA 2LB  2LB 2RC 1LC 3RB",  # superpowers(10)
+    "1RB 3LB --- 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC",  # 2^[15]5 + 14
 
     # 4/3
-    "1RB 1LA 2LA  1LA 2RC 1LB  1RD 2RB 0LC  0RA ... 0RA",  # 2^^^(2^(2^32))
-    "0RB ... 0RB  1RC 1LB 2LB  1LB 2RD 1LC  1RA 2RC 0LD",
-    "0RB ... 1RC  1RC 1LB 2LB  1LB 2RD 1LC  1RA 2RC 0LD",
-    "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD",
-    "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  0RB 2RA 2RD",
+    "1RB 1LA 2LA  1LA 2RC 1LB  1RD 2RB 0LC  0RA --- 0RA",  # 2^^^(2^(2^32))
+    "0RB --- 0RB  1RC 1LB 2LB  1LB 2RD 1LC  1RA 2RC 0LD",
+    "0RB --- 1RC  1RC 1LB 2LB  1LB 2RD 1LC  1RA 2RC 0LD",
+    "1RB 1RD 1LC  2LB 1RB 1LC  --- 1LA 1LD  2RB 2RA 2RD",
+    "1RB 1RD 1LC  2LB 1RB 1LC  --- 1LA 1LD  0RB 2RA 2RD",
 
     # 2/6
-    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA",  # 10^^^3
-    "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ...",  # 10^^24
+    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB --- 3LB 2LA",  # 10^^^3
+    "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ---",  # 10^^24
 
     # 6/2
-    "1RB ...  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD",  # 2^^2^^2^^9
-    "1RB 0LE  1RC 1RB  1RD ...  1LA 0RF  0LA 1RD  1RB 0RE",  # 2^^2^^2^^9
-    "1RB 0RF  1RC 1RB  1RD ...  1LE 0RA  1RB 0LF  0LE 1RD",  # 2^^2^^2^^9
-    "1RB 1RA  1RC ...  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE",  # 2^^2^^2^^9
-    "1RB 1LC  1LA 1RD  1LA 0LA  1LD 0RE  0RF 1RB  ... 1LB",  # 10^^10^7
-    "1RB 1LC  1LA 1RD  1LA 0LA  1LD 0RE  0RF 1RB  ... 1LC",  # 10^^10^7
-    "1RB 1LC  1LA 1RD  1LA 0LA  1LF 0RE  0RF 1RB  ... 1LB",  # 10^^10^7
-    "1RB 1LC  1LA 1RE  0RD 0LA  ... 1LB  1LD 0RF  0RD 1RB",  # 10^^10^7
-    "1RB 1LC  1LA 1RE  0RD 0LA  ... 1LB  1LE 0RF  0RD 1RB",  # 10^^10^7
-    "1RB 1LD  1LC 1RE  ... 1LD  1LA 0LA  1LE 0RF  0RC 1RB",  # 10^^10^7
-    "1RB 1LE  1LC 0RA  1RB 1LD  1LC 0LC  1RF 0LB  ... 1RE",  # 10^^10^7
-    "1RB 0LF  1RC 1RB  1LD 0RA  1LB 0LE  ... 0LC  1LA 1LF",  # 10^^7
-    "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA",  # 10^^7
-    "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  1RC 1RF  0RB ...",  # 10^38
-    "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  0LF 1RF  0RB ...",
+    "1RB ---  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD",  # 2^^2^^2^^9
+    "1RB 0LE  1RC 1RB  1RD ---  1LA 0RF  0LA 1RD  1RB 0RE",  # 2^^2^^2^^9
+    "1RB 0RF  1RC 1RB  1RD ---  1LE 0RA  1RB 0LF  0LE 1RD",  # 2^^2^^2^^9
+    "1RB 1RA  1RC ---  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE",  # 2^^2^^2^^9
+    "1RB 1LC  1LA 1RD  1LA 0LA  1LD 0RE  0RF 1RB  --- 1LB",  # 10^^10^7
+    "1RB 1LC  1LA 1RD  1LA 0LA  1LD 0RE  0RF 1RB  --- 1LC",  # 10^^10^7
+    "1RB 1LC  1LA 1RD  1LA 0LA  1LF 0RE  0RF 1RB  --- 1LB",  # 10^^10^7
+    "1RB 1LC  1LA 1RE  0RD 0LA  --- 1LB  1LD 0RF  0RD 1RB",  # 10^^10^7
+    "1RB 1LC  1LA 1RE  0RD 0LA  --- 1LB  1LE 0RF  0RD 1RB",  # 10^^10^7
+    "1RB 1LD  1LC 1RE  --- 1LD  1LA 0LA  1LE 0RF  0RC 1RB",  # 10^^10^7
+    "1RB 1LE  1LC 0RA  1RB 1LD  1LC 0LC  1RF 0LB  --- 1RE",  # 10^^10^7
+    "1RB 0LF  1RC 1RB  1LD 0RA  1LB 0LE  --- 0LC  1LA 1LF",  # 10^^7
+    "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  --- 1RA",  # 10^^7
+    "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  1RC 1RF  0RB ---",  # 10^38
+    "1RB 0RD  1RC 1RA  1LD 1LA  0RE 0LC  0LF 1RF  0RB ---",
 
     # 7/2
-    "1RB 0RG  1RC 1RB  0RD ...  0LE 0LD  0LF 1LE  1RA 1LF  0LD 0RB",  # 3 ^20 3
-    "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",  # 2 ^11 2 ^11 3
-    "1RB 1RF  0RC 1RG  1LD 1LE  0LE 1LD  0RF 0LC  1RA 0LC  0RF ...",  # 10^^286
+    "1RB 0RG  1RC 1RB  0RD ---  0LE 0LD  0LF 1LE  1RA 1LF  0LD 0RB",  # 3 ^20 3
+    "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  --- 0LC  1RG 1LD  0RG 0RF",  # 2 ^11 2 ^11 3
+    "1RB 1RF  0RC 1RG  1LD 1LE  0LE 1LD  0RF 0LC  1RA 0LC  0RF ---",  # 10^^286
 
     # 2/5
-    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...",  # 10 ↑↑ 4
-    "1RB 4LA 1LA ... 2RB  2LB 3LA 1LB 2RA 0RB",  #      7,021,292,621
-    "1RB 3LA 1LA 4LA 1RA  2LB 2RA ... 0RA 0RB",  # 26,375,397,569,930
+    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ---",  # 10 ↑↑ 4
+    "1RB 4LA 1LA --- 2RB  2LB 3LA 1LB 2RA 0RB",  #      7,021,292,621
+    "1RB 3LA 1LA 4LA 1RA  2LB 2RA --- 0RA 0RB",  # 26,375,397,569,930
 }
 
 DONT_BLANK: set[str] = {
@@ -2288,11 +2288,11 @@ DO_BLANK: set[str] = {
 
     "1RB 2LD 2LA  1RC 0RD 2LA  1LA 2LB 0LC  2RD 2RC 0LD",  # "(10 ↑↑ 53)"
 
-    "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
+    "1RB 1RC  1LD ---  0RE 0LF  0LF 1LD  1LF ---  1RG 0LF  1RG 1RA",
 
-    "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
+    "1RB 1LA --- ---  2LC 0LC 3LA ---  1RC 0LB 1RB 1LA",
 
-    "1RB 0RA ... ...  2RC 2RB 0RA 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...",  # (10 ↑↑ 3) A -> A
+    "1RB 0RA --- ---  2RC 2RB 0RA 0RB  1LD 1RC --- ---  1LB 3RD 1LD ---",  # (10 ↑↑ 3) A -> A
 }
 
 DO_SPINOUT: set[str] = {
@@ -2319,16 +2319,16 @@ DONT_SPINOUT: set[str] = {
 
 DIFFUSE = {
     # 5/2
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": 3,  # BB(5)
-    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ...  1LC 1RA": 2,  # uwe
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  --- 0LA": 3,  # BB(5)
+    "1RB 0LC  1RC 1RD  1LA 0RB  0RE ---  1LC 1RA": 2,  # uwe
     "1RB 1RC  0LC 1RD  1LB 1LE  1RD 0RA  1LA 0LE": 3,  # high mark SO
 
     # 3/3
-    "1RB ... 2RB  1LC 0LB 1RA  1RA 2LC 1RC": 2,
-    "1RB 2LA 1RA  1RC 2RB 0RC  1LA ... 1LA": 2,
+    "1RB --- 2RB  1LC 0LB 1RA  1RA 2LC 1RC": 2,
+    "1RB 2LA 1RA  1RC 2RB 0RC  1LA --- 1LA": 2,
 
     # QH
-    "1RB ...  1LB 1RC  0LC 0RB": 2,
+    "1RB ---  1LB 1RC  0LC 0RB": 2,
 
     "1RB 0RC  0RD 1RA  0LD 0LA  1LC 1LA": 2,
     "1RB 0RB  1LC 1RA  0LD 1LB  1RD 0LB": 2,
@@ -2348,113 +2348,113 @@ type ProverEst = dict[
 ]
 
 PROVER_HALT_TOO_SLOW = {
-    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",
-    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...",
+    "1RB 2LB 4LB 3LA ---  1LA 3RA 3LB 0LB 0RA",
+    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ---",
 }
 
 PROVER_HALT: ProverEst = {
     # BBi(8)
-    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC": (1.3, 783),
+    "1RB 1LA --- ---  1RC 3LB 1RB ---  2LA 2LC --- 0LC": (1.3, 783),
 
     # BBi(9)
-    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ...": "(10 ↑↑ 4)",                           # 2x5 yuan
-    "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": "(10 ↑↑ 3)",                  # 3x4 BBi(8) ext
-    "1RB ... ... ...  2RC 2RB ... 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...": "(10 ↑↑ 3)", # 4x4 no-A
-    "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (1.2, 443682),                # 3x4 BBi(8) ext
-    "1RB 1LA ... ... ...  1RC 3LB 1RB ... 0LC  2LA 2LC ... 4LC ...": (1.2, 443682),     # 3x5 BBi(8) ext
-    "1RB ... 0LD  2RC ... 2RB  2LA ... 0RC  2LD 2LC 0RD": (4.0, 19728),                # 2x5
-    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),                          # 2x5 pavel
-    "1RB ... 2LA ...  1LC 2RC 1LB ...  1LA 2RC 3LC 1LB": (1.9, 2458),                  # 3x4
+    "1RB 3LA 4RB 0RB 2LA  1LB 2LA 3LA 1RA ---": "(10 ↑↑ 4)",                           # 2x5 yuan
+    "1RB 1LA --- ---  1RC 3LB 1RB ---  2LA 2LC 3LA 0LC": "(10 ↑↑ 3)",                  # 3x4 BBi(8) ext
+    "1RB --- --- ---  2RC 2RB --- 0RB  1LD 1RC --- ---  1LB 3RD 1LD ---": "(10 ↑↑ 3)", # 4x4 no-A
+    "1RB 1LA --- ---  1RC 3LB 1RB 0LC  2LA 2LC --- 3LC": (1.2, 443682),                # 3x4 BBi(8) ext
+    "1RB 1LA --- --- ---  1RC 3LB 1RB --- 0LC  2LA 2LC --- 4LC ---": (1.2, 443682),     # 3x5 BBi(8) ext
+    "1RB --- 0LD  2RC --- 2RB  2LA --- 0RC  2LD 2LC 0RD": (4.0, 19728),                # 2x5
+    "1RB 2LB 4LB 3LA ---  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),                          # 2x5 pavel
+    "1RB --- 2LA ---  1LC 2RC 1LB ---  1LA 2RC 3LC 1LB": (1.9, 2458),                  # 3x4
 
     # 2/5
-    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...": (1.7, 352),
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ...": (5.2, 105),
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA ...": (5.2, 105),
-    "1RB 2LA 3RA 2LA 2LB  0LA 2RB 4RB ... 1RA": (5.2, 105),
-    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB ... 2RA": (2.4,  88),
-    "1RB 2LA 1RA 2LB 2RA  0LA 3RB 3RB 4RA ...": (6.2,  56),
-    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB ... 2LA": (1.0,  51),
-    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ...": (9.3,  30),
-    "1RB 2LA 1RA 2RB 2LB  0LA 3RA 4RB ... 1RA": (4.0,  30),
-    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...": (3.2,  26),
-    "1RB 3LB ... 0RB 1LA  2LA 4RB 1RA 0LB 1LB": (8.2,   3),
+    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ---": (1.7, 352),
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ---": (5.2, 105),
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA ---": (5.2, 105),
+    "1RB 2LA 3RA 2LA 2LB  0LA 2RB 4RB --- 1RA": (5.2, 105),
+    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB --- 2RA": (2.4,  88),
+    "1RB 2LA 1RA 2LB 2RA  0LA 3RB 3RB 4RA ---": (6.2,  56),
+    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB --- 2LA": (1.0,  51),
+    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ---": (9.3,  30),
+    "1RB 2LA 1RA 2RB 2LB  0LA 3RA 4RB --- 1RA": (4.0,  30),
+    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ---": (3.2,  26),
+    "1RB 3LB --- 0RB 1LA  2LA 4RB 1RA 0LB 1LB": (8.2,   3),
 
     # 2/6
-    "1RB 2LA ... 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB": "(10 ↑↑ 19892)",
-    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...": "(10 ↑↑ 91)",
-    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA": "(10 ↑↑ 70)",
-    "1RB 2LA ... 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (1.9, 4933),
-    "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ...": (6.9, 4931),
-    "1RB 2LB 4RB 1LA 1RB ...  1LA 3RA 5RA 4LB 0RA 4LA": (8.6,  821),
-    "1RB 0RB 3LA 5LA ... 4LB  1LA 2RB 3LA 4LB 3RB 3RA": (1.9,   27),
+    "1RB 2LA --- 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB": "(10 ↑↑ 19892)",
+    "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ---": "(10 ↑↑ 91)",
+    "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB --- 3RB 4LA": "(10 ↑↑ 70)",
+    "1RB 2LA --- 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (1.9, 4933),
+    "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ---": (6.9, 4931),
+    "1RB 2LB 4RB 1LA 1RB ---  1LA 3RA 5RA 4LB 0RA 4LA": (8.6,  821),
+    "1RB 0RB 3LA 5LA --- 4LB  1LA 2RB 3LA 4LB 3RB 3RA": (1.9,   27),
 
     # 4/3
-    "1RB 0LC 1RC  1LA 2RB 1LB  1RC 2LA 0RD  2LB ... 2LC": "(10 ↑↑ 190)",
-    "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ...  1RA 2LD 1RD": "(10 ↑↑ 149)",
-    "1RB 2LD 2LA  1RC 0RD 2LA  1LA ... 0LC  2RD 2RC 0LD": "(10 ↑↑ 53)",
-    "1RB 0LB 1RD  2LC ... 1LB  2LD 0LC 1RB  2RA 2RD 1LD": "(10 ↑↑ 42)",
-    "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  ... 2RB 2LA": "(10 ↑↑ 32)",
-    "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD": "(10 ↑↑ 10)",
-    "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD": (1.3, 7036),
-    "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...": (1.3, 7036),
-    "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA ...": (4.2, 6034),
-    "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (8.9, 4931),
-    "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2.5, 4561),
-    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC ... 0LC": (4.0, 3860),
+    "1RB 0LC 1RC  1LA 2RB 1LB  1RC 2LA 0RD  2LB --- 2LC": "(10 ↑↑ 190)",
+    "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ---  1RA 2LD 1RD": "(10 ↑↑ 149)",
+    "1RB 2LD 2LA  1RC 0RD 2LA  1LA --- 0LC  2RD 2RC 0LD": "(10 ↑↑ 53)",
+    "1RB 0LB 1RD  2LC --- 1LB  2LD 0LC 1RB  2RA 2RD 1LD": "(10 ↑↑ 42)",
+    "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  --- 2RB 2LA": "(10 ↑↑ 32)",
+    "1RB 1RD 1LC  2LB 1RB 1LC  --- 1LA 1LD  2RB 2RA 2RD": "(10 ↑↑ 10)",
+    "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ---  2RA 1LB 0RD": (1.3, 7036),
+    "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ---": (1.3, 7036),
+    "1RB 0LB 1RD  2RC 2LA 0LA  1LB 0LA 0LA  1RA 0RA ---": (4.2, 6034),
+    "1RB 1LD ---  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (8.9, 4931),
+    "1RB 2LD ---  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB": (2.5, 4561),
+    "1RB 1LA 1RD  2LC 0RA 1LB  2LA 0LB 0RD  2RC --- 0LC": (4.0, 3860),
 
     # 3/4
-    "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(10 ↑↑ 2049)",
-    "1RB ... 1LA 2RB  2RC 3RC 3LB 2RA  2LB 3RB 3LC 1LA": "(10 ↑↑ 189)",
-    "1RB 2LC 1RC 2RA  1LA 3RA 2RB ...  3LB 2LC 1RA 0LB": "(10 ↑↑ 130)",
-    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC": (3.7, 6518),
-    "1RB 1RA 1LB 1RC  2LA 0LB 3LC ...  1LB 0RC 2RA 2RC": (2.2, 2372),
-    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB": (1.7, 1301),
-    "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA": (2.1,  628),
-    "1RB 0RB 3LC 1RC  0RC ... 2RC 3RC  1LB 2LA 3LA 2RB": (4.6,  434),
-    "1RB 1LA 1LB 1RA  0LA 2RB 2LC ...  3RB 2LB 1RC 0RC": (2.4,   26),
+    "1RB 0LB --- 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": "(10 ↑↑ 2049)",
+    "1RB --- 1LA 2RB  2RC 3RC 3LB 2RA  2LB 3RB 3LC 1LA": "(10 ↑↑ 189)",
+    "1RB 2LC 1RC 2RA  1LA 3RA 2RB ---  3LB 2LC 1RA 0LB": "(10 ↑↑ 130)",
+    "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC --- 1LC": (3.7, 6518),
+    "1RB 1RA 1LB 1RC  2LA 0LB 3LC ---  1LB 0RC 2RA 2RC": (2.2, 2372),
+    "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC --- 1LB": (1.7, 1301),
+    "1RB 3LA 3RC 1RA  2RC 1LA --- 2RB  1LC 1RB 1LB 2RA": (2.1,  628),
+    "1RB 0RB 3LC 1RC  0RC --- 2RC 3RC  1LB 2LA 3LA 2RB": (4.6,  434),
+    "1RB 1LA 1LB 1RA  0LA 2RB 2LC ---  3RB 2LB 1RC 0RC": (2.4,   26),
 
     # 3/5
-    "1RB 4RB 1RA 0RA ...  2LC ... 2RB ... ...  2LA 2LC 3RC ... ...": (5.8, 8),
+    "1RB 4RB 1RA 0RA ---  2LC --- 2RB --- ---  2LA 2LC 3RC --- ---": (5.8, 8),
 
     # 6/2
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": "(10 ↑↑ 16)",
-    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD": "(10 ↑↑ 5)",
-    "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  ... 1LC": "(10 ↑↑ 5)",
-    "1RB ...  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (1.7, 646_456_993),
-    "1RB ...  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2.0, 98641),
-    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...": (6.0, 39456),
-    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  ... 1RC": (3.5, 18267),
-    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE": (3.1, 10566),
-    "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE ...": (4.6,  1439),
-    "1RB 0RF  0LB 1LC  1LD 0RC  1LE ...  1LF 0LD  1RA 0LE": (2.5,   881),
-    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA ...": (1.2,   865),
-    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  ... 1LE": (6.4,   462),
-    "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  ... 0LD": (8.8,   102),
-    "1RB 1RF  0RC 0RA  1LD ...  0LE 0LB  1LF 1LD  1RA 1LB": (3.3,    79),
-    "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF ...  1RA 1RE": (1.4,    60),
-    "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE ...": (6.9,    49),
-    "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE ...": (1.1,    49),
-    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD ...": (6.7,    47),
-    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD ...": (6.7,    47),
-    "1RB 0RC  0LA 0RD  1RD ...  1LE 0LD  1RF 1LB  1RA 1RE": (2.5,    21),
-    "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": (1.0,     7),
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ---  1LF 0RB  0RC 0RE": "(10 ↑↑ 16)",
+    "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  --- 1LD": "(10 ↑↑ 5)",
+    "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  --- 1LC": "(10 ↑↑ 5)",
+    "1RB ---  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (1.7, 646_456_993),
+    "1RB ---  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (2.0, 98641),
+    "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ---": (6.0, 39456),
+    "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  --- 1RC": (3.5, 18267),
+    "1RB 0LD  1RC 0RF  1LC 1LA  0LE ---  1LA 0RB  0RC 0RE": (3.1, 10566),
+    "1RB 0LE  1LC 0RA  1LD 0RC  1LE 0LF  1LA 1LC  1LE ---": (4.6,  1439),
+    "1RB 0RF  0LB 1LC  1LD 0RC  1LE ---  1LF 0LD  1RA 0LE": (2.5,   881),
+    "1RB 0LF  0RC 0RD  1LD 1RE  0LE 0LD  0RA 1RC  1LA ---": (1.2,   865),
+    "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  --- 1LE": (6.4,   462),
+    "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  --- 0LD": (8.8,   102),
+    "1RB 1RF  0RC 0RA  1LD ---  0LE 0LB  1LF 1LD  1RA 1LB": (3.3,    79),
+    "1RB 0LC  1LA 1RC  1RA 0LD  1LE 1LC  1RF ---  1RA 1RE": (1.4,    60),
+    "1RB 0LB  1LC 0RE  1RE 0LD  1LA 1LA  0RA 0RF  1RE ---": (6.9,    49),
+    "1RB 0LC  1LA 1LD  1RD 0RC  0LB 0RE  1RC 1LF  1LE ---": (1.1,    49),
+    "1RB 0LC  1LA 1RD  1RA 0LE  1RA 0RB  1LF 1LC  1RD ---": (6.7,    47),
+    "1RB 0LC  1LA 1RD  0LB 0LE  1RA 0RB  1LF 1LC  1RD ---": (6.7,    47),
+    "1RB 0RC  0LA 0RD  1RD ---  1LE 0LD  1RF 1LB  1RA 1RE": (2.5,    21),
+    "1RB 0LF  1RC 0LE  1RD 0RA  1LE ---  1RC 0LA  1RA 0LB": (1.0,     7),
 
     # 7/2
-    "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": "(10 ↑↑ 519)",
-    "1RB 1LB  1LC 1RF  1LA 0LD  1RE 0LG  0RC ...  0RB 0RD  0RF 1LG": "(10 ↑↑ 404)",
-    "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": "(10 ↑↑ 134)",
+    "1RB ---  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": "(10 ↑↑ 519)",
+    "1RB 1LB  1LC 1RF  1LA 0LD  1RE 0LG  0RC ---  0RB 0RD  0RF 1LG": "(10 ↑↑ 404)",
+    "1RB 0LG  0RC ---  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": "(10 ↑↑ 134)",
 
-    # 5/5 block-compiled from 1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...
-    "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": (6.0, 39456),
+    # 5/5 block-compiled from 1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ---
+    "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA --- ---  1RF 0LA 1RD 2LA  2RF 3RF 1LG ---  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH --- 1RB": (6.0, 39456),
 
     # Green-8
-    "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (8.2, 44),
+    "1LB ---  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (8.2, 44),
 
     # Green-9
-    "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": "(10 ↑↑ 30)",
+    "1RB 1RC  0RD 0RB  --- 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": "(10 ↑↑ 30)",
 
     # Green-10
-    "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": "!!!",
+    "1LB ---  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": "!!!",
 }
 
 PROVER_SPINOUT: ProverEst = {
@@ -2523,16 +2523,16 @@ PROVER_SPINOUT: ProverEst = {
     "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA": 2,
 
     # 3/4
-    "1RB ... 3RA ...  0RC 2RA 0RB 1RB  2LC 2LB 1RC ...": 0,
+    "1RB --- 3RA ---  0RC 2RA 0RB 1RB  2LC 2LB 1RC ---": 0,
 
     # 4/3
     "1RB 2LD 2LA  1RC 0RD 2LA  1LA 2LB 0LC  2RD 2RC 0LD": 0,
 
     # 4/7 block-compiled from 5/2 marks champ
-    "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": (3.2, 544),
+    "1RB 1LC 2LC 2RA  2LD 3RE 1RB ---  0LC 2RA 2LF 3LD  --- 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": (3.2, 544),
 
     # 6/2
-    "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": 2,
+    "1RB ---  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": 2,
     "1RB 0LD  1RC 0RF  1LC 1LA  0LE 1RE  1LF 0RB  0RC 0RE": 0,
 }
 
@@ -2546,60 +2546,60 @@ PROVER_QUASIHALT = {
 
 RULE_LIMIT = {
     # 2/6
-    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA": "inapplicable_op",  # 10^^^3
+    "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB --- 3LB 2LA": "inapplicable_op",  # 10^^^3
 }
 
 MACRO_FAILURES = {
     "1RB 2RB 2LA  0LB 1LA 0RB": 0,
     "1RB 2RB 2LA  2LB 1LA 0RB": 0,
 
-    "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...": 0,
+    "1RB 2LA 3RB 0RB  0LB 1LA 2RB ---": 0,
     "1RB 2LA 3RB 0RB  1LB 1LA 1RA 0RB": 0,
 
     "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC": 0,
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC": 4,
 
-    "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": 0,
+    "1RB 3LB --- 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": 0,
 
-    "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  ... 2RB 2LA": 4,
+    "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  --- 2RB 2LA": 4,
 
-    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB": 0,
+    "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  --- 1RB": 0,
     "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1RF 1RB": 0,
 }
 
 PROVER_FAILURES = {
     "1RB 1RC 0RC  1RC 0LA 1LB  2LC 2RA 1LB",
 
-    "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ...",
+    "1RB 1LB 3RA 4LA 2LA 4LB  2LA 2RB 3LB 1LA 5RA ---",
 
-    "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
-    "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
+    "1RB ---  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
+    "1RB 1LB  1LC ---  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
 }
 
 CFGLIM = {
-    "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC",  # SIAB
-    "1RB 1RC  1LD 0LE  1RE ...  0RA 0LB  1LD 1RD",
-    "1RB ... ... ...  0RC 2LB 3LB 1RB  1LA ... 2RB 3RC",
-    "1RB ... ... ...  2RC ... ... ...  3LC 1RD 0RC 2LC  ... ... 2RD 3RC",
+    "1RB 2LB 1LC  1LA 2RB 1RB  --- 2LA 0LC",  # SIAB
+    "1RB 1RC  1LD 0LE  1RE ---  0RA 0LB  1LD 1RD",
+    "1RB --- --- ---  0RC 2LB 3LB 1RB  1LA --- 2RB 3RC",
+    "1RB --- --- ---  2RC --- --- ---  3LC 1RD 0RC 2LC  --- --- 2RD 3RC",
 }
 
 FAILURES = set(MACRO_FAILURES) | PROVER_FAILURES | CFGLIM
 
 SUSPECTED_RULES = {
-    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA",
-    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...",
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ...",
-    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA ...",
-    "1RB 2LA 3RA 2LA 2LB  0LA 2RB 4RB ... 1RA",
-    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB ... 2LA",
-    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ...",
-    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...",
+    "1RB 2LB 4LB 3LA ---  1LA 3RA 3LB 0LB 0RA",
+    "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ---",
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 4RA ---",
+    "1RB 2LA 4RA 2LB 2LA  0LA 2RB 3RB 1RA ---",
+    "1RB 2LA 3RA 2LA 2LB  0LA 2RB 4RB --- 1RA",
+    "1RB 2LA 1RA 2LB 3RA  0LA 2RB 4RB --- 2LA",
+    "1RB 2LA 4RA 1LB 2LA  0LA 2RB 3RB 2RA ---",
+    "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ---",
 
-    "1RB ... 2LA ...  1LC 2RC 1LB ...  1LA 2RC 3LC 1LB",
-    "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD",
-    "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
-    "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...",
+    "1RB --- 2LA ---  1LC 2RC 1LB ---  1LA 2RC 3LC 1LB",
+    "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ---  2RA 1LB 0RD",
+    "1RB 2LD ---  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
+    "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ---",
 
     "1RB 1LC  1RC 0RD  0LB 0RC  0RE 1RD  1LE 1LA",
     "1RB 1LC  0RD 0RD  0LB 0RC  0RE 1RD  1LE 1LA",
@@ -2607,10 +2607,10 @@ SUSPECTED_RULES = {
 
 REQUIRES_BACKSYM = {
     # 2/5
-    "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": 2,
+    "1RB 2LB 4LB 3LA ---  1LA 3RA 3LB 0LB 0RA": 2,
 
     # 6/2
-    "1RB 1LD  0RC ...  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD": 1,
+    "1RB 1LD  0RC ---  1RD 0LA  1RE 1RF  1LC 1LE  1RA 0RD": 1,
 }
 
 ########################################
@@ -2685,7 +2685,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** 20)))))))))))",
             "(474 + ((2 ** 19) * (3 + ((2 ** (-16 + (2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** 20))))))))))) + ((2 ** (-15 + (2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** 20))))))))) + ((2 ** (-16 + (2 ** (4 + (2 ** (4 + (2 ** (4 + (2 ** 20))))))))) + ((2 ** (-15 + (2 ** (4 + (2 ** (4 + (2 ** 20))))))) + ((2 ** (-16 + (2 ** (4 + (2 ** (4 + (2 ** 20))))))) + ((2 ** (-15 + (2 ** (4 + (2 ** 20))))) + ((2 ** (-16 + (2 ** 20))) * (3 + (2 ** ((2 ** 20) * (-1 + (2 ** (-16 + (2 ** 20)))))))))))))))))",
         ),
-        "1RB ...  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": (
+        "1RB ---  1RC 0RF  1RD 0LF  1LE 0RC  1LD 0RE  1LC 1RA": (
             711,
             "1",
             "1",
@@ -2696,15 +2696,15 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             999,
             "0",
             "0",
-            "(... // 8)",
+            "(--- // 8)",
         ),
         "1RB 2LD 2LA  1RC 0RD 2LA  1LA 2LB 0LC  2RD 2RC 0LD": (
             440,
             "0",
             "0",
-            "(537 + (... + ...))",
+            "(537 + (--- + ---))",
         ),
-        "1RB ... 3RA ...  0RC 2RA 0RB 1RB  2LC 2LB 1RC ...": (
+        "1RB --- 3RA ---  0RC 2RA 0RB 1RB  2LC 2LB 1RC ---": (
             251,
             "0",
             "0",
@@ -2713,322 +2713,322 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "halt": {
-        "1RB 3LB ... 0RB 1LA  2LA 4RB 1RA 0LB 1LB": (
+        "1RB 3LB --- 0RB 1LA  2LA 4RB 1RA 0LB 1LB": (
             546,
             "(10 ** 4)",
             "(28 + (2 ** 13))",
             "(477 + (2 ** 12))",
         ),
-        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (
+        "1LB ---  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1RH 1RF": (
             152,
             "(10 ** 45)",
             "((-3 + (7 * (3 ** 93))) // 2)",
             "((1041 + (7 * (3 ** 92))) // 2)",
         ),
-        "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC ... 1LB": (
+        "1RB 1LA 3LA 3RC  2LC 2LB 1RB 1RA  2LA 3LC --- 1LB": (
             227,
             "(10 ** 1301)",
             "((-4 + (19 * (2 ** 4320))) // 3)",
             "4817",
         ),
-        "1RB ...  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (
+        "1RB ---  1RC 1RA  1RD 0RB  1LE 0RC  0LF 0LD  0LB 1LA": (
             291,
             "(10 ** 98642)",
             "(-5 + (5 * (2 ** (-3 + (5 * (2 ** 16))))))",
             "(718 + (5 * (2 ** 16)))",
         ),
-        "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC ... 1LC": (
+        "1RB 1RA 2LB 3LA  2LA 0LB 1LC 1LB  3RB 3RC --- 1LC": (
             347,
             "(10 ** 6518)",
             "((-5 + (25 * (3 ** 13660))) // 2)",
             "27762",
         ),
-        "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE": (
+        "1RB 0LD  1RC 0RF  1LC 1LA  0LE ---  1LA 0RB  0RC 0RE": (
             413,
             "(10 ** 10567)",
             "((25 + (3 ** ((29 + (3 ** 11)) // 8))) // 2)",
             "((9861 + ((3 ** 10) * (7 + (4 * (3 ** ((-51 + (3 ** 11)) // 8)))))) // 8)",
         ),
-        "1RB ...  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (
+        "1RB ---  0LC 0LD  1LD 1LC  1RE 1LB  1RF 1RD  0LD 0RA": (
             522,
             "(10 ** 646456993)",
             "(1 + (2 ** (-1 + (2 ** 31))))",
             "(11559 + ((2 ** 30) * (1 + (2 ** (-33 + (2 ** 31))))))",
         ),
-        "1RB 3LA 3RC 1RA  2RC 1LA ... 2RB  1LC 1RB 1LB 2RA": (
+        "1RB 3LA 3RC 1RA  2RC 1LA --- 2RB  1LC 1RB 1LB 2RA": (
             681,
             "(10 ** 629)",
             "((13 + (8 * (7 ** 743))) // 3)",
             "(9481 + (40 * (7 ** 741)))",
         ),
-        "1RB ... ... ...  2RC 2RB ... 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...": (
+        "1RB --- --- ---  2RC 2RB --- 0RB  1LD 1RC --- ---  1LB 3RD 1LD ---": (
             282,
             "(10 ↑↑ 3)",
             "((-11 + (3 ** ((7 + (3 ** 548)) // 4))) // 2)",
             "((6297 + ((3 ** 548) * (1 + (2 * (3 ** ((-2189 + (3 ** 548)) // 4)))))) // 4)",
         ),
-        "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC ... 0LC": (
+        "1RB 1LA --- ---  1RC 3LB 1RB ---  2LA 2LC --- 0LC": (
             278,
             "(10 ** 783)",
             "((-11 + (3 ** 1642)) // 2)",
             "((7517 + (3 ** 1641)) // 2)",
         ),
-        "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": (
+        "1RB 1LA --- ---  1RC 3LB 1RB ---  2LA 2LC 3LA 0LC": (
             300,
             "(10 ↑↑ 3)",
             "((-5 + (3 ** ((-5 + (3 ** 1642)) // 4))) // 2)",
             "((15017 + (5 * (3 ** 1641))) // 4)",
         ),
-        "1RB ... 0LD  2RC ... 2RB  2LA ... 0RC  2LD 2LC 0RD": (
+        "1RB --- 0LD  2RC --- 2RB  2LA --- 0RC  2LD 2LC 0RD": (
             174,
             "(10 ** 19729)",
             "(-3 + (2 ** (1 + (2 ** 16))))",
             "(96 + ((2 ** 17) * (1 + (2 ** (-17 + (2 ** 16))))))",
         ),
-        "1RB 4RB 1RA 0RA ...  2LC ... 2RB ... ...  2LA 2LC 3RC ... ...": (
+        "1RB 4RB 1RA 0RA ---  2LC --- 2RB --- ---  2LA 2LC 3RC --- ---": (
             162,
             "(10 ** 9)",
             "((-5 + (3 ** 19)) // 2)",
             "539",
         ),
-        "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (
+        "1RB 1LA --- ---  1RC 3LB 1RB 0LC  2LA 2LC --- 3LC": (
             344,
             "(10 ** 443682)",
             "((-17 + (13 * (5 ** 634766))) // 4)",
             "((1905225 + (39 * (5 ** 634764))) // 2)",
         ),
-        "1RB 1LA ... ... ...  1RC 3LB 1RB ... 0LC  2LA 2LC ... 4LC ...": (
+        "1RB 1LA --- --- ---  1RC 3LB 1RB --- 0LC  2LA 2LC --- 4LC ---": (
             486,
             "(10 ** 443682)",
             "((-17 + (13 * (5 ** 634766))) // 4)",
             "((3818523 + (13 * (5 ** 634765))) // 4)",
         ),
-        "1RB 0LB ... 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": (
+        "1RB 0LB --- 3LA  0LC 3RB 3RC 1LB  2RB 2LA 3RA 1LC": (
             683,
             "(10 ↑↑ 2049)",
-            "(4 + (2 ** ...))",
-            "(4104 + (... * ...))",
+            "(4 + (2 ** ---))",
+            "(4104 + (--- * ---))",
         ),
-        "1RB 2LA ... 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (
+        "1RB 2LA --- 5LB 5LA 4LB  1LA 4RB 3RB 5LB 1LB 4RA": (
             731,
             "(10 ** 4933)",
             "(2 ** 16388)",
             "(17326 + (2 ** 16386))",
         ),
-        "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LF 0RB  0RC 0RE": (
+        "1RB 0LD  1RC 0RF  1LC 1LA  0LE ---  1LF 0RB  0RC 0RE": (
             980,
             "(10 ↑↑ 16)",
             "((-11 + (3 ** ((13 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** 11)) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 2)",
-            "(... // 8)",
+            "(--- // 8)",
         ),
-        "1RB 2LB 4RB 1LA 1RB ...  1LA 3RA 5RA 4LB 0RA 4LA": (
+        "1RB 2LB 4RB 1LA 1RB ---  1LA 3RA 5RA 4LB 0RA 4LA": (
             937,
             "(10 ** 822)",
             "((13 + (2 ** 2731)) // 3)",
             "((11963 + (7 * (2 ** 2728))) // 3)",
         ),
-        "1RB 0LF  1RC 0LE  1RD 0RA  1LE ...  1RC 0LA  1RA 0LB": (
+        "1RB 0LF  1RC 0LE  1RD 0RA  1LE ---  1RC 0LA  1RA 0LB": (
             992,
             "(10 ** 7)",
             "((2 + (5 * (2 ** 21))) // 3)",
             "((81157 + (35 * (2 ** 20))) // 3)",
         ),
-        "1RB 1LD ...  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (
+        "1RB 1LD ---  1RC 2LB 2LD  1LC 2RA 0RD  1RC 1LA 0LA": (
             1492,
             "(10 ** 4931)",
             "(3 * (2 ** 16382))",
             "(87714 + (3 * (2 ** 16381)))",
         ),
-        "1RB 1RF  0RC 0RA  1LD ...  0LE 0LB  1LF 1LD  1RA 1LB": (
+        "1RB 1RF  0RC 0RA  1LD ---  0LE 0LB  1LF 1LD  1RA 1LB": (
             1630,
             "(10 ** 80)",
             "(142 + (9 * (2 ** 261)))",
             "((~10^17) + ((~10^60) * (2 ** 64)))",
         ),
-        "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ...": (
+        "1RB 1RC  1LC 0RF  1RA 0LD  0LC 0LE  1LD 0RA  1RE ---": (
             1698,
             "(10 ** 39456)",
             "(3 * (2 ** 131071))",
             "(1121685 + (9 * (2 ** 131071)))",
         ),
-        "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  ... 0LD": (
+        "1RB 0RF  1RC 1RA  1RD 0RC  1LE 0RB  1LB 0LD  --- 0LD": (
             2335,
             "(10 ** 103)",
             "(1430 + (2 ** 341))",
             "(10863 + (3 * (2 ** 340)))",
         ),
-        "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  ... 2RB 2LA": (
+        "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  --- 2RB 2LA": (
             5579,
             "(10 ↑↑ 32)",
-            "(... // 3)",
-            "(... // 9)",
+            "(--- // 3)",
+            "(--- // 9)",
         ),
-        "1RB 0LB 1RD  2LC ... 1LB  2LD 0LC 1RB  2RA 2RD 1LD": (
+        "1RB 0LB 1RD  2LC --- 1LB  2LD 0LC 1RB  2RA 2RD 1LD": (
             7154,
             "(10 ↑↑ 42)",
-            "(... // 3)",
-            "(... // 9)",
+            "(--- // 3)",
+            "(--- // 9)",
         ),
-        "1RB 2LD 2LA  1RC 0RD 2LA  1LA ... 0LC  2RD 2RC 0LD": (
+        "1RB 2LD 2LA  1RC 0RD 2LA  1LA --- 0LC  2RD 2RC 0LD": (
             429,
             "(10 ↑↑ 53)",
             "(-3 + (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** (5 * (2 ** 160)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))",
-            "(541 + (... + ...))",
+            "(541 + (--- + ---))",
         ),
-        "1RB 2LC 1RC 2RA  1LA 3RA 2RB ...  3LB 2LC 1RA 0LB": (
+        "1RB 2LC 1RC 2RA  1LA 3RA 2RB ---  3LB 2LC 1RA 0LB": (
             1369,
             "(10 ↑↑ 130)",
-            "(2 ** ...)",
-            "(1224 + (... * ...))",
+            "(2 ** ---)",
+            "(1224 + (--- * ---))",
         ),
-        "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ...  1RA 2LD 1RD": (
+        "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ---  1RA 2LD 1RD": (
             2886,
             "(10 ↑↑ 149)",
-            "(... // 13)",
-            "(... // 26)",
+            "(--- // 13)",
+            "(--- // 26)",
         ),
-        "1RB ... 1LA 2RB  2RC 3RC 3LB 2RA  2LB 3RB 3LC 1LA": (
+        "1RB --- 1LA 2RB  2RC 3RC 3LB 2RA  2LB 3RB 3LC 1LA": (
             1314,
             "(10 ↑↑ 189)",
-            "(-1 + (3 * (2 ** ...)))",
-            "(329 + (... + ...))",
+            "(-1 + (3 * (2 ** ---)))",
+            "(329 + (--- + ---))",
         ),
-        "1RB 0LC 1RC  1LA 2RB 1LB  1RC 2LA 0RD  2LB ... 2LC": (
+        "1RB 0LC 1RC  1LA 2RB 1LB  1RC 2LA 0RD  2LB --- 2LC": (
             1886,
             "(10 ↑↑ 190)",
-            "(9 * (2 ** ...))",
-            "(3139 + (... + ...))",
+            "(9 * (2 ** ---))",
+            "(3139 + (--- + ---))",
         ),
-        "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  ... 1LE": (
+        "1RB 0LB  0RC 1LB  1RD 0LA  1LE 1LF  1LA 0LD  --- 1LE": (
             3147,
             "(10 ** 463)",
             "((-1 + (2 ** 1538)) // 3)",
             "(29554 + (15 * (2 ** 1536)))",
         ),
-        "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  ... 1LD": (
+        "1RB 0LA  1LC 1LF  0LD 0LC  0LE 0LB  1RE 0RA  --- 1LD": (
             3666,
             "(10 ↑↑ 5)",
             "((38 + (19 * (2 ** ((-26 + (7 * (2 ** ((-11 + (7 * (2 ** ((-11 + (19 * (2 ** 69175))) // 9)))) // 9)))) // 9)))) // 9)",
             "((8657965653 + (((7 * (2 ** ((-20 + (7 * (2 ** ((-11 + (19 * (2 ** 69175))) // 9)))) // 9))) + ((21 * (2 ** ((-29 + (7 * (2 ** ((-11 + (19 * (2 ** 69175))) // 9)))) // 9))) + (((7 * (2 ** ((-20 + (19 * (2 ** 69175))) // 9))) + ((2 ** 69171) * (437 + (861 * (2 ** ((-622613 + (19 * (2 ** 69175))) // 9)))))) + (105 * (2 ** ((-65 + (7 * (2 ** ((-11 + (19 * (2 ** 69175))) // 9)))) // 9)))))) + (57 * (2 ** ((-35 + (7 * (2 ** ((-11 + (7 * (2 ** ((-11 + (19 * (2 ** 69175))) // 9)))) // 9)))) // 9))))) // 27)",
         ),
-        "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB ... 3RB 4LA": (
+        "1RB 2LA 1RA 4LA 5RA 0LB  1LA 3RA 2RB --- 3RB 4LA": (
             5708,
             "(10 ↑↑ 70)",
             "(14 + (2 ** (-1 + (2 ** (2 + (2 ** (1 + (2 ** (-1 + (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (2 + (2 ** (2 ** (2 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (3 + (2 ** (2 ** (3 + (2 ** (2 ** (2 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (2 + (2 ** (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (2 + (2 ** (2 ** (2 + (2 ** (2 ** (-1 + (2 ** (2 ** (3 + (2 ** (2 ** (-1 + (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (-1 + (2 ** (2 ** (1 + (2 ** (1 + (2 ** (-1 + (2 ** (4 + (2 ** (2 ** (-1 + (2 ** (2 ** (2 + (2 ** (2 ** (2 + (2 ** (2 ** (-1 + (2 ** (2 ** 258))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))",
-            "(-197 + (... * ...))",
+            "(-197 + (--- * ---))",
         ),
-        "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  ... 1RC": (
+        "1RB 1LE  1RC 1RF  1LD 0RB  1RE 0LC  1LA 0RD  --- 1RC": (
             5723,
             "(10 ** 18267)",
             "((17 + (25 * (2 ** 60680))) // 9)",
             "(((~10^15) + (175 * (2 ** 60674))) // 3)",
         ),
-        "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  ... 1LC": (
+        "1RB 1RE  1LC 1LF  1RD 0LB  1LE 0RC  1RA 0LD  --- 1LC": (
             15200,
             "(10 ↑↑ 5)",
             "((23 + (49 * (2 ** ((-124 + (49 * (2 ** ((-34 + (49 * (2 ** ((62 + (49 * (2 ** 15172))) // 27)))) // 27)))) // 27)))) // 9)",
-            "(... // 81)",
+            "(--- // 81)",
         ),
-        "1RB 1RC  0RD 0RB  ... 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": (
+        "1RB 1RC  0RD 0RB  --- 1RA  1RE 1LF  0RG 0RE  0RC 1RB  1RH 1LD  0RI 0RH  1LI 1LG": (
             1793,
             "(10 ↑↑ 30)",
             "((-5 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** ((-1 + (7 * (3 ** 31))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 4)",
-            "(... // 4)",
+            "(--- // 4)",
         ),
-        "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": (
+        "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA --- ---  1RF 0LA 1RD 2LA  2RF 3RF 1LG ---  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH --- 1RB": (
             1698,
             "(10 ** 39456)",
             "(3 * (2 ** 131071))",
             "(1121685 + (9 * (2 ** 131071)))",
         ),
-        "1RB 1RD 1LC  2LB 1RB 1LC  ... 1LA 1LD  2RB 2RA 2RD": (
+        "1RB 1RD 1LC  2LB 1RB 1LC  --- 1LA 1LD  2RB 2RA 2RD": (
             468,
             "(10 ↑↑ 10)",
             "(1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))))))))))))))))))",
             "(81 + (((((3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))) + ((3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** 25))))))) + ((3 * (2 ** (1 + (3 * (2 ** 25))))) + ((2 ** 24) * (9 + (3 * (2 ** (-24 + (3 * (2 ** 25)))))))))) + (3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25))))))))))) + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))) + (3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))))))))))))))))))",
         ),
-        "1RB 1LB  1LC 1RF  1LA 0LD  1RE 0LG  0RC ...  0RB 0RD  0RF 1LG": (
+        "1RB 1LB  1LC 1RF  1LA 0LD  1RE 0LG  0RC ---  0RB 0RD  0RF 1LG": (
             2745,
             "(10 ↑↑ 404)",
-            "(5 * (3 ** ...))",
-            "(2394 + (... + ...))",
+            "(5 * (3 ** ---))",
+            "(2394 + (--- + ---))",
         ),
-        "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": (
+        "1RB ---  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE": (
             3532,
             "(10 ↑↑ 519)",
-            "(684 + (2 ** ...))",
-            "(4599 + (... * ...))",
+            "(684 + (2 ** ---))",
+            "(4599 + (--- * ---))",
         ),
-        "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": (
+        "1RB 0LG  0RC ---  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": (
             3258,
             "(10 ↑↑ 134)",
-            "(1 + (5 * (3 ** ...)))",
-            "(2329 + (... + ...))",
+            "(1 + (5 * (3 ** ---)))",
+            "(2329 + (--- + ---))",
         ),
-        "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ...": (
+        "1RB 3LA 4LB 0RB 1RA 3LA  2LA 2RA 4LA 1RA 5RB ---": (
             66587,
             "(10 ↑↑ 91)",
-            "(... // 3)",
-            "(... // 9)",
+            "(--- // 3)",
+            "(--- // 9)",
         ),
-        "1RB 2LA ... 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB": (
+        "1RB 2LA --- 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB": (
             4825,
             "(10 ↑↑ 19892)",
-            "(-13 + (5 * (2 ** ...)))",
-            "(... // 21)",
+            "(-13 + (5 * (2 ** ---)))",
+            "(--- // 21)",
         ),
-        "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": (
+        "1LB ---  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH": (
             2314,
             "!!!",
             "((1 + (7 * (3 ** ((-1 + (7 * (3 ** (19 + (6 * !!!))))) // 2)))) // 4)",
-            "(... // 4)",
+            "(--- // 4)",
         ),
     },
 
-    "period-limit: 2 ** ... % 48828125": {
-        "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ...": (
+    "period-limit: 2 ** --- % 48828125": {
+        "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ---": (
             6915,
             "(10 ↑↑ 10)",
-            "(... // 625)",
-            "(... // 625)",
+            "(--- // 625)",
+            "(--- // 625)",
         ),
     },
 
     "OpSeqResult.__mod__": {
-        "1RB 1LA 2LA  1LA 2RC 1LB  1RD 2RB 0LC  0RA ... 0RA": (
+        "1RB 1LA 2LA  1LA 2RC 1LB  1RD 2RB 0LC  0RA --- 0RA": (
             2274,
             "!!!",
             "(27 + !!!)",
-            "(... // 9)",
+            "(--- // 9)",
         ),
-        "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF": (
+        "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  --- 0LC  1RG 1LD  0RG 0RF": (
             6999,
             "!!!",
-            "(38 + (... + ...))",
-            "(343 + (... + ...))",
+            "(38 + (--- + ---))",
+            "(343 + (--- + ---))",
         ),
     },
 
     "Add.__lt__: (!!! + -!!!) < 1000": {
-        "1RB ...  1RC 0RA  1RD 1RE  0LE 0LF  0RB 1LD  1LD 0LE": (
+        "1RB ---  1RC 0RA  1RD 1RE  0LE 0LF  0RB 1LD  1LD 0LE": (
             3186,
             "!!!",
             "(-7 + ((2 ** (-1 + (2 ** (3 + !!!)))) + (2 ** (-1 + (2 ** (3 + !!!))))))",
-            "(-81 + (... + ...))",
+            "(-81 + (--- + ---))",
         ),
     },
 
     "Add.__lt__: ((3 * !!!) + (-3 * !!!)) < 1000": {
-        "1RB 0RG  1RC 1RB  0RD ...  0LE 0LD  0LF 1LE  1RA 1LF  0LD 0RB": (
+        "1RB 0RG  1RC 1RB  0RD ---  0LE 0LD  0LF 1LE  1RA 1LF  0LD 0RB": (
             4692,
             "!!!",
             "((52 + ((5 * (3 ** (14 + (3 * !!!)))) + (5 * (3 ** ((-3 + (5 * (3 ** (15 + (3 * !!!))))) // 2))))) // 2)",
-            "(... // 2)",
+            "(--- // 2)",
         ),
     },
 
     "inapplicable_op": {
-        "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA": (
+        "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB --- 3LB 2LA": (
             1799,
             "(10 ↑↑ 3)",
             "((52 + (13 * (2 ** ((151 + (13 * (2 ** 803))) // 15)))) // 3)",
@@ -3038,31 +3038,31 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             1123,
             "(10 ↑↑ 16)",
             "((-491 + (3 ** ((45 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** ((7 + (3 ** ((23 + (3 ** ((7 + (3 ** ((21 + (3 ** 11)) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 8))) // 2)",
-            "(... // 8)",
+            "(--- // 8)",
         ),
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE 0RD  1LF 0RB  0RC 0RE": (
             1136,
             "2",
             "2",
-            "(... // 8)",
+            "(--- // 8)",
         ),
-        "1RB ...  0LC 1RB  0RA 1RD  1LE 0LF  1RC 1LD  1RA 0RE": (
+        "1RB ---  0LC 1RB  0RA 1RD  1LE 0LF  1RC 1LD  1RA 0RE": (
             1740,
             "(10 ↑↑ 8)",
             "(-4 + (3 * (2 ** (-2 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** 6143)))))))))))))))))))))",
-            "(26805 + (... + ...))",
+            "(26805 + (--- + ---))",
         ),
-        "1RB ...  1RC 0RA  1RD 1RE  0LE 0LF  0RB 1LD  1RD 0LE": (
+        "1RB ---  1RC 0RA  1RD 1RE  0LE 0LF  0RB 1LD  1RD 0LE": (
             3817,
             "!!!",
             "(5 + (2 ** (23 + (4 * !!!))))",
-            "(492 + (... + ...))",
+            "(492 + (--- + ---))",
         ),
-        "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": (
+        "1RB 3LB --- 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": (
             3828,
             "!!!",
             "(27 + ((2 ** 16) * (1 + (2 ** (-4 + (2 * !!!))))))",
-            "(1264 + (... + ...))",
+            "(1264 + (--- + ---))",
         ),
     },
 
@@ -3071,18 +3071,18 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             2447,
             "(10 ** 7077)",
             "(23540 + ((2 ** 11760) * (-1 + ((2 ** 5879) * (-1 + ((2 ** 2939) * (-1 + ((~10^440) * (2 ** 1469)))))))))",
-            "(58636 + (... + ...))",
+            "(58636 + (--- + ---))",
         ),
         "1RB 1RC  1LC 1RA  0RC 1RD  1LE 0RB  0LA 0LD": (
             2661,
             "(10 ** 7078)",
             "(23540 + ((2 ** 11760) * (-1 + ((2 ** 5879) * (-1 + ((2 ** 2939) * (-1 + ((~10^441) * (2 ** 1469)))))))))",
-            "(187227 + (... + ...))",
+            "(187227 + (--- + ---))",
         ),
     },
 
     "Add.__lt__: (-10 + (3 * (2 ** 24))) < (-2 + (3 * (2 ** 3)))": {
-        "1RB ... 3RB 0LA  2LC 2LB 0RA 1LA  0RB 3LC 1RB 1RC": (
+        "1RB --- 3RB 0LA  2LC 2LB 0RA 1LA  0RB 3LC 1RB 1RC": (
             1430,
             "(10 ** 7)",
             "(11 + (3145731 * (2 ** 4)))",
@@ -3091,7 +3091,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "Mul.__lt__: (15 * (2 ** 86)) < (2 ** 87)": {
-        "1RB 1RF  1RC 1RA  1RD 0RB  1LE 0RC  0LA 0LD  1LE ...": (
+        "1RB 1RF  1RC 1RA  1RD 0RB  1LE 0RC  0LA 0LD  1LE ---": (
             1305,
             "(10 ↑↑ 3)",
             "(6175 + ((2 ** 86) * (3 + (3 * (2 ** (-101 + (15 * (2 ** 86))))))))",
@@ -3100,7 +3100,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "Add.__lt__: (25 + ((5 * (2 ** (-194 + (2 ** 23)))) + (2 ** (-67 + ((2 ** 21) * (5 + (2 ** (-194 + (2 ** 23))))))))) < (2 ** 27)": {
-        "1RB 1RE  1RC 0RA  1LD 0RB  1LA 0LC  1RA 0RF  1LG 1RG  0LD ...": (
+        "1RB 1RE  1RC 0RA  1LD 0RB  1LA 0LC  1RA 0RF  1LG 1RG  0LD ---": (
             2343,
             "(10 ↑↑ 4)",
             "(1584 + ((11 * (2 ** 28)) + ((2 ** 20) * (25 + ((5 * (2 ** (-194 + (2 ** 23)))) + (2 ** (-67 + ((2 ** 21) * (5 + (2 ** (-194 + (2 ** 23))))))))))))",
@@ -3131,7 +3131,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             8002,
             "(10 ** 463377091)",
             "(384826393 + (3 * (2 ** 1539305378)))",
-            "((~10^17) + (... + ...))",
+            "((~10^17) + (--- + ---))",
         ),
     },
 
@@ -3142,37 +3142,37 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(23 + ((2 ** 5) * (16 + ((2 ** 6) * (16 + ((2 ** 7) * (16 + ((2 ** 8) * (16 + (2 ** 13))))))))))",
             "104",
         ),
-        "1RB 0LE  1RC 1RD  0LB ...  1LE 0RF  1RC 1LA  1LE 1RF": (
+        "1RB 0LE  1RC 1RD  0LB ---  1LE 0RF  1RC 1LA  1LE 1RF": (
             4413,
             "(10 ** 18)",
             "(206 + ((2 ** 6) * (1 + ((2 ** 7) * (1 + ((2 ** 8) * (1 + ((2 ** 9) * (9 + (33820809 * (2 ** 4)))))))))))",
             "(23221 + (((2 ** 7) * (1 + ((2 ** 8) * (1 + ((2 ** 9) * (9 + (33820809 * (2 ** 4)))))))) + (((2 ** 8) * (1 + ((2 ** 9) * (9 + (33820809 * (2 ** 4)))))) + (((2 ** 9) * (9 + (33820809 * (2 ** 4)))) + ((33820809 * (2 ** 5)) + ((((((2 ** 6) * (3 + (2 ** 7))) + ((2 ** 5) * (1 + ((2 ** 6) * (1 + (2 ** 7)))))) + ((2 ** 4) * (1 + ((2 ** 5) * (1 + ((2 ** 6) * (1 + (2 ** 7)))))))) + ((2 ** 3) * (1 + ((2 ** 4) * (1 + ((2 ** 5) * (1 + ((2 ** 6) * (1 + (2 ** 7)))))))))) + ((2 ** 2) * (1 + ((2 ** 3) * (1 + ((2 ** 4) * (1 + ((2 ** 5) * (1 + ((2 ** 6) * (1 + (2 ** 7)))))))))))))))))",
         ),
-        "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  ... 1RA": (
+        "1RB 1RC  1LC 1RE  1LD 0LB  1RE 1LC  1LE 0RF  --- 1RA": (
             20877,
             "(10 ** 301)",
             "(547 + ((2 ** 164) * (4 + ((2 ** 165) * (4 + ((2 ** 166) * (4 + ((2 ** 167) * (4 + ((2 ** 168) * (4 + (2 ** 171))))))))))))",
             "133323",
         ),
-        "1RB ...  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD": (
+        "1RB ---  1LC 0RF  1RE 0LD  0LC 1RB  1RA 1RE  1RE 0RD": (
             11321,
             "(10 ** 70)",
             "(93 + ((2 ** 55) * (16 + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
             "(33190 + ((2 ** 55) * ((~10^54) + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
         ),
-        "1RB 0LE  1RC 1RB  1RD ...  1LA 0RF  0LA 1RD  1RB 0RE": (
+        "1RB 0LE  1RC 1RB  1RD ---  1LA 0RF  0LA 1RD  1RB 0RE": (
             10272,
             "(10 ** 70)",
             "(91 + ((2 ** 55) * (16 + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
             "(33195 + ((~10^51) * (2 ** 63)))",
         ),
-        "1RB 0RF  1RC 1RB  1RD ...  1LE 0RA  1RB 0LF  0LE 1RD": (
+        "1RB 0RF  1RC 1RB  1RD ---  1LE 0RA  1RB 0LF  0LE 1RD": (
             10272,
             "(10 ** 70)",
             "(91 + ((2 ** 55) * (16 + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
             "(33195 + ((~10^51) * (2 ** 63)))",
         ),
-        "1RB 1RA  1RC ...  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE": (
+        "1RB 1RA  1RC ---  1LD 0RF  1RA 0LE  0LD 1RC  1RA 0RE": (
             11323,
             "(10 ** 70)",
             "(93 + ((2 ** 55) * (16 + ((2 ** 56) * (16 + ((2 ** 57) * (16 + (2 ** 62))))))))",
@@ -3181,13 +3181,13 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
     },
 
     "infrul": {
-        "1RB 0RA ... ...  2RC 2RB 0RA 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...": (
+        "1RB 0RA --- ---  2RC 2RB 0RA 0RB  1LD 1RC --- ---  1LB 3RD 1LD ---": (
             283,
             "0",
             "0",
             "((6297 + ((3 ** 548) * (1 + (2 * (3 ** ((-2189 + (3 ** 548)) // 4)))))) // 4)",
         ),
-        "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA": (
+        "1RB 1LA --- ---  2LC 0LC 3LA ---  1RC 0LB 1RB 1LA": (
             326,
             "3",
             "3",
@@ -3199,7 +3199,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "1",
             "((501 + ((((3 * (2 ** 16)) + ((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16))))) + (3 * (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3)))) + ((2 ** (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3))) + (2 ** (1 + (2 ** (((2 ** (2 ** 16)) + (2 ** (1 + (2 ** 16)))) // 3))))))) // 3)",
         ),
-        "1RB 1LA ...  1RC 2LB 1RB  2LA 2LC 0LC": (
+        "1RB 1LA ---  1RC 2LB 1RB  2LA 2LC 0LC": (
             399,
             "(10 ↑↑ 6)",
             "((-13 + (3 ** ((-1 + (3 ** ((3 + (3 ** ((3 + (3 ** ((3 + (3 ** 1642)) // 4))) // 4))) // 4))) // 4))) // 2)",
@@ -3229,7 +3229,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(-4 + (2 ** (2 + (2 ** (1 + (2 ** (1 + (2 ** (1 + (2 ** 33))))))))))",
             "(136 + ((2 ** 34) * (1 + ((2 ** (-33 + (2 ** (1 + (2 ** (1 + (2 ** 33))))))) + ((2 ** (-33 + (2 ** (1 + (2 ** (1 + (2 ** 33))))))) + ((2 ** (-33 + (2 ** (1 + (2 ** 33))))) + ((2 ** (-32 + (2 ** 33))) + (2 ** (-33 + (2 ** (1 + (2 ** 33))))))))))))",
         ),
-        "1RB ...  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE": (
+        "1RB ---  1LC 0RB  1LD 0RD  0RE 1LB  0RC 1RF  0RA 1RE": (
             637,
             "(10 ↑↑ 5)",
             "((17 + (23 * (6 ** ((1 + (69 * (6 ** ((-4 + (69 * (6 ** ((-4 + (69 * (6 ** 13))) // 5)))) // 5)))) // 5)))) // 5)",
@@ -3253,13 +3253,13 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(-2 + (3 * (2 ** (-5 + (3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** 764)))))))))))))))",
             "(1506 + ((3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** 764))))))))))) + (((3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** 764)))))))) + (((3 * (2 ** (-4 + (3 * (2 ** 764))))) + ((2 ** 763) * (9 + (3 * (2 ** (-768 + (3 * (2 ** 764)))))))) + (3 * (2 ** (-5 + (3 * (2 ** (-4 + (3 * (2 ** 764)))))))))) + (3 * (2 ** (-5 + (3 * (2 ** (-4 + (3 * (2 ** (-4 + (3 * (2 ** 764))))))))))))))",
         ),
-        "1RB 0LA  1RC 0RF  1RD 0RA  1LE 0RD  1LB 1LE  ... 1RD": (
+        "1RB 0LA  1RC 0RF  1RD 0RA  1LE 0RD  1LB 1LE  --- 1RD": (
             695,
             "(10 ↑↑ 6)",
             "(-7 + (3 * (2 ** (-1 + (3 * (2 ** (3 * (2 ** (3 * (2 ** (3 * (2 ** 192))))))))))))",
             "(609 + ((3 * (2 ** (1 + (3 * (2 ** (3 * (2 ** (3 * (2 ** 192))))))))) + ((((2 ** 191) * (15 + (9 * (2 ** (-192 + (3 * (2 ** 192))))))) + ((2 ** (3 * (2 ** 192))) * (3 + (3 * (2 ** (-1 + ((2 ** 192) * (-3 + (3 * (2 ** (-192 + (3 * (2 ** 192))))))))))))) + ((2 ** (1 + (3 * (2 ** (3 * (2 ** 192)))))) * (3 + (3 * (2 ** (-2 + ((2 ** (3 * (2 ** 192))) * (-3 + (3 * (2 ** ((2 ** 192) * (-3 + (3 * (2 ** (-192 + (3 * (2 ** 192)))))))))))))))))))",
         ),
-        "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD": (
+        "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  --- 0RD": (
             820,
             "(10 ↑↑ 6)",
             "(-4 + (3 ** (3 ** (1 + (3 ** (1 + (3 ** (1 + (3 ** 730)))))))))",
@@ -3271,7 +3271,7 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(29548 + ((2 ** 14772) * (-9849 + ((~10^147) * (2 ** 2460)))))",
             "(124519 + (((2 ** 14771) * (-9849 + ((~10^147) * (2 ** 2460)))) + (((2 ** 14770) * (-9849 + ((~10^147) * (2 ** 2460)))) + (((~10^147) * (2 ** 2459)) + (((2 ** 2458) * (-1641 + ((~10^24) * (2 ** 408)))) + (((~10^24) * (2 ** 407)) + (((2 ** 406) * (-273 + (19923 * (2 ** 66)))) + ((19923 * (2 ** 65)) + ((2 ** 7) * (-(~10^19) + (39 * (2 ** 66))))))))))))",
         ),
-        "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA ... ... 1LB": (
+        "1RB 2RB 3RB 4RB 5LA 4RA  0LA 1RB 5RA --- --- 1LB": (
             1076,
             "(10 ↑↑ 5)",
             "(1 + (2 ** (2 ** (2 ** (2 ** 16)))))",
@@ -3281,19 +3281,19 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             1056,
             "(10 ↑↑ 10)",
             "(-1 + (3 * (2 ** (-1 + (2 ** (1 + (2 ** (1 + (2 ** (1 + (2 ** (1 + (2 ** (1 + (2 ** (1 + (2 ** (1 + (2 ** 513)))))))))))))))))))",
-            "(4572 + (... + ...))",
+            "(4572 + (--- + ---))",
         ),
         "1RB 1LE  1RC 1RE  1RD 1RB  0LB 0LD  1LA 0LA": (
             1050,
             "(10 ↑↑ 11)",
             "(-1 + (7 * (2 ** (-4 + (7 * (2 ** (-3 + (7 * (2 ** (-3 + (7 * (2 ** (-3 + (7 * (2 ** (-3 + (7 * (2 ** (-3 + (7 * (2 ** (-3 + (7 * (2 ** (-3 + (7 * (2 ** (-3 + (7 * (2 ** 53))))))))))))))))))))))))))))))",
-            "(304 + (... + ...))",
+            "(304 + (--- + ---))",
         ),
         "1RB 1LE  1RC 1RE  1RD 1RB  0RE 0LD  1LA 0LA": (
             1206,
             "(10 ↑↑ 11)",
             "(-8 + (3 * (2 ** (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** (-1 + (3 * (2 ** 95)))))))))))))))))))))))))))))",
-            "(491 + (... + ...))",
+            "(491 + (--- + ---))",
         ),
         "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB": (
             1405,
@@ -3319,29 +3319,29 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "10",
             "(2476 + ((5 * (2 ** (-5 + (5 * (2 ** (-5 + (5 * (2 ** (-5 + (5 * (2 ** 155))))))))))) + ((5 * (2 ** (-3 + (5 * (2 ** (-5 + (5 * (2 ** (-5 + (5 * (2 ** 155))))))))))) + ((5 * (2 ** (-4 + (5 * (2 ** (-5 + (5 * (2 ** (-5 + (5 * (2 ** 155))))))))))) + ((25 * (2 ** (-6 + (5 * (2 ** (-5 + (5 * (2 ** (-5 + (5 * (2 ** 155))))))))))) + ((5 * (2 ** (-5 + (5 * (2 ** (-5 + (5 * (2 ** 155)))))))) + ((5 * (2 ** (-3 + (5 * (2 ** (-5 + (5 * (2 ** 155)))))))) + ((5 * (2 ** (-4 + (5 * (2 ** (-5 + (5 * (2 ** 155)))))))) + ((25 * (2 ** (-6 + (5 * (2 ** (-5 + (5 * (2 ** 155)))))))) + ((5 * (2 ** (-5 + (5 * (2 ** 155))))) + ((5 * (2 ** (-3 + (5 * (2 ** 155))))) + ((2 ** 154) * (95 + (45 * (2 ** (-160 + (5 * (2 ** 155))))))))))))))))))",
         ),
-        "1RB 0RA  0LC 0RE  0LE 1RD  1RC ...  1RA 1LF  0LA 0LB": (
+        "1RB 0RA  0LC 0RE  0LE 1RD  1RC ---  1RA 1LF  0LA 0LB": (
             2661,
             "(10 ↑↑ 6)",
             "((16 + (7 * (2 ** ((-7 + (7 * (2 ** ((8 + (7 * (2 ** ((16 + (7 * (2 ** ((13 + (7 * (2 ** 6373))) // 9)))) // 9)))) // 9)))) // 9)))) // 3)",
-            "(... // 9)",
+            "(--- // 9)",
         ),
-        "1RB 0RD  0RC 0LD  1RD ...  1LE 1LF  1RB 1LD  1RF 0RA": (
+        "1RB 0RD  0RC 0LD  1RD ---  1LE 1LF  1RB 1LD  1RF 0RA": (
             1900,
             "(10 ↑↑ 10)",
             "((5 + (3 ** ((1 + (3 ** ((1 + (3 ** ((1 + (3 ** ((1 + (3 ** ((1 + (3 ** ((1 + (3 ** ((1 + (3 ** ((1 + (3 ** 41)) // 2))) // 2))) // 2))) // 2))) // 2))) // 2))) // 2))) // 2))) // 2)",
-            "(... // 2)",
+            "(--- // 2)",
         ),
-        "1RB 0RC  0RC 0LD  1RD 1RA  1RE 0LA  1LF ...  1LB 1LF": (
+        "1RB 0RC  0RC 0LD  1RD 1RA  1RE 0LA  1LF ---  1LB 1LF": (
             1914,
             "3",
             "3",
-            "(... // 3)",
+            "(--- // 3)",
         ),
         "1RB 0RD  1LC 1LE  1RD 1LB  0LD 1RA  0LA 1LC": (
             2670,
             "(10 ↑↑ 21)",
             "(-1 + (2 ** (-2 + (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** 16))))))))))))))))))))))",
-            "(2883 + (... * ...))",
+            "(2883 + (--- * ---))",
         ),
         "1RB 0RA  1LC 0LB  0LE 0LD  1LB 0LC  1RE 1RA": (
             640,
@@ -3353,43 +3353,43 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             1108,
             "(10 ↑↑ 11)",
             "(4 + (5 * (2 ** (-4 + (5 * (2 ** (-4 + (5 * (2 ** (-4 + (5 * (2 ** (-4 + (5 * (2 ** (-4 + (5 * (2 ** (-4 + (5 * (2 ** (-4 + (5 * (2 ** (-4 + (5 * (2 ** (-4 + (5 * (2 ** 316))))))))))))))))))))))))))))))",
-            "(729 + (... + ...))",
+            "(729 + (--- + ---))",
         ),
-        "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...": (
+        "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ---": (
             1845,
             "15",
             "15",
-            "(... // 3)",
+            "(--- // 3)",
         ),
-        "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0LA  1RA 1LC": (
+        "1RB 0LD  1RC 1RF  0LA 1LF  --- 1LE  0LF 0LA  1RA 1LC": (
             1904,
             "(10 ↑↑ 16)",
             "(1 + (5 * (3 ** (-4 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** 13)))))))))))))))))))))))))))))))))))))))))))))",
-            "(... // 2)",
+            "(--- // 2)",
         ),
-        "1RB 1LC  1LA 0LD  1RB 0LA  ... 1LE  1RF 0LB  1RB 0RE": (
+        "1RB 1LC  1LA 0LD  1RB 0LA  --- 1LE  1RF 0LB  1RB 0RE": (
             2370,
             "(10 ↑↑ 10)",
             "(-5 + (3 * (2 ** (-2 + (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** (2 ** 65536))))))))))))",
-            "(483672 + (... + ...))",
+            "(483672 + (--- + ---))",
         ),
         "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE": (
             3314,
             "(10 ↑↑ 6)",
             "(59 + (((((2 ** 50) * (3 + (3 * (2 ** (-48 + (3 * (2 ** 50))))))) + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50))))))))) + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50)))))))))))) + (3 * (2 ** (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** (2 + (3 * (2 ** 50)))))))))))))))",
-            "(2264 + (... + ...))",
+            "(2264 + (--- + ---))",
         ),
-        "1RB 0LD  1RC 1RF  0LA 1LF  ... 1LE  0LF 0RF  1RA 1LC": (
+        "1RB 0LD  1RC 1RF  0LA 1LF  --- 1LE  0LF 0RF  1RA 1LC": (
             3782,
             "(10 ↑↑ 16)",
             "(1 + (5 * (3 ** (-4 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** (-2 + (5 * (3 ** 13)))))))))))))))))))))))))))))))))))))))))))))",
-            "(... // 2)",
+            "(--- // 2)",
         ),
-        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...": (
+        "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ---": (
             4505,
             "(10 ↑↑ 6)",
             "((23 + (2 * (6 ** ((-28 + (8 * (6 ** ((-23 + (8 * (6 ** ((-23 + (8 * (6 ** ((-23 + (8 * (6 ** 12437))) // 5)))) // 5)))) // 5)))) // 5)))) // 5)",
-            "(... // 5)",
+            "(--- // 5)",
         ),
         "1RB 1LC  0RC 1RE  1LD 1RA  0RE 0LF  1RC 0RD  1LE 1LD": (
             5256,
@@ -3397,44 +3397,44 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "49040",
             "(876451 + (3315 * (2 ** 245)))",
         ),
-        "1RB 0RC  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LF  0LD ...": (
+        "1RB 0RC  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LF  0LD ---": (
             7219,
             "(10 ↑↑ 25)",
             "((1 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** 16))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)",
-            "(... // 2)",
+            "(--- // 2)",
         ),
-        "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD": (
+        "1RB 0RF  1LC 0LC  1LE 0RD  1RA 1LB  0LD 0LE  --- 0RD": (
             7219,
             "(10 ↑↑ 25)",
             "((1 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** 16))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)",
-            "(... // 2)",
+            "(--- // 2)",
         ),
-        "1RB 0RC  1LC 0LF  1LE 0RD  1RA 1LB  0LD 0LE  ... 0RD": (
+        "1RB 0RC  1LC 0LF  1LE 0RD  1RA 1LB  0LD 0LE  --- 0RD": (
             7219,
             "(10 ↑↑ 25)",
             "((1 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** ((-3 + (7 * (5 ** 16))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)))) // 2)",
-            "(... // 2)",
+            "(--- // 2)",
         ),
-        "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD": (
+        "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  --- 1RD": (
             12327,
             "9",
             "9",
             "(21880 + ((((2 ** 138) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))) + (((2 ** 136) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))) + ((((2 ** 137) * (1 + (2 ** (1 + (2 ** 136))))) + ((2 ** 138) * (3 + (5 * (2 ** (-1 + (2 ** 136))))))) + ((2 ** 137) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136)))))))))))) + ((2 ** 137) * (1 + ((2 ** (1 + (2 ** 136))) * (1 + ((2 ** (1 + (2 ** (137 + (2 ** 136))))) + (2 ** (2 + ((2 ** (137 + (2 ** 136))) * (1 + (2 ** (1 + (2 ** (137 + (2 ** 136))))))))))))))))",
         ),
-        "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD": (
+        "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  --- 1LD": (
             36234,
             "(10 ↑↑ 14)",
             "((4159 + (20352 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** ((-213 + (108544 * (2097152 ** 1792387925))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)))) // 127)",
-            "(... // 127)",
+            "(--- // 127)",
         ),
     },
 
-    "period-limit: 3 ** ... % 16777216": {
+    "period-limit: 3 ** --- % 16777216": {
         "1RB 0LD  1RC 0RF  1LC 1LA  0LE 0LB  1LF 0RB  0RC 0RE": (
             1424,
             "5",
             "5",
-            "(... // 8)",
+            "(--- // 8)",
         ),
     },
 }
@@ -3449,34 +3449,34 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 1LA  0LA 0RB",
 
     "1RB 2LA 0RB  1LB 1LA 1RA",
-    "1RB ... 0RB  2LB 2LA 0RA",
+    "1RB --- 0RB  2LB 2LA 0RA",
     "1RB 2LA 0RB  2LB 1LA 0RA",
-    "1RB 0LB ...  1LA 2RA 1LA",
-    "1RB 0LB ...  2LA ... 0RA",
-    "1RB 0LB ...  2LA 2LA 1RA",
-    "1RB 1LA 0LA  0LA 2RA ...",
-    "1RB 1LA 0LA  1LA 2RA ...",
-    "1RB 1LA 0LA  2LA 0RA ...",
-    "1RB 1LA 0LA  2LA 2RA ...",
-    "1RB 1LB ...  2LA 0RB 1RB",
-    "1RB 2LA 0LA  0LA ... 2RA",
-    "1RB 2LA 0LA  1LA ... 2RA",
-    "1RB 2LA 0LA  2LA ... 2RA",
-    "1RB 2LA 0RB  0LA ... 1RA",
-    "1RB 2LA 1RB  0LA ... 1RA",
-    "1RB 2LA 1RB  1LA ... 1RA",
-    "1RB 2LA 1RB  2LA ... 1RA",
-    "1RB 2LB ...  1LA 1RB 0RB",
-    "1RB 2LB ...  2LA 2LA 1RB",
-    "1RB 2LB 1RB  1LA 0RA ...",
-    "1RB 2LB 1RB  2LA ... 0RA",
-    "1RB 2RB 1LA  0LA 2RA ...",
-    "1RB 2RA 1LA  2LA 2RB ...",
+    "1RB 0LB ---  1LA 2RA 1LA",
+    "1RB 0LB ---  2LA --- 0RA",
+    "1RB 0LB ---  2LA 2LA 1RA",
+    "1RB 1LA 0LA  0LA 2RA ---",
+    "1RB 1LA 0LA  1LA 2RA ---",
+    "1RB 1LA 0LA  2LA 0RA ---",
+    "1RB 1LA 0LA  2LA 2RA ---",
+    "1RB 1LB ---  2LA 0RB 1RB",
+    "1RB 2LA 0LA  0LA --- 2RA",
+    "1RB 2LA 0LA  1LA --- 2RA",
+    "1RB 2LA 0LA  2LA --- 2RA",
+    "1RB 2LA 0RB  0LA --- 1RA",
+    "1RB 2LA 1RB  0LA --- 1RA",
+    "1RB 2LA 1RB  1LA --- 1RA",
+    "1RB 2LA 1RB  2LA --- 1RA",
+    "1RB 2LB ---  1LA 1RB 0RB",
+    "1RB 2LB ---  2LA 2LA 1RB",
+    "1RB 2LB 1RB  1LA 0RA ---",
+    "1RB 2LB 1RB  2LA --- 0RA",
+    "1RB 2RB 1LA  0LA 2RA ---",
+    "1RB 2RA 1LA  2LA 2RB ---",
     "1RB 2LA 1LA  2LB 2RA 0RB",
     "1RB 2RA 2LB  1LB 2LA 0RA",
     "1RB 2RB 2LA  0LB 1LA 0RB",
     "1RB 2RB 2LA  2LB 1LA 0RB",
-    "1RB 1LA ...  2LB 1RB 0LA",
+    "1RB 1LA ---  2LB 1RB 0LA",
     "1RB 2RA 1LA  2LB 0RB 2LA",
     "1RB 2LA 1LA  1LB 2RA 0RB",
     "1RB 0LB 1RA  1LB 2RB 0LA",
@@ -3486,19 +3486,19 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
 
     "1RB 1LA  0LA 1RC  1LA 0RB",
     "1RB 1LB  0LC 0RC  1RA 1LA",
-    "1RB ...  0LC 0RA  0RA 1LB",
-    "1RB ...  0LC 0RA  1LA 1LB",
-    "1RB ...  1LC 0RA  0RB 0LB",
-    "1RB ...  1LC 0RA  1RB 0LB",
-    "1RB ...  1LC 0RB  1LB 1LA",
-    "1RB ...  1LC 1RA  0RA 0LC",
-    "1RB 0LB  1LA 0RC  1RB ...",
-    "1RB 0LB  1LC 1RB  ... 1LA",
-    "1RB 0LC  0LC 1RA  ... 1LA",
-    "1RB 0LC  1LA 0RA  1LA ...",
-    "1RB 1LC  0LA 0RB  1LA ...",
-    "1RB 1RC  1LC ...  0RA 0LB",
-    "1RB ...  0LC 0RB  1LC 1LA",
+    "1RB ---  0LC 0RA  0RA 1LB",
+    "1RB ---  0LC 0RA  1LA 1LB",
+    "1RB ---  1LC 0RA  0RB 0LB",
+    "1RB ---  1LC 0RA  1RB 0LB",
+    "1RB ---  1LC 0RB  1LB 1LA",
+    "1RB ---  1LC 1RA  0RA 0LC",
+    "1RB 0LB  1LA 0RC  1RB ---",
+    "1RB 0LB  1LC 1RB  --- 1LA",
+    "1RB 0LC  0LC 1RA  --- 1LA",
+    "1RB 0LC  1LA 0RA  1LA ---",
+    "1RB 1LC  0LA 0RB  1LA ---",
+    "1RB 1RC  1LC ---  0RA 0LB",
+    "1RB ---  0LC 0RB  1LC 1LA",
     "1RB 1LA  0LB 1RC  1LA 0RB",
     "1RB 0LB  0LC 0LA  1RC 1LB",
     "1RB 0LB  1LA 0RC  1LC 1RB",
@@ -3506,52 +3506,52 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 0RB  0RC 0RA  1LC 1RB",
     "1RB 0RB  1LC 0RA  1LC 1LA",
     "1RB 0RC  1LB 1RA  0RB 0RA",
-    "1RB ...  0RC 0RB  1LC 1LA",
-    "1RB ...  0RC 1LB  1LA 0LA",
-    "1RB 0LC  1LB 1RA  ... 1LA",
-    "1RB 0RB  1LC ...  0LA 1RC",
-    "1RB 0RC  0RC ...  1LC 0LA",
-    "1RB 0RC  1LA 1RB  ... 1LB",
-    "1RB 1LA  0LA 0LC  ... 1RA",
-    "1RB 1LA  1LA 0LC  ... 1RA",
-    "1RB 1LA  1LA 1RC  ... 1RB",
-    "1RB 1LA  1LC 0LC  ... 1RA",
-    "1RB 1LC  1LC 1RB  ... 1LA",
-    "1RB 1RC  0RC ...  1LC 0LA",
+    "1RB ---  0RC 0RB  1LC 1LA",
+    "1RB ---  0RC 1LB  1LA 0LA",
+    "1RB 0LC  1LB 1RA  --- 1LA",
+    "1RB 0RB  1LC ---  0LA 1RC",
+    "1RB 0RC  0RC ---  1LC 0LA",
+    "1RB 0RC  1LA 1RB  --- 1LB",
+    "1RB 1LA  0LA 0LC  --- 1RA",
+    "1RB 1LA  1LA 0LC  --- 1RA",
+    "1RB 1LA  1LA 1RC  --- 1RB",
+    "1RB 1LA  1LC 0LC  --- 1RA",
+    "1RB 1LC  1LC 1RB  --- 1LA",
+    "1RB 1RC  0RC ---  1LC 0LA",
     "1RB 0RB  1LC 0RB  1LC 1RA",
-    "1RB ...  1LC 0RB  0LC 1RB",
+    "1RB ---  1LC 0RB  0LC 1RB",
 
-    "1RB 3LA 1LA ...  1LB 2RB 0LA 0RB",
-    "1RB 3LA 1LA 1RA  2LB 2RA ... 0RB",
-    "1RB 3LA 1LA 2RA  2LB 3RA ... 0RB",
-    "1RB 1LA ... 3LA  2LA 3RB 3LA 0RA",
-    "1RB 2LA 3RB 0RB  0LB 1LA 2RB ...",
-    "1RB 0RA 2LB ...  2LA 1LB 3RA 1RA",
+    "1RB 3LA 1LA ---  1LB 2RB 0LA 0RB",
+    "1RB 3LA 1LA 1RA  2LB 2RA --- 0RB",
+    "1RB 3LA 1LA 2RA  2LB 3RA --- 0RB",
+    "1RB 1LA --- 3LA  2LA 3RB 3LA 0RA",
+    "1RB 2LA 3RB 0RB  0LB 1LA 2RB ---",
+    "1RB 0RA 2LB ---  2LA 1LB 3RA 1RA",
     "1RB 2LA 3RB 0RB  1LB 1LA 1RA 0RB",
 
-    "1RB ...  1LC 1RA  0LC 0LD  0RA 0RC",
-    "1RB 0LC  1LC ...  1RD 0LB  0RD 0LA",
-    "1RB 0RB  1LC 1RB  ... 0LD  1RA 1LD",
-    "1RB 1LA  1LA 0RC  1LD 1RC  ... 0LA",
-    "1RB 0LA  1LC ...  0LD 0LC  1RD 0RA",
-    "1RB 1LB  0LB 1RC  1RD 0RC  1LA ...",
-    "1RB 1RC  1LC 0LD  1RA 0LB  ... 0LA",
-    "1RB 0LD  1LC 1RA  ... 1LA  0RA 1LD",
-    "1RB 0LD  0LC 1RA  ... 1LA  0RA 1LD",
+    "1RB ---  1LC 1RA  0LC 0LD  0RA 0RC",
+    "1RB 0LC  1LC ---  1RD 0LB  0RD 0LA",
+    "1RB 0RB  1LC 1RB  --- 0LD  1RA 1LD",
+    "1RB 1LA  1LA 0RC  1LD 1RC  --- 0LA",
+    "1RB 0LA  1LC ---  0LD 0LC  1RD 0RA",
+    "1RB 1LB  0LB 1RC  1RD 0RC  1LA ---",
+    "1RB 1RC  1LC 0LD  1RA 0LB  --- 0LA",
+    "1RB 0LD  1LC 1RA  --- 1LA  0RA 1LD",
+    "1RB 0LD  0LC 1RA  --- 1LA  0RA 1LD",
     "1RB 1LA  0LA 1LC  0LD 0LC  1RD 1RB",
-    "1RB 0RD  1LC 0RA  1LA 1LB  ... 0RC",
+    "1RB 0RD  1LC 0RA  1LA 1LB  --- 0RC",
     # "1RB 1RC  1LC 0RD  1RA 0LB  1RD 0RA",
     # "1RB 0LD  1LC 0RA  1LA 1LB  1LD 0LC",
-    "1RB 1LA  1LA 1RC  ... 0RD  0LA 1RD",
-    "1RB 0LD  1LC 1RA  0RB 0LC  ... 1LA",
-    "1RB ...  0LC 0RA  1LD 1RC  0RB 0LD",
-    "1RB ...  1RC 0RA  1LD 0LB  0LA 0LC",
-    "1RB ...  1RC 1LB  0LD 0RC  1LA 1LD",
-    "1RB 1LA  1RC 0RB  0LC 1LD  ... 0LA",
-    "1RB 1LA  1RC 0RB  1LC 1LD  ... 0LA",
-    "1RB ...  0LC 0RB  0LD 1LC  1RA 0RB",
-    "1RB 1LD  1LC 0RA  1LA 0LB  0RB ...",
-    "1RB ...  1LC 1RD  0RB 0LC  1LC 1RA",
+    "1RB 1LA  1LA 1RC  --- 0RD  0LA 1RD",
+    "1RB 0LD  1LC 1RA  0RB 0LC  --- 1LA",
+    "1RB ---  0LC 0RA  1LD 1RC  0RB 0LD",
+    "1RB ---  1RC 0RA  1LD 0LB  0LA 0LC",
+    "1RB ---  1RC 1LB  0LD 0RC  1LA 1LD",
+    "1RB 1LA  1RC 0RB  0LC 1LD  --- 0LA",
+    "1RB 1LA  1RC 0RB  1LC 1LD  --- 0LA",
+    "1RB ---  0LC 0RB  0LD 1LC  1RA 0RB",
+    "1RB 1LD  1LC 0RA  1LA 0LB  0RB ---",
+    "1RB ---  1LC 1RD  0RB 0LC  1LC 1RA",
     "1RB 0LB  1LC 1RA  0RC 0LD  1RD 0LB",
     "1RB 0LC  0RC 1RD  0RD 1RA  1LD 0LA",
     "1RB 0LC  1LB 1LC  1RD 0RB  0RC 1LA",
@@ -3592,16 +3592,16 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
     "1RB 1LB  1LA 1LC  0RC 0LD  1RD 0RB",
 
     "1RB 0LA  0LC 0RD  0RA 1LB  1RC 1LE  0LE 1LC",
-    "1RB 0LC  1LA 1RC  1RA 0LD  0RE 1LD  ... 0RA",
-    "1RB 1LA  0LA 1RC  1RA 1RD  ... 0RE  0LA 1RC",
-    "1RB 1LC  0LA 0RD  1LA 1LE  1RB 1LE  0LC ...",
+    "1RB 0LC  1LA 1RC  1RA 0LD  0RE 1LD  --- 0RA",
+    "1RB 1LA  0LA 1RC  1RA 1RD  --- 0RE  0LA 1RC",
+    "1RB 1LC  0LA 0RD  1LA 1LE  1RB 1LE  0LC ---",
     "1RB 0LD  0RC 1RC  1LA 0LE  0RA 1LD  0LA 1RB",
     "1RB 0LD  1RC 0LA  1LD 0RA  1LE 0RA  0RC 1LC",
     "1RB 0LD  1RC 0LA  1LD 0RA  1LE 0RA  0RD 1LC",
     "1RB 0LD  1RC 0LA  1LD 0RA  1LE 1RE  0RC 1LC",
-    "1RB 1LE  1LC 1RD  1LB 1RC  1LA 0RD  ... 0LA",
-    "1RB 1LD  0RC 0LC  0RD 1RA  1LE ...  0RA 0LE",
-    "1RB ...  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
+    "1RB 1LE  1LC 1RD  1LB 1RC  1LA 0RD  --- 0LA",
+    "1RB 1LD  0RC 0LC  0RD 1RA  1LE ---  0RA 0LE",
+    "1RB ---  1LC 0LD  0LD 0LB  0LE 0LC  1RE 1RA",
 
     "1RB 2LA 0RB  2LB 1LA 0RC  0LB 2RC 1RC",
     "1RB 0RC 1LA  2LA 0LA 2RB  2RC 2RB 1LC",
@@ -3610,9 +3610,9 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
 }
 
 MAYBE_HALTERS = {
-    "1RB 2LC 1RC  2LC ... 2RB  2LA 0LB 0RA",
-    "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  ... 0RA",
-    "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 1LD  ... 0LC",
+    "1RB 2LC 1RC  2LC --- 2RB  2LA 0LB 0RA",
+    "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  --- 0RA",
+    "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 1LD  --- 0LC",
 } | CRYPTIDS
 
 HALTERS = set(
@@ -3702,15 +3702,15 @@ assert not HALTERS & SPINNERS
 ## test program ######################################################
 
 NORMALIZE = {
-    "1RB ... ...  2LB 0LA ...": {
-        "1RB ... ...  2LB 0LA ...",
+    "1RB --- ---  2LB 0LA ---": {
+        "1RB --- ---  2LB 0LA ---",
     },
-    "1RB 2LA 1RA 1LA  3LA ... 2RB 2RA": {
-        "1RB 3LA 1LA 1RA  2LA ... 3RA 3RB",
-        "2RB 2RA 1LA 2LA  3LA 1RB ... 1RA",
-        "1LB 2RA 1LA 1RA  3RA ... 2LB 2LA",
-        "1LB 3RA 1RA 1LA  2RA ... 3LA 3LB",
-        "2LB 2LA 1RA 2RA  3RA 1LB ... 1LA",
+    "1RB 2LA 1RA 1LA  3LA --- 2RB 2RA": {
+        "1RB 3LA 1LA 1RA  2LA --- 3RA 3RB",
+        "2RB 2RA 1LA 2LA  3LA 1RB --- 1RA",
+        "1LB 2RA 1LA 1RA  3RA --- 2LB 2LA",
+        "1LB 3RA 1RA 1LA  2RA --- 3LA 3LB",
+        "2LB 2LA 1RA 2RA  3RA 1LB --- 1LA",
     },
     "1RB 1LC  1RD 1RB  0RE 1RE  1LD 1LA  0LF 1LF  0RD 0RC": {
         "1RB 1LE  1RD 1RB  0RD 0RE  1LD 1LA  0RF 1RF  0LC 1LC",
@@ -3720,36 +3720,36 @@ NORMALIZE = {
         "1LB 1RD  1LE 1LB  0LE 0LD  0LF 1LF  1RE 1RA  0RC 1RC",
     },
 
-    "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA": (
-        "0RB ...  0LC ...  1LD 1LE  1RF ...  0LG 0RH  0RH 1RF  1RH ...  1LI 0RH  1LI 1LC",
-        "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA  0RA ...  0LH ...",
+    "1RB 1RC  1LD ---  0RE 0LF  0LF 1LD  1LF ---  1RG 0LF  1RG 1RA": (
+        "0RB ---  0LC ---  1LD 1LE  1RF ---  0LG 0RH  0RH 1RF  1RH ---  1LI 0RH  1LI 1LC",
+        "1RB 1RC  1LD ---  0RE 0LF  0LF 1LD  1LF ---  1RG 0LF  1RG 1RA  0RA ---  0LH ---",
     ),
 
-    "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": (
-        "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD  ... ... ... ...  ... ... ... ...  ... ... ... ...",
+    "1RB 1LC 2LC 2RA  2LD 3RE 1RB ---  0LC 2RA 2LF 3LD  --- 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": (
+        "1RB 1LC 2LC 2RA  2LD 3RE 1RB ---  0LC 2RA 2LF 3LD  --- 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD  --- --- --- ---  --- --- --- ---  --- --- --- ---",
     ),
 
-    "1RB 2RC 3RB 1LA 3RC 4LD ... 5RC  6LD 3RB 4RB 2LA 1LA ... ... ...  ... 3RC 1LA 3RB 2RC ... 2LD ...  7RC 1LD 2LD 3LD 4LD 1RB ... 2RB": (
-        "1RB 2RC 3RB 1LA 3RC 4LD ... 5RC ...  6LD 3RB 4RB 2LA 1LA ... ... ... ...  ... 3RC 1LA 3RB 2RC ... 2LD ... ...  7RC 1LD 2LD 3LD 4LD 1RB ... 2RB ...",
+    "1RB 2RC 3RB 1LA 3RC 4LD --- 5RC  6LD 3RB 4RB 2LA 1LA --- --- ---  --- 3RC 1LA 3RB 2RC --- 2LD ---  7RC 1LD 2LD 3LD 4LD 1RB --- 2RB": (
+        "1RB 2RC 3RB 1LA 3RC 4LD --- 5RC ---  6LD 3RB 4RB 2LA 1LA --- --- --- ---  --- 3RC 1LA 3RB 2RC --- 2LD --- ---  7RC 1LD 2LD 3LD 4LD 1RB --- 2RB ---",
     ),
 
-    "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC ...  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC": (
-        "1RB ... ... ... ... ... ... ...  2LC ... ... ... ... ... ... ...  3RD 3LC ... 1LC ... ... ... ...  ... 1RD 1RB 1LE ... ... ... ...  4RD 1LE ... 1RD 1LC ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...  ... ... ... ... ... ... ... ...",
+    "1RB --- --- --- ---  2LC --- --- --- ---  3RD 3LC --- 1LC ---  --- 1RD 1RB 1LE ---  4RD 1LE --- 1RD 1LC": (
+        "1RB --- --- --- --- --- --- ---  2LC --- --- --- --- --- --- ---  3RD 3LC --- 1LC --- --- --- ---  --- 1RD 1RB 1LE --- --- --- ---  4RD 1LE --- 1RD 1LC --- --- ---  --- --- --- --- --- --- --- ---  --- --- --- --- --- --- --- ---  --- --- --- --- --- --- --- ---",
     ),
 }
 
 EXPAND = {
-    "1RB2RA1LC_2LC1RB2RB_---2LA1LA": "1RB 2RA 1LC  2LC 1RB 2RB  ... 2LA 1LA",
-    "1RB3LB1RZ2RA_2LC3RB1LC2RA_3RB1LB3LC2RC": "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC",
-    "1LB1RZ_0LC1LC_0LD0LC_1LE1RA_0LF0LE_1LG1RD_0LH0LG_1LI1RF_0LJ0LI_1RJ1RH": "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
+    "1RB2RA1LC_2LC1RB2RB_---2LA1LA": "1RB 2RA 1LC  2LC 1RB 2RB  --- 2LA 1LA",
+    "1RB3LB1RZ2RA_2LC3RB1LC2RA_3RB1LB3LC2RC": "1RB 3LB --- 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC",
+    "1LB1RZ_0LC1LC_0LD0LC_1LE1RA_0LF0LE_1LG1RD_0LH0LG_1LI1RF_0LJ0LI_1RJ1RH": "1LB ---  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH",
 }
 
 TNF = {
-    "1RB 1LC  1LD 0RB  ... 0LD  1RA 1LA": "1RB 1LD  1LC 0RB  1RA 1LA  ... 0LC",
+    "1RB 1LC  1LD 0RB  --- 0LD  1RA 1LA": "1RB 1LD  1LC 0RB  1RA 1LA  --- 0LC",
     "1RB 0LC  1LD 0RC  1RA 0RB  0LD 1LA": "1RB 0LD  1LC 0RD  0LC 1LA  1RA 0RB",
     "1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA": "1RB 1LD  1RC 1RB  1LC 1LA  0RC 0RD",
 
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...",
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ---": "1RB 2LA 1RA 1RA  1LB 1LA 3RB ---",
     "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA": "1RB 2LA 1RA 1LB  0LB 2RB 3RB 1LA",
     "1RB 2LB 3RA 2LA  3LB 3RA 0RB 1RB": "1RB 3LB 3LA 2RA  2LB 2RA 1RB 0RB",
     "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA": "1RB 2RA 1LA 2LB  2LB 3RB 0RB 1RA",
@@ -3757,7 +3757,7 @@ TNF = {
 
     "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC": "1RB 0LB 1LA  2LC 2LB 2LB  2RC 2RA 0LC",
 
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA",
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  --- 0LA": "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  --- 0LA",
     "1RB 0LC  0LD 0LB  1RA 1LA  1RE 1LD  1RE 1RA": "1RB 0LE  0LC 0LB  1RD 1LC  1RD 1RA  1RA 1LA",
     "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA": "1RB 0LC  1RC 0LA  1LD 0RB  0RE 0RD  1LE 0LA",
     "1RB 0RB  0RC 0RB  0RD 0RE  1LD 0LE  1LA 1RE": "1RB 0RB  0RC 0RB  0RD 0RE  1LD 0LE  1LA 1RE",
@@ -3783,7 +3783,7 @@ TNF = {
     "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE": "1RB 1LE  0RC 0RD  1LC 1LA  0RB 1RD  0LD 0RE",
     "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0LB 0RD": "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0LB 0RD",
     "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0RB 0RD": "1RB 1RA  1LB 0LC  1RC 1LD  0RE 0RA  0RB 0RD",
-    "1RB 0LA  0RC 1LD  1LE 0RA  0LF ...  1LB 1LC  0LE 0LF": "1RB 0LA  0RC 1LE  1LD 0RA  1LB 1LC  0LF ...  0LD 0LF",
+    "1RB 0LA  0RC 1LD  1LE 0RA  0LF ---  1LB 1LC  0LE 0LF": "1RB 0LA  0RC 1LE  1LD 0RA  1LB 1LC  0LF ---  0LD 0LF",
 }
 
 ## test graph ########################################################
@@ -3802,7 +3802,7 @@ GRAPHS: dict[
     ],
 ] = {
     # 2 2
-    "1RB 1LB  1LA ...": (
+    "1RB 1LB  1LA ---": (
         "BBA.",
         1, 1, 1, 0,
         {A: {B}, B: {A}},
@@ -3816,31 +3816,31 @@ GRAPHS: dict[
     ),
 
     # 3 2
-    "1RB 0LB  1LA 0RA  ... ...": (
+    "1RB 0LB  1LA 0RA  --- ---": (
         "BBAA..",
         0, 0, 1, 0,
         {A: {B}, B: {A}, C: set()},
         {A: {B}, B: {A}, C: set()},
     ),
-    "1RB 1LA  0LA 0RB  ... ...": (
+    "1RB 1LA  0LA 0RB  --- ---": (
         "BAAB..",
         0, 0, 0, 0,
         {A : {A, B}, B: {A, B}, C: set()},
         {A : {A, B}, B: {A, B}, C: set()},
     ),
-    "1RB ...  0LB 1RC  1LB 0RC": (
+    "1RB ---  0LB 1RC  1LB 0RC": (
         "B.BCBC",
         1, 0, 0, 1,
         {A: set(), B: {A, B, C}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {B, C}},
     ),
-    "1RB ...  1LB 0RC  1LC 1LA": (
+    "1RB ---  1LB 0RC  1LC 1LA": (
         "B.BCCA",
         1, 1, 0, 1,
         {A: {C}, B: {A, B}, C: {B, C}},
         {A: {B}, B: {B, C}, C: {A, C}},
     ),
-    "1RC ...  1LB 0RC  1LB 1LA": (
+    "1RC ---  1LB 0RC  1LB 1LA": (
         "C.BCBA",
         0, 1, 0, 1,
         {A: {C}, B: {B, C}, C: {A, B}},
@@ -3860,7 +3860,7 @@ GRAPHS: dict[
     ),
 
     # 2 3
-    "1RB 2LB ...  2LA 2RB 1LB": (
+    "1RB 2LB ---  2LA 2RB 1LB": (
         "BB.ABB",
         1, 1, 0, 0,
         {A: {B}, B: {A, B}},
@@ -3886,25 +3886,25 @@ GRAPHS: dict[
     ),
 
     # 4 2
-    "1RB 1LB  1LA 0LC  ... 1LD  1RD 0RA": (
+    "1RB 1LB  1LA 0LC  --- 1LD  1RD 0RA": (
         "BBAC.DDA",
         1, 1, 0, 1,
         {A: {B, D}, B: {A}, C: {B}, D: {C, D}},
         {A: {B}, B: {A, C}, C: {D}, D: {A, D}},
     ),
-    "1RC 1LB  1LA 0LC  ... 1LD  1RC 0RA": (
+    "1RC 1LB  1LA 0LC  --- 1LD  1RC 0RA": (
         "CBAC.DCA",
         0, 1, 1, 0,
         {A: {B, D}, B: {A}, C: {A, B, D}, D: {C}},
         {A: {B, C}, B: {A, C}, C: {D}, D: {A, C}},
     ),
-    "1RB 1LB  1LA 0LB  ... 1LC  1RD 0RA": (
+    "1RB 1LB  1LA 0LB  --- 1LC  1RD 0RA": (
         "BBAB.CDA",
         1, 0, 0, 1,
         {A: {B, D}, B: {A, B}, C: {C}, D: {D}},
         {A: {B}, B: {A, B}, C: {C}, D: {A, D}},
     ),
-    "1RC 1LB  1LA 0LC  ... 1LD  1RD 0RD": (
+    "1RC 1LB  1LA 0LC  --- 1LD  1RD 0RD": (
         "CBAC.DDD",
         0, 0, 0, 1,
         {A: {B}, B: {A}, C: {A, B}, D: {C, D}},
@@ -3922,7 +3922,7 @@ GRAPHS: dict[
         {A: {B, D}, B: {A}, C: {A, C}, D: {B, C, D}},
         {A: {B, C}, B: {A, D}, C: {C, D}, D: {A, D}},
     ),
-    "1RB 0LA  1RC 1LA  0LB 0LD  ... 0RD": (
+    "1RB 0LA  1RC 1LA  0LB 0LD  --- 0RD": (
         "BACABD.D",
         1, 0, 0, 0,
         {A: {A, B}, B: {A, C}, C: {B}, D: {D, C}},
@@ -3930,13 +3930,13 @@ GRAPHS: dict[
     ),
 
     # 2 4
-    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ...": (
+    "1RB 2LA 1RA 1RA  1LB 1LA 3RB ---": (
         "BAAABAB.",
         1, 1, 0, 1,
         {A: {A, B}, B: {A, B}},
         {A: {A, B}, B: {A, B}},
     ),
-    "1RA 2LA 1RA 1RA  1LB 1LA 3RB ...": (
+    "1RA 2LA 1RA 1RA  1LB 1LA 3RB ---": (
         "AAAABAB.",
         1, 0, 0, 1,
         {A: {A, B}, B: {B}},
@@ -3944,19 +3944,19 @@ GRAPHS: dict[
     ),
 
     # 3 3
-    "1RB 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC": (
+    "1RB 2LB 1LC  1LA 2RB 1RB  --- 2LA 0LC": (
         "BBCABB.AC",
         1, 1, 0, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
     ),
-    "1RC 2LB 1LC  1LA 2RB 1RB  ... 2LA 0LC": (
+    "1RC 2LB 1LC  1LA 2RB 1RB  --- 2LA 0LC": (
         "CBCABB.AC",
         0, 1, 0, 0,
         {A: {B, C}, B: {A, B}, C: {A, C}},
         {A: {B, C}, B: {A, B}, C: {A, C}},
     ),
-    "1RB 1LC ...  1LA 1LC 2RB  1RB 2LC 1RC": (
+    "1RB 1LC ---  1LA 1LC 2RB  1RB 2LC 1RC": (
         "BC.ACBBCC",
         1, 1, 0, 0,
         {A: {B}, B: {A, B, C}, C: {A, B, C}},
@@ -3964,19 +3964,19 @@ GRAPHS: dict[
     ),
 
     # 5 2
-    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  ... 0LA": (
+    "1RB 1LC  1RC 1RB  1RD 0LE  1LA 1LD  --- 0LA": (
         "BCCBDEAD.A",
         1, 1, 0, 0,
         {A: {D, E}, B: {A, B}, C: {A, B}, D: {C, D}, E: {C}},
         {A: {B, C}, B: {B, C}, C: {D, E}, D: {A, D}, E: {A}},
     ),
-    "1RB 1LC  1RC 1RB  0LE 1RD  1LA 1LD  ... 0LA": (
+    "1RB 1LC  1RC 1RB  0LE 1RD  1LA 1LD  --- 0LA": (
         "BCCBEDAD.A",
         0, 1, 0, 0,
         {A: {D, E}, B: {A, B}, C: {A, B}, D: {C, D}, E: {C}},
         {A: {B, C}, B: {B, C}, C: {E, D}, D: {A, D}, E: {A}},
     ),
-    "1RB 1LC  1RC 1RB  1RD 0LC  1LA 1LD  ... 0LE": (
+    "1RB 1LC  1RC 1RB  1RD 0LC  1LA 1LD  --- 0LE": (
         "BCCBDCAD.E",
         1, 0, 0, 0,
         {A: {D}, B: {A, B}, C: {A, B, C}, D: {C, D}, E: {E}},
@@ -4021,7 +4021,7 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
 FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
     "far": {
         "halt": {
-            "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
+            "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  --- 1RC",
         },
         "blank": {
             "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB",
@@ -4032,19 +4032,19 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
     },
     "cps": {
         "halt": {
-            "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
-            "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
-            "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
-            "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
-            "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...",
-            "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
+            "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  --- 1RC",
+            "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ---",
+            "1RB ---  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
+            "1RB 1LB  1LC ---  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
+            "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ---",
+            "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  --- 1LD",
         },
         "blank": {
             "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
             "1RB 0RB  1RC 1RA  1LC 0LD  0RA 0LE  1LD 1LE",
             "1RB 1RD  1LB 0LC  0RD 0LE  1RA 0RA  1LC 1LE",
-            "1RB 0RD ...  1LC 0LB 1RB  0RA 1LB ...  1RA 2RD ...",
-            "1RB 2RA ...  1RC 0RA ...  1LD 0LC 1RC  0RB 1LC ...",
+            "1RB 0RD ---  1LC 0LB 1RB  0RA 1LB ---  1RA 2RD ---",
+            "1RB 2RA ---  1RC 0RA ---  1LD 0LC 1RC  0RB 1LC ---",
             "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB",
             "1RB 0RE  0LC 0RB  1RD 1LA  1RE 1LF  0LF 0RD  1LC 0LA",
         },
@@ -4066,42 +4066,42 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
-            "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
+            "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  --- 0LC  1RG 1LD  0RG 0RF",
         },
     },
     "bkw": {
         "halt": {
-            "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
-            "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
-            "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 0RF  1LA 0LA",
-            "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 1RF  1LB 1LC",
-            "1RB ...  1LC 1RD  1LD 1LC  1LE 0RD  1RF 0LE  1RA 0LE",
-            "1RB 0LA  1RC 0LA  1RD ...  1LE 1RF  1LF 1LE  1LA 0RF",
-            "1RB 0LB  1LA 1RC  0RD 0RC  1RF 0LE  1LE 1LB  0LA ...",
-            "1RB 0LC  0RC 0RF  1RD 0LA  0LE 0RC  1LE 1LA  0RD ...",
-            "1RB 0LE  1RC 0RB  0RD 1LE  1LE 1RF  1LA 0LC  ... 1RE",
-            "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  ... 0RD",
-            "1RB 0RF  0RC ...  1RD 0LD  1LD 0LE  0LA 0LC  1RF 0RB",
-            "1RB 1LF  1RC 0RE  1LD 0RB  1LE 0LD  0LA 1RB  ... 1LB",
-            "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 0LB  ... 0LC",
-            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 0LB  1LD 0LF",
-            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 1LD  1LD 0LF",
-            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 1LD  1RD 0LF",
-            "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1LD 0LF",
-            "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1RD 0LF",
-            "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
+            "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  --- 1RC",
+            "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ---",
+            "1RB ---  1LC 1LB  1RA 0LD  1RE 0LC  0RE 0RF  1LA 0LA",
+            "1RB ---  1LC 1LB  1RA 0LD  1RE 0LC  0RE 1RF  1LB 1LC",
+            "1RB ---  1LC 1RD  1LD 1LC  1LE 0RD  1RF 0LE  1RA 0LE",
+            "1RB 0LA  1RC 0LA  1RD ---  1LE 1RF  1LF 1LE  1LA 0RF",
+            "1RB 0LB  1LA 1RC  0RD 0RC  1RF 0LE  1LE 1LB  0LA ---",
+            "1RB 0LC  0RC 0RF  1RD 0LA  0LE 0RC  1LE 1LA  0RD ---",
+            "1RB 0LE  1RC 0RB  0RD 1LE  1LE 1RF  1LA 0LC  --- 1RE",
+            "1RB 0RC  1RC 1RA  1RD 1LA  1LE 0RF  0LA 1LE  --- 0RD",
+            "1RB 0RF  0RC ---  1RD 0LD  1LD 0LE  0LA 0LC  1RF 0RB",
+            "1RB 1LF  1RC 0RE  1LD 0RB  1LE 0LD  0LA 1RB  --- 1LB",
+            "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 0LB  --- 0LC",
+            "1RB 1RA  0RC 1RF  1LD ---  0LE 1LE  1RA 0LB  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1LD ---  0LE 1LE  1RA 1LD  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1LD ---  0LE 1LE  1RA 1LD  1RD 0LF",
+            "1RB 1RA  0RC 1RF  1RD ---  0LE 1LE  1RA 1LD  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1RD ---  0LE 1LE  1RA 1LD  1RD 0LF",
+            "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  --- 1LD",
         },
         "blank": {
             "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
             "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
-            "1RB ... ...  2RC 2RB 1LB  2LC 1RA 0LC",
+            "1RB --- ---  2RC 2RB 1LB  2LC 1RA 0LC",
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 1LA  1RC 0RE  1LD 0LA  1LC 0RD  1RC 1RB",
             "1RB 1LC  0RC 1RE  1LD 1RA  0RE 0LF  1RC 0RD  1LE 1LD",
         },
         "spinout": {
-            "1RB 0RB ... 0LB  2LB 3RB 1LB 1LA",
+            "1RB 0RB --- 0LB  2LB 3RB 1LB 1LA",
             "1RB 0RB 0RA 0LB  1LB 2RA 3LA 2RB",
             "1RB 2LA 1RA 1LB  2LB 2RB 3RB 1LA",
             "1RB 2LB 0RA 1LB  2LB 3LA 1RA 0RB",
@@ -4123,16 +4123,16 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 1LC  1RD 0RB  0LC 1LA  1RC 0RA",
             "1RB 1RA  0RC 0LB  0RD 0RA  1LD 0LA",
             "1RB 1RC  1LB 1LC  1RD 0LB  1RA 0RD",
-            "1RB ... ...  0LC 2LB 1RB  2RC 1LB 0RC",
-            "1RB ... ...  0RC 2RB 1LB  2LC 1RB 0LC",
-            "1RB ... ...  2RC 2RB 1LB  2LC 1RA 0LC",
-            "1RB ... 1LB  2LB 2RC 0LA  2RB ... 0RB",
-            "1RB 0LC ...  1LB 2LA 0RA  2LA 0RB ...",
+            "1RB --- ---  0LC 2LB 1RB  2RC 1LB 0RC",
+            "1RB --- ---  0RC 2RB 1LB  2LC 1RB 0LC",
+            "1RB --- ---  2RC 2RB 1LB  2LC 1RA 0LC",
+            "1RB --- 1LB  2LB 2RC 0LA  2RB --- 0RB",
+            "1RB 0LC ---  1LB 2LA 0RA  2LA 0RB ---",
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
             "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
-            "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
+            "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  --- 0LC  1RG 1LD  0RG 0RF",
         },
         "twostep": {
             "1RB 2LA 1LB 3RB  0LA 2RB 3LB 2RA",
@@ -4147,7 +4147,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 1RC  1LC 1RD  1LD 0LB  0RA 1LB",
         },
         "zloop": {
-            "1RB ...  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE",
+            "1RB ---  0RC 0RE  1LD 1LA  1LC 0LG  0RF 1LF  0RD 1LF  1LB 0LE",
         },
     },
 }
@@ -4205,214 +4205,214 @@ FAR_SOLVES = {
         "1RB 3RB 3RA 1LA  0LB 2RB 1LA 2LB",
         "1RB 3RB 3RA 2LB  1LB 2LA 0RA 0LA",
         "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
-        "1RB ... 0RC  1LC 2LB 1RA  2RC 0LB 0LC",
-        "1RB ... 1RC  2LB 1RA 0LB  0RB 2RC 1LC",
-        "1RB 0LB ...  1LA 0RC 0RB  2LC 1LA 1RB",
-        "1RB 0LC 0LA  1LA 0RA ...  2RC 1RB 1LA",
-        "1RB 0LC 0RB  2LB 2RA 1LC  2RB ... 2LB",
-        "1RB 0RA 0RC  2LB 2LA 0RA  0LB ... 1RC",
-        "1RB 1LA ...  2LA 2LC 1RB  0RC 2LB 1RC",
-        "1RB 2RA 0LB  2LB 1RB 1LC  ... 1LA 0LA",
-        "1RB 2RA 0LC  0RC 0RA ...  1LC 0LA 1RC",
-        "1RB 2RA 0RC  2LB 2LA 0RA  0LB ... 1RC",
-        "1RB 2RA 1LC  2LB 0RB 2LA  ... 2LB 1LA",
-        "1RB 2RB 0LC  1LC 1RC ...  1RC 2RA 0LA",
-        "1RB 0LA ... 1LA ...  2LB 3RB 4LA 4LB 0RB",
-        "1RB 0RB ... ... 2LA  2LB 3LA 1LA 4RB 0LA",
-        "1RB 0RB ... ... 2LA  2LB 3LA 1LA 4RB 1LB",
-        "1RB 0RB ... 4LA ...  2LB 2LA 3RB 0LA 1LA",
-        "1RB 0RB ... 4LA ...  2LB 3RB 1LA 1LB 2LA",
-        "1RB 0RB ... 4LA ...  2LB 3RB 1LA 2LB 2LA",
-        "1RB 0RB ... 4LA ...  2LB 3RB 1LA 4LB 2LA",
-        "1RB 4RB ... ... 0LA  2LB 2LA 3LA 0RB 1LB",
-        "1RB 4RB ... 1LA 0RB  2LB 2LA 3RB 0LA ...",
-        "1RB ... ... ...  1RC 0LB 0LC ...  1LC 2RC 3LB 1RC",
-        "1RB ... ... ...  2LB 3RB 1LB 0LC  1RA 0RA ... 2LB",
-        "1RB ... ... ...  2LC ... 0RB 0RC  2RC 2LC 3LC 1RB",
-        "1RB 0RB ... ...  1LC 2LA 3LB 0RB  0LC 1RA ... ...",
+        "1RB --- 0RC  1LC 2LB 1RA  2RC 0LB 0LC",
+        "1RB --- 1RC  2LB 1RA 0LB  0RB 2RC 1LC",
+        "1RB 0LB ---  1LA 0RC 0RB  2LC 1LA 1RB",
+        "1RB 0LC 0LA  1LA 0RA ---  2RC 1RB 1LA",
+        "1RB 0LC 0RB  2LB 2RA 1LC  2RB --- 2LB",
+        "1RB 0RA 0RC  2LB 2LA 0RA  0LB --- 1RC",
+        "1RB 1LA ---  2LA 2LC 1RB  0RC 2LB 1RC",
+        "1RB 2RA 0LB  2LB 1RB 1LC  --- 1LA 0LA",
+        "1RB 2RA 0LC  0RC 0RA ---  1LC 0LA 1RC",
+        "1RB 2RA 0RC  2LB 2LA 0RA  0LB --- 1RC",
+        "1RB 2RA 1LC  2LB 0RB 2LA  --- 2LB 1LA",
+        "1RB 2RB 0LC  1LC 1RC ---  1RC 2RA 0LA",
+        "1RB 0LA --- 1LA ---  2LB 3RB 4LA 4LB 0RB",
+        "1RB 0RB --- --- 2LA  2LB 3LA 1LA 4RB 0LA",
+        "1RB 0RB --- --- 2LA  2LB 3LA 1LA 4RB 1LB",
+        "1RB 0RB --- 4LA ---  2LB 2LA 3RB 0LA 1LA",
+        "1RB 0RB --- 4LA ---  2LB 3RB 1LA 1LB 2LA",
+        "1RB 0RB --- 4LA ---  2LB 3RB 1LA 2LB 2LA",
+        "1RB 0RB --- 4LA ---  2LB 3RB 1LA 4LB 2LA",
+        "1RB 4RB --- --- 0LA  2LB 2LA 3LA 0RB 1LB",
+        "1RB 4RB --- 1LA 0RB  2LB 2LA 3RB 0LA ---",
+        "1RB --- --- ---  1RC 0LB 0LC ---  1LC 2RC 3LB 1RC",
+        "1RB --- --- ---  2LB 3RB 1LB 0LC  1RA 0RA --- 2LB",
+        "1RB --- --- ---  2LC --- 0RB 0RC  2RC 2LC 3LC 1RB",
+        "1RB 0RB --- ---  1LC 2LA 3LB 0RB  0LC 1RA --- ---",
     },
     "halt": {
-        "1RB ... 0LB  0RC 2RC 1LC  2LA 2LB 1RB",
-        "1RB ... 0RB  1LC 2RA 1RB  2RA 2LC 0LC",
-        "1RB ... 0RC  1LC 2LB 1RA  2RC 0LB 0LC",
-        "1RB ... 1LB  1LC 0LC 1RB  2LA 2RC 0RC",
-        "1RB ... 1LC  2LC 0RB 2RB  2LA 2RA 2LC",
-        "1RB ... 1LC  2RC 0LA 2LB  1LB 0LB 0RB",
-        "1RB ... 1RC  0LC 2RB 1LB  2LA 2LC 1RA",
-        "1RB ... 1RC  2LB 1RA 0LB  0RB 2RC 1LC",
-        "1RB ... 2LA  1LC 2RC 1LB  0LA 2RB 0RA",
-        "1RB ... 2LB  2LC 0RA 2RC  1LA 2LA 0RB",
-        "1RB ... 2LB  2LC 2LC 2RC  1LA 2LA 0RB",
-        "1RB ... 2LC  2LC 2RB 2RC  1LA 2LC 0RB",
-        "1RB ... 2RB  2LC 2RB 1LB  ... 1RA 0LC",
-        "1RB 0LA 2LA  2RC ... 0RC  1LA 2LB 2RC",
-        "1RB 0LB ...  1LC 2RB 1RB  2LA 2LC 2LA",
-        "1RB 0LB ...  2LC 0RB 2RB  1LA 0RC 1RC",
-        "1RB 0LB 0RC  1LB 2LC ...  1RA 2RC 1LC",
-        "1RB 0LB 1LA  2LC 1RA ...  0RA 2RC 1LC",
-        "1RB 0LB 1RA  1LA 2LC 1LA  ... 2RA 2LA",
-        "1RB 0LC 0LB  1RC 0RB ...  1LA 2RB 0LC",
-        "1RB 0LC 2LA  2LA 0RB 2RB  2RC ... 1LA",
-        "1RB 0LC 2RA  2LC 2RB 1RA  ... 1LA 1LB",
-        "1RB 0RB ...  0LC 2RC 1LC  2RA 2LB 1RB",
-        "1RB 0RB ...  2LC 1RB 1LA  2RA 1LC 0LC",
-        "1RB 0RB ...  2LC 1RB 2RA  2RA 1LC 0LC",
-        "1RB 0RB 0LA  1LB 2RA 2LC  2RC ... 2RA",
-        "1RB 0RB 0LA  1LC 2RC 2RB  2RA 2LA ...",
-        "1RB 0RB 1LA  2RC 2LB 0LB  1LA ... 1RA",
-        "1RB 1LA ...  1RC 2LC 1RB  2LA 2LB 2RB",
-        "1RB 1LA ...  2RC 0LB 0RC  2LC 2LA 1RB",
-        "1RB 1LA 0LA  0RC 1RB 2RB  1LC 2LA ...",
-        "1RB 1LA 0LA  2LA 1RB 0RC  1LC 2RB ...",
-        "1RB 1LA 2LA  1LA 2RC 1LB  ... 2RB 0LB",
-        "1RB 1LB ...  1LC 2RA 0RB  1LA 0LC 0LA",
-        "1RB 1LB 1LA  2RC 0LA 1RB  2LA 1RB ...",
-        "1RB 1LC ...  2LC 2RB 1RB  0LA 2LA 0LB",
-        "1RB 1LC 1RC  2LC ... 2RB  2LA 2LC 1RA",
-        "1RB 1RA 1LB  2LC 2RA ...  0RA 1LC 0LC",
-        "1RB 1RB 1LA  2LC 2RB 1LB  ... 1RA 0LC",
-        "1RB 2LA 0LA  0RC ... 2RA  1LC 0LA 1LB",
-        "1RB 2LA 1RA  1LA 1LC 2RB  ... 0LC 0LA",
-        "1RB 2LA 1RA  1LC 2LA ...  2RA 0LC 2RC",
-        "1RB 2LA 1RC  0LB 1LA 2RA  ... 0LA 0RA",
-        "1RB 2LA 1RC  2LC ... 2RB  1LA 2LA 1RA",
-        "1RB 2LA 1RC  2LC ... 2RB  1LC 2LA 1RA",
-        "1RB 2LA 2LC  0LA 0LA 1RA  ... 2RB 1LB",
-        "1RB 2LB 1RA  1RC 2LA 1LA  0LB ... 2RC",
-        "1RB 2LB 1RA  2LC 2LA ...  0RA 2RC 1LC",
-        "1RB 2LB 2LA  1LA 2RC 1LB  ... 2RB 0LB",
-        "1RB 2LC ...  0LC 2RB 1LB  1RB 2LA 1RC",
-        "1RB 2LC 1RA  0LA 2RB 1LB  1RB 2LA ...",
-        "1RB 2LC 1RA  0LA 2RB 1LB  2RA 2LA ...",
-        "1RB 2RA 1LC  2LA 1RB 0LA  ... 2LA 1LA",
-        "1RB 2RA 1LC  2LB 0RB 2LA  ... 2LA 1LA",
-        "1RB 2RB 0LA  1LC 2LA 2RB  ... 1RA 0LC",
-        "1RB 2RB 0LC  1LC ... 2RC  2RA 2RA 2LA",
-        "1RB 2RB 1LC  1LA 2RB 0RA  2LA ... 0LA",
-        "1RB 2RB 1LC  1LA 2RB 0RB  2LA ... 0LA",
-        "1RB 2RB 1LC  2LA 2RA 1LC  ... 1LA 0LB",
-        "1RB 2RB 1LC  2LC 2RB 1LB  ... 1RA 0LC",
-        "1RB 2RB 2LA  1LC 2LA 2RB  ... 1RA 0LC",
-        "1RB 2RB 2LC  2LA 0RB 2RB  1LA ... 0LA",
-        "1RB 2RC ...  2LC 0RB 2LB  1LA 2RC 1LC",
-        "1RB 2RC 1LB  2LA 2RC 1LA  ... 0RA 2RB",
-        "1RB 2RC 1LC  2LC ... 0RC  0LA 2LA 1RA",
-        "1RB 2RC 1RB  1LA 0RA 1LB  ... 2LB 2RB",
-        "1RB ... ... 0RB 0LB  2LB 3LA 4RA 4RB 3LB",
-        "1RB 0LB ... 3LB ...  2LA 4RA 3RB 0RB 3LA",
-        "1RB 0LB 4LB 3LA 0RA  2LA ... 3RA 4RB ...",
-        "1RB 2LA 1LA 4LA ...  0LA 2RB 3RB ... 0RA",
-        "1RB 2LA 1LA 4LA ...  1LA 2RB 3RB ... 0RA",
-        "1RB 2LB 4RB ... ...  2LA 4RA 3RA 1LB 0LB",
-        "1RB 3LA 0RA 2LB ...  2LA ... 4LA 1RB 2RA",
-        "1RB 3LB 1RA 4RA ...  2LA 2LB 4RA ... 0LB",
-        "1RB 3LB 4LB 2RA 0RA  2LA 4LA 1RA ... ...",
-        "1RB 3RB ... 1LB 2LA  2LA 0LB 4RB ... 1RA",
-        "1RB 4RB ... 1LA 0RB  2LB 2LA 3RB 0LA ...",
-        "1RB ... ... ... 0LB ...  2LB 3LA 0RB 4RB 5LB 1RB",
-        "1RB ... ... ... 0LB ...  2LB 3LA 0RB 4RB 5RB 1LB",
-        "1RB 3LA ... 5RB 0LA 4RA  2LA ... 4RA 1RB ... ...",
-        "1RB 3LB ... ... 2LA ...  2LA ... 4RB 0RB 5LA 3LB",
-        "1RB 5LA ... ... ... ...  2LB 3LA 0RB 4RB 1RB 0LB",
-        "1RB 5LA ... ... ... ...  2LB 3RB 0RB 4LA 1RB 0LB",
-        "1RB ... ... ...  1RC 0LB ... 1LA  2LC 3RC 0RC 1LB",
-        "1RB ... ... 0RB  2LC ... 2RA 1RB  2RA 3LC 0LC ...",
-        "1RB ... ... 0RB  2LC ... 3RA 1RB  3RA 3LC ... 0LC",
-        "1RB ... ... 2LC  2LB 3RB 0RB 1LC  1LA ... ... 0LB",
-        "1RB ... 0RB ...  1LC 3RA 1RB ...  3RA 2LC ... 0LC",
-        "1RB ... 1RC ...  1LC ... 0RA ...  3RA 2LC 1RA 0LC",
-        "1RB ... 2RB ...  2LC 2LC 3LB 2RB  ... 1RA 0LC ...",
-        "1RB ... 2RB ...  2LC 2RB 3LB 1LA  ... 1RA 0LC ...",
-        "1RB ... 2RB ...  2LC 2RB 3LB 2RB  ... 1RA 0LC ...",
-        "1RB ... 2RB 0LA  2RC ... ... 3RC  3LA ... 3RC 2LC",
-        "1RB ... 3LB ...  2LC ... 0LC 2RB  0LA 3RA 0RA ...",
-        "1RB ... 3LC ...  2LC ... 2RB 0RB  2LA 2RA 2LC ...",
-        "1RB ... 3LC ...  2RC ... 0RC ...  0LA 2LC 0LB 0RA",
-        "1RB ... 3LC 2RB  2LC 2RB 1LB ...  ... 1RA 0LC ...",
-        "1RB ... 3RB ...  2LC 3RB 1LB 0LB  ... 1RA ... 0LC",
-        "1RB ... 3RB ...  2LC 3RB 1LB 1LB  ... 1RA ... 0LC",
-        "1RB 0LA ... 0LC  2LB 3RB 0RB 1LA  0LA ... ... ...",
-        "1RB 0LA ... 1LC  2LB 3RB 0RB 1LA  1RA ... ... ...",
-        "1RB 0LA 2LA ...  2RC ... 0RC ...  3LA ... 2RC 2LB",
-        "1RB 0LA 3LA 2RB  2RC ... ... 2RA  2LA ... ... 0RA",
-        "1RB 0LC ... ...  2LB 3RB 0RB 1LA  3RB ... ... 0LA",
-        "1RB 0LC ... 2LA  2LB 3RB 0RB 1LA  0LA ... ... ...",
-        "1RB 0LC 2LA ...  2LA ... 2RB 0RB  2RC ... 3LA ...",
-        "1RB 0RB ... ...  0LC 0LA 0RC 1LB  3RA 2LB ... ...",
-        "1RB 0RB ... ...  1LA 1LC 1RC 0LB  2LB 3RA ... ...",
-        "1RB 0RB ... ...  2LA 0LB 1LC 2RC  3LB 1RA ... ...",
-        "1RB 0RB ... ...  2LC 1RB 1LA ...  3RA 1LC ... 0LC",
-        "1RB 0RB ... ...  2LC 1RB 3RA ...  3RA 1LC ... 0LC",
-        "1RB 0RB ... 0LA  1LC 3RA 3RB ...  3RA 2LA ... ...",
-        "1RB 0RB ... 0LA  1LC 3RC 3RB ...  3RA 2LA ... ...",
-        "1RB 0RB ... 1LA  0RC 0LC 3LC ...  2LA 3RA ... ...",
-        "1RB 0RB ... 1LB  2LA 2LC 3RB 0LA  ... ... ... 3LA",
-        "1RB 1LA ... 0LA  0RC 1RB 3RB ...  1LC 2LA ... ...",
-        "1RB 1LA ... 0LA  2LA 1RB 0RC ...  1LC 3RB ... ...",
-        "1RB 1RA 1LB ...  2LC 3RA ... ...  0RA 1LC ... 0LC",
-        "1RB 2LA 0LC 1LA  2LA 1LB 0RA ...  3LA ... ... ...",
-        "1RB 2LA 1LA 2RA  0LA 0LC 3RB ...  ... ... ... 1RA",
-        "1RB 2LA 1LA 2RA  1LA 0LC 3RB ...  ... ... ... 1RA",
-        "1RB 2LA 1LA 2RA  2LA 0LC 3RB ...  ... ... ... 1RA",
-        "1RB 2RA 3RB 0LC  2LA 1RB 0LA ...  ... ... 1LA ...",
-        "1RB 2RB 0LA ...  1LC 3LA ... 2RB  ... 1RA 0LC ...",
-        "1RB 2RB 1LC ...  1LA 2RB ... 0RA  3LA ... 0LA ...",
-        "1RB 2RB 1LC ...  1LA 2RB ... 0RB  3LA ... 0LA ...",
-        "1RB 2RB 2LB ...  2LA 2LC 3LA 1RB  ... ... 0LA ...",
-        "1RB 2RB 2LC ...  2LA ... 2RB 0RB  3LA ... 0LA ...",
-        "1RB 2RB 3LA ...  1LC 3LA ... 2RB  ... 1RA 0LC ...",
-        "1RB 3LA ... 1LA  1RC 0RA 1LA 3RB  2LA ... ... ...",
-        "1RB 3LA ... 1LA  2LA 0RA 3RC 3RB  1LA ... ... ...",
-        "1RB 3LB 0LC ...  2LA 2RB 1RB 0LB  ... 3RA ... ...",
-        "1RB 3LB 2LC ...  2LA 2RB 1RB 0LB  ... 3RB ... ...",
-        "1RB 3LB 3LA ...  2LA 0LA 0RC 1RB  ... ... ... 2RA",
-        "1RB 3RA 3RB 1LA  2LC ... 2LA ...  ... 1RA ... 0LC",
-        "1RB 3RB ... 2LC  2LA ... 3RB 0RB  3LA ... ... 0LA",
-        "1RB 3RB ... 2LC  2LA 0RB 3RB ...  1LA ... ... 0LA",
-        "1RB 3RB 1RC 2LA  2LA 1RA 1LA ...  ... 0RB ... ...",
-        "1RB ... ...  0LC ... 1RC  2RD 2LC 0RD  1RA ... 0LB",
-        "1RB ... ...  0RC ... 0LB  0RD ... 1LC  2LB 2RD 1LD",
-        "1RB ... ...  0RC ... 0LB  0RD ... 2RD  2LB 2RD 1LD",
-        "1RB ... ...  0RC ... 1LB  2LD 2RC 1LC  0RB ... 0LD",
-        "1RB ... ...  0RC ... 2RC  2LD 2RC 1LC  0RB ... 0LD",
-        "1RB ... ...  1LC ... 2LC  2RD 2LC 1RC  ... 1LB 0RD",
-        "1RB ... ...  1RC ... 2RC  2LD 2RC 1LC  ... 1RB 0LD",
-        "1RB ... ...  2LC 2RB 1LB  ... 1RD 0LC  1RB ... 2RB",
-        "1RB ... ...  2LC 2RB 1LB  2RD 1RB 0LB  ... ... 0RC",
-        "1RB ... ...  2RC ... 1LC  2LD 2RC 1LC  ... 1RA 0LD",
-        "1RB ... ...  2RC 1RC ...  1LD 2LC 1RC  ... 0LD 2RB",
-        "1RB ... ...  2RC 2LB 1RB  2LD 1LB 0RB  ... ... 0LC",
-        "1RB ... 0LC  1RC ... ...  0LD ... 1RD  2RA 2LD 0RA",
-        "1RB ... 1LD  2LC 2RB 1LB  ... 1RA 0LC  ... 1RB ...",
-        "1RB 0LB ...  2LC ... 2RB  2LA 2LB 0RD  ... ... 1RC",
-        "1RB 0RB 0LA  1LC ... 2RD  2RA 2LA ...  ... 2RA ...",
-        "1RB 0RB 0LA  1LC ... 2RD  2RA 2LA ...  ... 2RC ...",
-        "1RB 0RB 0LA  1LC 2RD ...  2RA 1LA ...  ... 2RA ...",
-        "1RB 0RB 0LA  1LC 2RD ...  2RA 1LA ...  ... 2RC ...",
-        "1RB 0RB 1LA  2RC 0LD ...  2RD ... ...  0LA 2RA ...",
-        "1RB 1LA 0RC  0RC 1RD ...  1LC 0LA ...  ... 2RB ...",
-        "1RB 1LA 0RC  0RC 2RD ...  1LC 0LA ...  ... 1RB ...",
-        "1RB ... ... ... ...  2LB 3LC 0RB 2LA 2LB  2LA 4LC ... ... ...",
-        "1RB ... ... ... ...  2LC ... ... 4RC ...  4RC 3LC 4RA 2RC 0LC",
-        "1RB ... ... ... 2LB  2LB 2LC 0RB 4RB 1LB  3LA ... ... ... ...",
-        "1RB ... ... 0LC ...  2LB 3RB 0RB 4LC 1RB  0LA ... ... ... ...",
-        "1RB ... ... 0LC ...  2LB 3RB 0RB 4RB 1LC  0LA ... ... ... ...",
-        "1RB ... ... 0RB ...  2LC ... 4RA 1RB ...  4RA 3LC ... ... 0LC",
-        "1RB ... 4RA ... ...  2LC ... ... ... ...  1RC 0LC 3RA 1RB 1RC",
-        "1RB 0RB ... ... ...  2LA ... 1LC 2RC 0LB  3LB 4RA ... ... ...",
-        "1RB 0RB ... 4LB ...  2LA ... 3RB 0LA 2LC  ... ... ... 3LA ...",
-        "1RB 3RB ... 2LC ...  2LA ... 3RB ... 0RB  4LA ... ... 0LA ...",
-        "1RB ... ... ...  0RC ... 0LB ...  0RD ... 2RD ...  2LB ... 3LD 2RD",
-        "1RB ... ... ...  0RC ... 0LB ...  0RD ... 3LC ...  2LB ... 3LD 2RD",
-        "1RB ... ... ...  0RC ... 2RC ...  2LD ... 3LC 2RC  0RB ... 0LD ...",
-        "1RB ... ... ...  0RC ... 3LB ...  2LD ... 3LC 2RC  0RB ... 0LD ...",
-        "1RB ... ... ...  1RC ... 0RA ...  2LD ... ... ...  1RD 0LD 3RA 1RC",
-        "1RB ... ... ...  2LB 3LC 0RB 2LA  0LD ... ... ...  3RB 2LC ... ...",
-        "1RB ... ... ...  2LB 3LC 0RB 2LA  2LD ... ... ...  2LA 0LC ... ...",
-        "1RB ... ... ...  2RC ... ... 3RC  3LD ... 3RC 2LC  ... ... 2RB 0LD",
-        "1RB ... ... 2LD  2LB 2LC 0RB 1LD  3RB ... ... ...  0LA ... ... ...",
-        "1RB ... 0RD ...  2LC ... ... ...  1RC 0LC 3RD 1RB  1RA ... ... ...",
-        "1RB 0RB ... 0LA  1LC ... 3RD ...  3RA 2LA ... ...  ... 3RA ... ...",
-        "1RB 0RB ... 0LA  1LC ... 3RD ...  3RA 2LA ... ...  ... 3RC ... ...",
+        "1RB --- 0LB  0RC 2RC 1LC  2LA 2LB 1RB",
+        "1RB --- 0RB  1LC 2RA 1RB  2RA 2LC 0LC",
+        "1RB --- 0RC  1LC 2LB 1RA  2RC 0LB 0LC",
+        "1RB --- 1LB  1LC 0LC 1RB  2LA 2RC 0RC",
+        "1RB --- 1LC  2LC 0RB 2RB  2LA 2RA 2LC",
+        "1RB --- 1LC  2RC 0LA 2LB  1LB 0LB 0RB",
+        "1RB --- 1RC  0LC 2RB 1LB  2LA 2LC 1RA",
+        "1RB --- 1RC  2LB 1RA 0LB  0RB 2RC 1LC",
+        "1RB --- 2LA  1LC 2RC 1LB  0LA 2RB 0RA",
+        "1RB --- 2LB  2LC 0RA 2RC  1LA 2LA 0RB",
+        "1RB --- 2LB  2LC 2LC 2RC  1LA 2LA 0RB",
+        "1RB --- 2LC  2LC 2RB 2RC  1LA 2LC 0RB",
+        "1RB --- 2RB  2LC 2RB 1LB  --- 1RA 0LC",
+        "1RB 0LA 2LA  2RC --- 0RC  1LA 2LB 2RC",
+        "1RB 0LB ---  1LC 2RB 1RB  2LA 2LC 2LA",
+        "1RB 0LB ---  2LC 0RB 2RB  1LA 0RC 1RC",
+        "1RB 0LB 0RC  1LB 2LC ---  1RA 2RC 1LC",
+        "1RB 0LB 1LA  2LC 1RA ---  0RA 2RC 1LC",
+        "1RB 0LB 1RA  1LA 2LC 1LA  --- 2RA 2LA",
+        "1RB 0LC 0LB  1RC 0RB ---  1LA 2RB 0LC",
+        "1RB 0LC 2LA  2LA 0RB 2RB  2RC --- 1LA",
+        "1RB 0LC 2RA  2LC 2RB 1RA  --- 1LA 1LB",
+        "1RB 0RB ---  0LC 2RC 1LC  2RA 2LB 1RB",
+        "1RB 0RB ---  2LC 1RB 1LA  2RA 1LC 0LC",
+        "1RB 0RB ---  2LC 1RB 2RA  2RA 1LC 0LC",
+        "1RB 0RB 0LA  1LB 2RA 2LC  2RC --- 2RA",
+        "1RB 0RB 0LA  1LC 2RC 2RB  2RA 2LA ---",
+        "1RB 0RB 1LA  2RC 2LB 0LB  1LA --- 1RA",
+        "1RB 1LA ---  1RC 2LC 1RB  2LA 2LB 2RB",
+        "1RB 1LA ---  2RC 0LB 0RC  2LC 2LA 1RB",
+        "1RB 1LA 0LA  0RC 1RB 2RB  1LC 2LA ---",
+        "1RB 1LA 0LA  2LA 1RB 0RC  1LC 2RB ---",
+        "1RB 1LA 2LA  1LA 2RC 1LB  --- 2RB 0LB",
+        "1RB 1LB ---  1LC 2RA 0RB  1LA 0LC 0LA",
+        "1RB 1LB 1LA  2RC 0LA 1RB  2LA 1RB ---",
+        "1RB 1LC ---  2LC 2RB 1RB  0LA 2LA 0LB",
+        "1RB 1LC 1RC  2LC --- 2RB  2LA 2LC 1RA",
+        "1RB 1RA 1LB  2LC 2RA ---  0RA 1LC 0LC",
+        "1RB 1RB 1LA  2LC 2RB 1LB  --- 1RA 0LC",
+        "1RB 2LA 0LA  0RC --- 2RA  1LC 0LA 1LB",
+        "1RB 2LA 1RA  1LA 1LC 2RB  --- 0LC 0LA",
+        "1RB 2LA 1RA  1LC 2LA ---  2RA 0LC 2RC",
+        "1RB 2LA 1RC  0LB 1LA 2RA  --- 0LA 0RA",
+        "1RB 2LA 1RC  2LC --- 2RB  1LA 2LA 1RA",
+        "1RB 2LA 1RC  2LC --- 2RB  1LC 2LA 1RA",
+        "1RB 2LA 2LC  0LA 0LA 1RA  --- 2RB 1LB",
+        "1RB 2LB 1RA  1RC 2LA 1LA  0LB --- 2RC",
+        "1RB 2LB 1RA  2LC 2LA ---  0RA 2RC 1LC",
+        "1RB 2LB 2LA  1LA 2RC 1LB  --- 2RB 0LB",
+        "1RB 2LC ---  0LC 2RB 1LB  1RB 2LA 1RC",
+        "1RB 2LC 1RA  0LA 2RB 1LB  1RB 2LA ---",
+        "1RB 2LC 1RA  0LA 2RB 1LB  2RA 2LA ---",
+        "1RB 2RA 1LC  2LA 1RB 0LA  --- 2LA 1LA",
+        "1RB 2RA 1LC  2LB 0RB 2LA  --- 2LA 1LA",
+        "1RB 2RB 0LA  1LC 2LA 2RB  --- 1RA 0LC",
+        "1RB 2RB 0LC  1LC --- 2RC  2RA 2RA 2LA",
+        "1RB 2RB 1LC  1LA 2RB 0RA  2LA --- 0LA",
+        "1RB 2RB 1LC  1LA 2RB 0RB  2LA --- 0LA",
+        "1RB 2RB 1LC  2LA 2RA 1LC  --- 1LA 0LB",
+        "1RB 2RB 1LC  2LC 2RB 1LB  --- 1RA 0LC",
+        "1RB 2RB 2LA  1LC 2LA 2RB  --- 1RA 0LC",
+        "1RB 2RB 2LC  2LA 0RB 2RB  1LA --- 0LA",
+        "1RB 2RC ---  2LC 0RB 2LB  1LA 2RC 1LC",
+        "1RB 2RC 1LB  2LA 2RC 1LA  --- 0RA 2RB",
+        "1RB 2RC 1LC  2LC --- 0RC  0LA 2LA 1RA",
+        "1RB 2RC 1RB  1LA 0RA 1LB  --- 2LB 2RB",
+        "1RB --- --- 0RB 0LB  2LB 3LA 4RA 4RB 3LB",
+        "1RB 0LB --- 3LB ---  2LA 4RA 3RB 0RB 3LA",
+        "1RB 0LB 4LB 3LA 0RA  2LA --- 3RA 4RB ---",
+        "1RB 2LA 1LA 4LA ---  0LA 2RB 3RB --- 0RA",
+        "1RB 2LA 1LA 4LA ---  1LA 2RB 3RB --- 0RA",
+        "1RB 2LB 4RB --- ---  2LA 4RA 3RA 1LB 0LB",
+        "1RB 3LA 0RA 2LB ---  2LA --- 4LA 1RB 2RA",
+        "1RB 3LB 1RA 4RA ---  2LA 2LB 4RA --- 0LB",
+        "1RB 3LB 4LB 2RA 0RA  2LA 4LA 1RA --- ---",
+        "1RB 3RB --- 1LB 2LA  2LA 0LB 4RB --- 1RA",
+        "1RB 4RB --- 1LA 0RB  2LB 2LA 3RB 0LA ---",
+        "1RB --- --- --- 0LB ---  2LB 3LA 0RB 4RB 5LB 1RB",
+        "1RB --- --- --- 0LB ---  2LB 3LA 0RB 4RB 5RB 1LB",
+        "1RB 3LA --- 5RB 0LA 4RA  2LA --- 4RA 1RB --- ---",
+        "1RB 3LB --- --- 2LA ---  2LA --- 4RB 0RB 5LA 3LB",
+        "1RB 5LA --- --- --- ---  2LB 3LA 0RB 4RB 1RB 0LB",
+        "1RB 5LA --- --- --- ---  2LB 3RB 0RB 4LA 1RB 0LB",
+        "1RB --- --- ---  1RC 0LB --- 1LA  2LC 3RC 0RC 1LB",
+        "1RB --- --- 0RB  2LC --- 2RA 1RB  2RA 3LC 0LC ---",
+        "1RB --- --- 0RB  2LC --- 3RA 1RB  3RA 3LC --- 0LC",
+        "1RB --- --- 2LC  2LB 3RB 0RB 1LC  1LA --- --- 0LB",
+        "1RB --- 0RB ---  1LC 3RA 1RB ---  3RA 2LC --- 0LC",
+        "1RB --- 1RC ---  1LC --- 0RA ---  3RA 2LC 1RA 0LC",
+        "1RB --- 2RB ---  2LC 2LC 3LB 2RB  --- 1RA 0LC ---",
+        "1RB --- 2RB ---  2LC 2RB 3LB 1LA  --- 1RA 0LC ---",
+        "1RB --- 2RB ---  2LC 2RB 3LB 2RB  --- 1RA 0LC ---",
+        "1RB --- 2RB 0LA  2RC --- --- 3RC  3LA --- 3RC 2LC",
+        "1RB --- 3LB ---  2LC --- 0LC 2RB  0LA 3RA 0RA ---",
+        "1RB --- 3LC ---  2LC --- 2RB 0RB  2LA 2RA 2LC ---",
+        "1RB --- 3LC ---  2RC --- 0RC ---  0LA 2LC 0LB 0RA",
+        "1RB --- 3LC 2RB  2LC 2RB 1LB ---  --- 1RA 0LC ---",
+        "1RB --- 3RB ---  2LC 3RB 1LB 0LB  --- 1RA --- 0LC",
+        "1RB --- 3RB ---  2LC 3RB 1LB 1LB  --- 1RA --- 0LC",
+        "1RB 0LA --- 0LC  2LB 3RB 0RB 1LA  0LA --- --- ---",
+        "1RB 0LA --- 1LC  2LB 3RB 0RB 1LA  1RA --- --- ---",
+        "1RB 0LA 2LA ---  2RC --- 0RC ---  3LA --- 2RC 2LB",
+        "1RB 0LA 3LA 2RB  2RC --- --- 2RA  2LA --- --- 0RA",
+        "1RB 0LC --- ---  2LB 3RB 0RB 1LA  3RB --- --- 0LA",
+        "1RB 0LC --- 2LA  2LB 3RB 0RB 1LA  0LA --- --- ---",
+        "1RB 0LC 2LA ---  2LA --- 2RB 0RB  2RC --- 3LA ---",
+        "1RB 0RB --- ---  0LC 0LA 0RC 1LB  3RA 2LB --- ---",
+        "1RB 0RB --- ---  1LA 1LC 1RC 0LB  2LB 3RA --- ---",
+        "1RB 0RB --- ---  2LA 0LB 1LC 2RC  3LB 1RA --- ---",
+        "1RB 0RB --- ---  2LC 1RB 1LA ---  3RA 1LC --- 0LC",
+        "1RB 0RB --- ---  2LC 1RB 3RA ---  3RA 1LC --- 0LC",
+        "1RB 0RB --- 0LA  1LC 3RA 3RB ---  3RA 2LA --- ---",
+        "1RB 0RB --- 0LA  1LC 3RC 3RB ---  3RA 2LA --- ---",
+        "1RB 0RB --- 1LA  0RC 0LC 3LC ---  2LA 3RA --- ---",
+        "1RB 0RB --- 1LB  2LA 2LC 3RB 0LA  --- --- --- 3LA",
+        "1RB 1LA --- 0LA  0RC 1RB 3RB ---  1LC 2LA --- ---",
+        "1RB 1LA --- 0LA  2LA 1RB 0RC ---  1LC 3RB --- ---",
+        "1RB 1RA 1LB ---  2LC 3RA --- ---  0RA 1LC --- 0LC",
+        "1RB 2LA 0LC 1LA  2LA 1LB 0RA ---  3LA --- --- ---",
+        "1RB 2LA 1LA 2RA  0LA 0LC 3RB ---  --- --- --- 1RA",
+        "1RB 2LA 1LA 2RA  1LA 0LC 3RB ---  --- --- --- 1RA",
+        "1RB 2LA 1LA 2RA  2LA 0LC 3RB ---  --- --- --- 1RA",
+        "1RB 2RA 3RB 0LC  2LA 1RB 0LA ---  --- --- 1LA ---",
+        "1RB 2RB 0LA ---  1LC 3LA --- 2RB  --- 1RA 0LC ---",
+        "1RB 2RB 1LC ---  1LA 2RB --- 0RA  3LA --- 0LA ---",
+        "1RB 2RB 1LC ---  1LA 2RB --- 0RB  3LA --- 0LA ---",
+        "1RB 2RB 2LB ---  2LA 2LC 3LA 1RB  --- --- 0LA ---",
+        "1RB 2RB 2LC ---  2LA --- 2RB 0RB  3LA --- 0LA ---",
+        "1RB 2RB 3LA ---  1LC 3LA --- 2RB  --- 1RA 0LC ---",
+        "1RB 3LA --- 1LA  1RC 0RA 1LA 3RB  2LA --- --- ---",
+        "1RB 3LA --- 1LA  2LA 0RA 3RC 3RB  1LA --- --- ---",
+        "1RB 3LB 0LC ---  2LA 2RB 1RB 0LB  --- 3RA --- ---",
+        "1RB 3LB 2LC ---  2LA 2RB 1RB 0LB  --- 3RB --- ---",
+        "1RB 3LB 3LA ---  2LA 0LA 0RC 1RB  --- --- --- 2RA",
+        "1RB 3RA 3RB 1LA  2LC --- 2LA ---  --- 1RA --- 0LC",
+        "1RB 3RB --- 2LC  2LA --- 3RB 0RB  3LA --- --- 0LA",
+        "1RB 3RB --- 2LC  2LA 0RB 3RB ---  1LA --- --- 0LA",
+        "1RB 3RB 1RC 2LA  2LA 1RA 1LA ---  --- 0RB --- ---",
+        "1RB --- ---  0LC --- 1RC  2RD 2LC 0RD  1RA --- 0LB",
+        "1RB --- ---  0RC --- 0LB  0RD --- 1LC  2LB 2RD 1LD",
+        "1RB --- ---  0RC --- 0LB  0RD --- 2RD  2LB 2RD 1LD",
+        "1RB --- ---  0RC --- 1LB  2LD 2RC 1LC  0RB --- 0LD",
+        "1RB --- ---  0RC --- 2RC  2LD 2RC 1LC  0RB --- 0LD",
+        "1RB --- ---  1LC --- 2LC  2RD 2LC 1RC  --- 1LB 0RD",
+        "1RB --- ---  1RC --- 2RC  2LD 2RC 1LC  --- 1RB 0LD",
+        "1RB --- ---  2LC 2RB 1LB  --- 1RD 0LC  1RB --- 2RB",
+        "1RB --- ---  2LC 2RB 1LB  2RD 1RB 0LB  --- --- 0RC",
+        "1RB --- ---  2RC --- 1LC  2LD 2RC 1LC  --- 1RA 0LD",
+        "1RB --- ---  2RC 1RC ---  1LD 2LC 1RC  --- 0LD 2RB",
+        "1RB --- ---  2RC 2LB 1RB  2LD 1LB 0RB  --- --- 0LC",
+        "1RB --- 0LC  1RC --- ---  0LD --- 1RD  2RA 2LD 0RA",
+        "1RB --- 1LD  2LC 2RB 1LB  --- 1RA 0LC  --- 1RB ---",
+        "1RB 0LB ---  2LC --- 2RB  2LA 2LB 0RD  --- --- 1RC",
+        "1RB 0RB 0LA  1LC --- 2RD  2RA 2LA ---  --- 2RA ---",
+        "1RB 0RB 0LA  1LC --- 2RD  2RA 2LA ---  --- 2RC ---",
+        "1RB 0RB 0LA  1LC 2RD ---  2RA 1LA ---  --- 2RA ---",
+        "1RB 0RB 0LA  1LC 2RD ---  2RA 1LA ---  --- 2RC ---",
+        "1RB 0RB 1LA  2RC 0LD ---  2RD --- ---  0LA 2RA ---",
+        "1RB 1LA 0RC  0RC 1RD ---  1LC 0LA ---  --- 2RB ---",
+        "1RB 1LA 0RC  0RC 2RD ---  1LC 0LA ---  --- 1RB ---",
+        "1RB --- --- --- ---  2LB 3LC 0RB 2LA 2LB  2LA 4LC --- --- ---",
+        "1RB --- --- --- ---  2LC --- --- 4RC ---  4RC 3LC 4RA 2RC 0LC",
+        "1RB --- --- --- 2LB  2LB 2LC 0RB 4RB 1LB  3LA --- --- --- ---",
+        "1RB --- --- 0LC ---  2LB 3RB 0RB 4LC 1RB  0LA --- --- --- ---",
+        "1RB --- --- 0LC ---  2LB 3RB 0RB 4RB 1LC  0LA --- --- --- ---",
+        "1RB --- --- 0RB ---  2LC --- 4RA 1RB ---  4RA 3LC --- --- 0LC",
+        "1RB --- 4RA --- ---  2LC --- --- --- ---  1RC 0LC 3RA 1RB 1RC",
+        "1RB 0RB --- --- ---  2LA --- 1LC 2RC 0LB  3LB 4RA --- --- ---",
+        "1RB 0RB --- 4LB ---  2LA --- 3RB 0LA 2LC  --- --- --- 3LA ---",
+        "1RB 3RB --- 2LC ---  2LA --- 3RB --- 0RB  4LA --- --- 0LA ---",
+        "1RB --- --- ---  0RC --- 0LB ---  0RD --- 2RD ---  2LB --- 3LD 2RD",
+        "1RB --- --- ---  0RC --- 0LB ---  0RD --- 3LC ---  2LB --- 3LD 2RD",
+        "1RB --- --- ---  0RC --- 2RC ---  2LD --- 3LC 2RC  0RB --- 0LD ---",
+        "1RB --- --- ---  0RC --- 3LB ---  2LD --- 3LC 2RC  0RB --- 0LD ---",
+        "1RB --- --- ---  1RC --- 0RA ---  2LD --- --- ---  1RD 0LD 3RA 1RC",
+        "1RB --- --- ---  2LB 3LC 0RB 2LA  0LD --- --- ---  3RB 2LC --- ---",
+        "1RB --- --- ---  2LB 3LC 0RB 2LA  2LD --- --- ---  2LA 0LC --- ---",
+        "1RB --- --- ---  2RC --- --- 3RC  3LD --- 3RC 2LC  --- --- 2RB 0LD",
+        "1RB --- --- 2LD  2LB 2LC 0RB 1LD  3RB --- --- ---  0LA --- --- ---",
+        "1RB --- 0RD ---  2LC --- --- ---  1RC 0LC 3RD 1RB  1RA --- --- ---",
+        "1RB 0RB --- 0LA  1LC --- 3RD ---  3RA 2LA --- ---  --- 3RA --- ---",
+        "1RB 0RB --- 0LA  1LC --- 3RD ---  3RA 2LA --- ---  --- 3RC --- ---",
     },
 }

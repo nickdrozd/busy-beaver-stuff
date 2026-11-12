@@ -102,7 +102,7 @@ class Machine:
             *[
                 "{}: {}".format(
                     cat.upper(),
-                    data if isinstance(data, int|str|tuple) else "...")
+                    data if isinstance(data, int|str|tuple) else "---")
                 for cat in TERM_CATS
                 if (data := getattr(self, cat, None)) is not None
             ],
@@ -148,7 +148,7 @@ class Machine:
             str(self.tape),
         ]
 
-        info.insert(1, f'{step : 3d}' if step != -1 else '...')
+        info.insert(1, f'{step : 3d}' if step != -1 else '---')
 
         return ' | '.join(info)
 

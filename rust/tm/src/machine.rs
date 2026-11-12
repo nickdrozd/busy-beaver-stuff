@@ -452,7 +452,7 @@ const REC_PROGS_2_2: &[(&str, bool)] = &[
     ("1RB 0LB  1LA 0RB", true),
     ("1RB 1LB  1LA 1RA", true),
     ("1RB 0RB  1LB 1RA", true),
-    ("1RB ...  0LB 0LA", false),
+    ("1RB ---  0LB 0LA", false),
     ("1RB 1LA  0LA 0RB", false),
     ("1RB 1LA  0LA 1RB", false),
     ("1RB 0LB  1LA 0RA", false),
@@ -461,7 +461,7 @@ const REC_PROGS_2_2: &[(&str, bool)] = &[
 
 #[cfg(test)]
 const REC_PROGS_2_3: &[(&str, bool)] = &[
-    ("1RB 0LA ...  1LB 2LA 0RB", true),
+    ("1RB 0LA ---  1LB 2LA 0RB", true),
     ("1RB 1LB 2LA  1LA 2RB 0RA", true),
 ];
 
@@ -469,12 +469,12 @@ const REC_PROGS_2_3: &[(&str, bool)] = &[
 const REC_PROGS_3_2: &[(&str, bool)] = &[
     ("1RB 1LB  0RC 0LA  1LC 0LA", true),
     ("1RB 1LA  1LC 1RC  1LA 0RB", true),
-    ("1RB 0LB  1LA 0RC  1RB ...", false),
+    ("1RB 0LB  1LA 0RC  1RB ---", false),
     ("1RB 0LC  1LA 1RC  1RC 1RB", false),
     ("1RB 1LA  0LA 1RC  1LA 0RB", false),
-    ("1RB 1LA  1LA 1RC  ... 1RB", false),
+    ("1RB 1LA  1LA 1RC  --- 1RB", false),
     ("1RB 1LB  0LC 0RC  1RA 1LA", false),
-    ("1RB 1RC  1LC ...  0RA 0LB", false),
+    ("1RB 1RC  1LC ---  0RA 0LB", false),
 ];
 
 #[cfg(test)]
@@ -559,20 +559,20 @@ fn test_term_immediate() {
     let before = config.to_string();
 
     // B0 executes once, then C0 is undefined.
-    let undef = Prog::<3, 2>::from("1RB ...  0RC ...  ... ...");
+    let undef = Prog::<3, 2>::from("1RB ---  0RC ---  --- ---");
     assert!(immediate(&undef, &config));
 
     // The same immediate halt is visible even though B0 changes the tape.
     let touch_then_undef =
-        Prog::<3, 2>::from("1RB ...  1RC ...  ... ...");
+        Prog::<3, 2>::from("1RB ---  1RC ---  --- ---");
     assert!(immediate(&touch_then_undef, &config));
 
     // Current transition itself spins at the fresh right edge.
-    let spin = Prog::<2, 2>::from("1RB ...  0RB ...");
+    let spin = Prog::<2, 2>::from("1RB ---  0RB ---");
     assert!(immediate(&spin, &config));
 
     // B0 -> C0, then C0 would spin at the blank right edge.
-    let next_spin = Prog::<3, 2>::from("1RB ...  1RC ...  0RC ...");
+    let next_spin = Prog::<3, 2>::from("1RB ---  1RC ---  0RC ---");
     assert!(immediate(&next_spin, &config));
     assert!(matches!(
         next_spin.run_basic(2, &mut config.clone()),
@@ -580,7 +580,7 @@ fn test_term_immediate() {
     ));
 
     // Same first step, but C0 heads left toward the tape, not off its edge.
-    let next_not_spin = Prog::<3, 2>::from("1RB ...  1RC ...  0LC ...");
+    let next_not_spin = Prog::<3, 2>::from("1RB ---  1RC ---  0LC ---");
     assert!(!immediate(&next_not_spin, &config));
     assert!(matches!(
         next_not_spin.run_basic(2, &mut config.clone()),
@@ -588,14 +588,14 @@ fn test_term_immediate() {
     ));
 
     // B0 -> C1 is defined and not an immediate spinout: inconclusive.
-    let continue_run = Prog::<3, 2>::from("1RB ...  0LC ...  ... 1RB");
+    let continue_run = Prog::<3, 2>::from("1RB ---  0LC ---  --- 1RB");
     assert!(!immediate(&continue_run, &config));
 
     // Put the sole mark under the head; erasing it while moving onto blank
     // immediately blanks the tape.
     let mut blank_config = config.clone();
     blank_config.tape.step(false, 0, false);
-    let blank = Prog::<3, 2>::from("1RB ...  ... 0RC  ... ...");
+    let blank = Prog::<3, 2>::from("1RB ---  --- 0RC  --- ---");
     assert!(immediate(&blank, &blank_config));
 
     assert_eq!(config.to_string(), before);
@@ -605,7 +605,7 @@ fn test_term_immediate() {
 fn test_mult_rule() {
     assert!(
         Prog::<6, 2>::from(
-            "1RB 0LD  1RC 0RF  1LC 1LA  0LE ...  1LA 0RB  0RC 0RE",
+            "1RB 0LD  1RC 0RF  1LC 1LA  0LE ---  1LA 0RB  0RC 0RE",
         )
         .run_prover(10_000)
         .is_mult()
@@ -625,7 +625,7 @@ fn test_mult_rule() {
 
     assert!(
         Prog::<2, 6>::from(
-            "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA",
+            "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB --- 3LB 2LA",
         )
         .run_prover(2_100)
         .is_mult()
@@ -633,7 +633,7 @@ fn test_mult_rule() {
 
     assert!(
         Prog::<2, 6>::from(
-            "1RB 2LA ... 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB",
+            "1RB 2LA --- 1RB 5RB 0RB  2LA 4RA 3LB 5LB 5RA 4LB",
         )
         .run_prover(2_100)
         .is_mult()
@@ -643,7 +643,7 @@ fn test_mult_rule() {
 #[test]
 fn test_check_inf() {
     assert!(
-        Prog::<2, 4>::from("1RB ... 1RB 3LB  2LB 3LA 3RA 0RB")
+        Prog::<2, 4>::from("1RB --- 1RB 3LB  2LB 3LA 3RA 0RB")
             .check_inf(1000)
     );
 
@@ -673,7 +673,7 @@ fn test_macro_excess() {
 #[test]
 #[should_panic(expected = "attempt to exponentiate with overflow")]
 fn test_macro_overflow() {
-    let prog = Prog::<2, 4>::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...");
+    let prog = Prog::<2, 4>::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ---");
 
     assert!(
         !prog
@@ -687,7 +687,7 @@ fn test_macro_overflow() {
 fn test_macro_loop() {
     assert!(
         Prog::<6, 2>::from(
-            "1RB 0LC  0RD 1RA  ... 0LD  1LE 1LA  0LF 1LA  0RE 1LF"
+            "1RB 0LC  0RD 1RA  --- 0LD  1LE 1LA  0LF 1LA  0RE 1LF"
         )
         .run_prover(1000)
         .is_infinite()
@@ -697,8 +697,8 @@ fn test_macro_loop() {
 #[test]
 fn test_prover_failure() {
     let progs = &[
-        "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
-        "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
+        "1RB ---  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
+        "1RB 1LB  1LC ---  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
     ];
 
     for &prog in progs {

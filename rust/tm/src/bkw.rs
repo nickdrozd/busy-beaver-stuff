@@ -10992,13 +10992,13 @@ macro_rules! assert_entrypoints {
 #[test]
 fn test_entrypoints() {
     assert_entrypoints!(
-        ("1RB ...  1LB 0RB", (2, 2)) => [
+        ("1RB ---  1LB 0RB", (2, 2)) => [
             'B' => (["B0:1L", "B1:0R"], ["A0:1RB"])
         ],
-        ("1RB ... ...  0LB 2RB 0RB", (2, 3)) => [
+        ("1RB --- ---  0LB 2RB 0RB", (2, 3)) => [
             'B' => (["B0:0L", "B1:2R", "B2:0R"], ["A0:1RB"])
         ],
-        ("1RB ... 2LB  2LB 2RA 0RA", (2, 3)) => [
+        ("1RB --- 2LB  2LB 2RA 0RA", (2, 3)) => [
             'A' => ([], ["B1:2R", "B2:0R"]),
             'B' => (["B0:2L"], ["A0:1R", "A2:2L"])
         ],
@@ -11006,12 +11006,12 @@ fn test_entrypoints() {
             'A' => (["A2:1R"], ["B2:0L"]),
             'B' => (["B0:1L", "B1:2R"], ["A0:1R", "A1:0R"])
         ],
-        ("1RB 1RC  0LA 1RA  0LB ...", (3, 2)) => [
+        ("1RB 1RC  0LA 1RA  0LB ---", (3, 2)) => [
             'A' => ([], ["B0:0L", "B1:1R"]),
             'B' => ([], ["A0:1R", "C0:0L"]),
             'C' => ([], ["A1:1R"])
         ],
-        ("1RB ...  0LB 1RC  0LC 1RA", (3, 2)) => [
+        ("1RB ---  0LB 1RC  0LC 1RA", (3, 2)) => [
             'A' => ([], ["C1:1R"]),
             'B' => (["B0:0L"], ["A0:1R"]),
             'C' => (["C0:0L"], ["B1:1R"])
@@ -11030,12 +11030,12 @@ fn test_entrypoints() {
             'A' => (["A1:2R"], ["B2:3L", "B3:0L"]),
             'B' => (["B0:1L", "B1:3R"], ["A0:1R", "A2:0R", "A3:2R"])
         ],
-        ("1RB ...  0LC ...  1RC 1LD  0LC 0LD", (4, 2)) => [
+        ("1RB ---  0LC ---  1RC 1LD  0LC 0LD", (4, 2)) => [
             'B' => ([], ["A0:1RB"]),
             'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
             'D' => (["D1:0L"], ["C1:1L"])
         ],
-        ("1RB ...  0LC ...  1RC 1LD  0LC 0LB", (4, 2)) => [
+        ("1RB ---  0LC ---  1RC 1LD  0LC 0LB", (4, 2)) => [
             'B' => ([], ["A0:1RB", "D1:0L"]),
             'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
             'D' => ([], ["C1:1L"])
@@ -17525,12 +17525,12 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
 #[test]
 fn test_is_reversible() {
-    assert!(Prog::<2, 2>::from("0RB ...  1LA 1RB").is_reversible());
+    assert!(Prog::<2, 2>::from("0RB ---  1LA 1RB").is_reversible());
     assert!(Prog::<2, 2>::from("0RB 0LA  1LA 1RB").is_reversible());
     assert!(!Prog::<2, 2>::from("0RB 1LA  1LA 1RB").is_reversible());
 
     assert!(
-        Prog::<3, 2>::from("0RB ...  0LC 1RA  1RB 1LC").is_reversible()
+        Prog::<3, 2>::from("0RB ---  0LC 1RA  1RB 1LC").is_reversible()
     );
     assert!(
         Prog::<3, 2>::from("0RB 0RA  0LC 1RA  1RB 1LC").is_reversible()
@@ -17541,7 +17541,7 @@ fn test_is_reversible() {
     );
 
     assert!(
-        Prog::<4, 2>::from("1RB 0LD  0LC 0RB  1LA 1LD  1LC ...")
+        Prog::<4, 2>::from("1RB 0LD  0LC 0RB  1LA 1LD  1LC ---")
             .is_reversible()
     );
     assert!(
@@ -17555,7 +17555,7 @@ fn test_is_reversible() {
 
     assert!(
         Prog::<5, 2>::from(
-            "1RB 0RD  1RC 0RB  1RD ...  1LE 1LA  0LE 0LA"
+            "1RB 0RD  1RC 0RB  1RD ---  1LE 1LA  0LE 0LA"
         )
         .is_reversible()
     );
@@ -17574,7 +17574,7 @@ fn test_is_reversible() {
 
     assert!(
         Prog::<6, 2>::from(
-            "1RB 1LD  1LC 1RE  0LD 0LC  0RE 0RF  0RA ...  1RF 1RA"
+            "1RB 1LD  1LC 1RE  0LD 0LC  0RE 0RF  0RA ---  1RF 1RA"
         )
         .is_reversible()
     );
@@ -17591,7 +17591,7 @@ fn test_is_reversible() {
         .is_reversible()
     );
 
-    assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB ...").is_reversible());
+    assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB ---").is_reversible());
     assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB 1RG").is_reversible());
     assert!(!Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB 1LG").is_reversible());
 }

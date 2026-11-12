@@ -1,4 +1,4 @@
-#define PROGRAM "1RB ... ... ... ...  2LC ... ... ... ...  3RD 3LC ... 1LC 1R_  ... 1RD 1RB 1LE ...  4RD 1LE ... 1RD 1LC"
+#define PROGRAM "1RB --- --- --- ---  2LC --- --- --- ---  3RD 3LC --- 1LC 1R_  --- 1RD 1RB 1LE ---  4RD 1LE --- 1RD 1LC"
 
 #define TAPELEN 10000
 

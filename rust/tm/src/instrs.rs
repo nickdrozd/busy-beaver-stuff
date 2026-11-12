@@ -7,7 +7,7 @@ pub type Instr = (Color, Shift, State);
 
 /**************************************/
 
-const UNDF: char = '.';
+const UNDF: char = '-';
 
 const LEFT: char = 'L';
 const RIGHT: char = 'R';
@@ -93,7 +93,7 @@ impl Parse for Option<Instr> {
     }
 
     fn show(&self) -> String {
-        self.map_or_else(|| "...".to_owned(), |instr| instr.show())
+        self.map_or_else(|| "---".to_owned(), |instr| instr.show())
     }
 }
 
@@ -103,7 +103,7 @@ impl Parse for Option<&Instr> {
     }
 
     fn show(&self) -> String {
-        self.map_or_else(|| "...".to_owned(), |&instr| instr.show())
+        self.map_or_else(|| "---".to_owned(), |&instr| instr.show())
     }
 }
 
@@ -135,7 +135,7 @@ fn test_instr() {
         assert_eq!(instr, Instr::read(instr).show());
     }
 
-    let undfnd = "...";
+    let undfnd = "---";
 
     assert_eq!(undfnd, Option::<Instr>::read(undfnd).show());
 }
