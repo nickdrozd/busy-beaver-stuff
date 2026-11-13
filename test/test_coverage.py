@@ -113,7 +113,6 @@ class TestFloss(TestCase):
             "1RB 0LD  0RC 0RA  1LD 1LE  1RE 1LC  0LE 1LA",
             "1RB 2LA 5LB 0RA 1RA 3LB  1LA 4LA 3LB 3RB 3RB ...",
             "1RB 3RB 5RA 1LB 5LA 2LB  2LA 2RA 4RB ... 3LB 2LA",
-            "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC",
             "1RB 0RD 0LB  0RC ... 2RB  2LC 2RB 0LA  1RC ... ...",
             "1RB 1LA 2LA  1LA 2RC 1LB  1RD 2RB 0LC  0RA ... 0RA",
             "1RB 2LB 0LB  2LC 2LA 0LA  2RD 1LC ...  1RA 2LD 1RD",
@@ -121,8 +120,7 @@ class TestFloss(TestCase):
             "1RB 1RA  1LC 0RF  0LE 0RD  0RE 1LB  1RA 0LC  ... 1RD",
             "1RB 1LC  1LA 1RF  0LD 0LA  0RE 1LF  1LA 1RE  ... 0RE",
             "1RB 0LF  1RC 0LB  1RD 0RB  1LE 0RC  0LA 0LD  1LG ...  0LC 0LD",
-            "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
-            "1RB 1RE  1RC 0RA  1LD 0RB  1LA 0LC  1RA 0RF  0RG 0LC  ... 1RB",
+            "1RB 1RD  1LC 0RD  0LG 1LD  1RA 0RE  1LF 1LA  0LC 1LE  ... 0LE",
         )
 
         for prog in algebraic:
@@ -139,12 +137,7 @@ class TestFloss(TestCase):
 
             assert machine.is_algebraic
 
-        Machine(
-            "1LB ...  0LC 1LC  0LD 0LC  1LE 1RA  0LF 0LE  1LG 1RD  0LH 0LG  1LI 1RF  0LJ 0LI  1RJ 1RH"
-        ).run()
-
         others = (
-            "1RB 0LA 1LA 0RA  2LB 2RB 3RB 0LA",
             "1RB 2RA 1LB 2LA  2LA 3RB 1LB 2RA",
             "1RB 2LA 1RA  0RC 0RB 0LC  1LC 0LA 2RC",
             "1RB 0LD  1LB 0RC  0RE 1LD  1LA ...  0RB 0LC",

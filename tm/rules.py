@@ -187,7 +187,7 @@ def calculate_op_seq(*counts: Num) -> OpSeq:
                 sub = exp
 
     else:
-        raise UnhandledOp(  # no-cover
+        raise UnhandledOp(
             'subexpression descent')
 
     ascent: list[tuple[OpSym, int]] = []

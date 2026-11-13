@@ -1628,6 +1628,7 @@ KERNEL = {
     "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF": 3,
     "1RB 0LG  0RC ...  1LD 0LA  1RE 1LE  1LC 1RF  0RE 0RA  0RF 1LG": 4,
     "1RB 1LB  1LC 1RF  1LA 0LD  1RE 0LG  0RC ...  0RB 0RD  0RF 1LG": 4,
+    "1RB 1RD  1LC 0RD  0LG 1LD  1RA 0RE  1LF 1LA  0LC 1LE  ... 0LE": 4,
 
     "1RB 2LC 3LA 0RD  3LE 2RB 0RB 1LE  1RD 2LA ... ...  1RF 0LA 1RD 2LA  2RF 3RF 1LG ...  1LA 0RF 3LA 0RD  2RB 3RB 1LE 1LH  3LE 3LH ... 1RB": 3,
 
@@ -2241,6 +2242,7 @@ DO_HALT: set[str] = {
     # 7/2
     "1RB 0RG  1RC 1RB  0RD ...  0LE 0LD  0LF 1LE  1RA 1LF  0LD 0RB",  # 3 ^20 3
     "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",  # 2 ^11 2 ^11 3
+    "1RB 1RD  1LC 0RD  0LG 1LD  1RA 0RE  1LF 1LA  0LC 1LE  ... 0LE",  # 10 ↑^4 10^^5
     "1RB 1RF  0RC 1RG  1LD 1LE  0LE 1LD  0RF 0LC  1RA 0LC  0RF ...",  # 10^^286
 
     # 2/5
@@ -2616,11 +2618,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 361801,
-    "divs": 52293,
-    "exps": 231547,
-    "muls": 164772,
-    "totl": 810413,
+    "adds": 362370,
+    "divs": 52621,
+    "exps": 231576,
+    "muls": 164901,
+    "totl": 811468,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -2982,6 +2984,15 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "!!!",
             "((1 + (7 * (3 ** ((-1 + (7 * (3 ** (19 + (6 * !!!))))) // 2)))) // 4)",
             "(... // 4)",
+        ),
+    },
+
+    "subexpression descent": {
+        "1RB 1RD  1LC 0RD  0LG 1LD  1RA 0RE  1LF 1LA  0LC 1LE  ... 0LE": (
+            6670,
+            "!!!",
+            "((-18 + (((2 * !!!) + (5 * (3 ** (15 + (3 * !!!))))) + (5 * (3 ** ((-3 + (5 * (3 ** ((-3 + (5 * (3 ** ((-3 + (5 * (3 ** 21))) // 2)))) // 2)))) // 2))))) // 2)",
+            "(... // 2)",
         ),
     },
 
