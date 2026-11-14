@@ -37,8 +37,6 @@ class Num:
 
     leaves: int
 
-    tower_est: int | None
-
     @abstractmethod
     def __int__(self) -> int: ...
 
@@ -48,23 +46,8 @@ class Num:
     @abstractmethod
     def __hash__(self) -> int: ...
 
-    def estimate(self) -> Count:
-        if (tower := self.tower_est) is None:
-            return PentPlus()  # type: ignore[abstract]  # ty: ignore[abstract-class-instantiation]
-
-        est: Exp | Tet
-
-        if tower > 3:
-            est = Tet(10, tower)
-        else:
-            try:
-                digits = self.digits()
-            except OverflowError:
-                est = Tet(10, tower)
-            else:
-                est = Exp.make(10, digits)
-
-        return -est if self.neg else est
+    def estimate(self) -> Arrow:
+        return estimate_count(self)
 
     @abstractmethod
     def digits(self) -> int: ...
@@ -150,8 +133,196 @@ class Num:
     @abstractmethod
     def __floordiv__(self, other: Count) -> Count: ...
 
-    def __rpow__(self, other: int) -> Exp | Tet:
+    def __rpow__(self, other: int) -> Exp | Arrow:
         return Exp.make(other, self)
+
+
+def estimate_digits(num: Num) -> Arrow | None:
+    try:
+        digits = num.digits()
+    except (OverflowError, ValueError):
+        return None
+
+    return Arrow(10, 1, max(1, digits))
+
+
+def _estimate_arrow(base: int, arrows: int, height: Count) -> Arrow:
+    if not isinstance(height, Arrow) or height.base != base:
+        return Arrow(base, arrows, height)
+
+    match arrows, height.arrows, height.height:
+        case _, level, h if level == arrows + 1:
+            return Arrow(base, level, h + 1)
+        case 1, 1, int() as h if h >= base:
+            return Arrow(base, 2, 4 if h >= base ** 6 else 3)
+        case 2, 1, int() as h if h >= base:
+            return Arrow(base, 3, 3)
+        case 2, 1, Num():  # no-cover
+            return Arrow(base, 3, 3)
+        case 2, 2, int() as h if h >= 3:
+            return Arrow(base, 3, 3)
+
+    n = 1
+    tail: Count = height
+    while (n < 4 and isinstance(tail, Arrow)
+           and tail.base == base and tail.arrows == arrows):
+        n += 1
+        tail = tail.height
+
+    if n < 4:
+        return Arrow(base, arrows, height)
+
+    match tail:
+        case Arrow() as next_ if next_.base == base and next_.arrows == arrows + 1:  # no-cover
+            return Arrow(base, arrows + 1, next_.height + n)
+        case Arrow() as next_ if next_.base == base and next_.arrows > arrows + 1:  # no-cover
+            return next_
+        case _:
+            return Arrow(base, arrows + 1, n + 1)
+
+
+def _estimate_exp(exponent: Count, done: dict[Num, Arrow]) -> Arrow:
+    match exponent:
+        case int() as n if n <= 0:  # no-cover
+            return Arrow(10, 1, 1)
+        case int() as n:  # no-cover
+            return _estimate_arrow(10, 1, Arrow(10, 1, max(1, round(log10(n)))))
+        case Num() as exp:  # no-branch
+            est = done[exp]
+            match est.arrows:
+                case 1:
+                    result = _estimate_arrow(10, 1, est)
+                    return Arrow(10, 2, 3) if result.arrows == 2 and result.height == 4 else result
+                case 2:
+                    return _estimate_arrow(10, 2, est.height + 1)
+                case _:
+                    return est
+
+
+def _estimate_opseq(times: Count, ops: tuple[tuple[str, int], ...], done: dict[Num, Arrow]) -> Arrow:
+    levels = sum(1 if op == '**' else -1 if op == '~' else 0 for op, _ in ops)
+    height = times if isinstance(times, int) else done[times]
+
+    if levels == 0:  # no-cover
+        if any(op == '**' for op, _ in ops):
+            return _estimate_arrow(10, 2, height)
+
+        if any(op == '*' and val > 1 for op, val in ops):
+            return _estimate_arrow(10, 1, max(1, height) if isinstance(height, int) else height)
+
+        if not isinstance(times, int):
+            return done[times]
+
+        return Arrow(10, 1, max(1, round(log10(max(1, times)))))
+
+    if isinstance(times, int):
+        height = max(1, levels * times)
+
+    return _estimate_arrow(10, 2, height)
+
+
+
+def _exp_chain_height(num: Count) -> int | None:
+    levels = 0
+
+    while True:
+        match num:
+            case Exp(exp=exp):
+                levels += 1
+                num = exp
+            case Add(l=int(), r=child) | Mul(l=int(), r=child) | Div(num=child):
+                num = child
+            case int() as n:
+                return levels + (n >= 10)
+            case _:
+                return None
+
+
+def _estimate_resolved(num: Num, done: dict[Num, Arrow]) -> Arrow:
+    from tm.rules import OpSeqResult  # ruff: ignore[import-outside-top-level]
+
+    match num:
+        case Add(l=int(), r=int_rhs) | Mul(l=int(), r=int_rhs):
+            return done[int_rhs]
+        case Add(l=Num() as num_lhs, r=num_rhs) | Mul(l=Num() as num_lhs, r=num_rhs):
+            try:
+                return max(done[num_rhs], done[num_lhs])
+            except NotImplementedError:
+                return done[num_rhs]
+        case Div(num=div_num):
+            return done[div_num]
+        case Exp(exp=exponent) as exp_num:
+            result = _estimate_exp(exponent, done)
+            if (result.arrows == 2 and isinstance(exponent, Num)
+                    and done[exponent].arrows == 1
+                    and (chain_height := _exp_chain_height(exp_num)) is not None):
+                assert isinstance(result.height, int)
+                return Arrow(10, 2, max(result.height, chain_height))
+            return result
+        case Arrow(base=arrow_base, arrows=arrow_arrows, height=arrow_height):
+            estimated = arrow_height if isinstance(arrow_height, int) else done[arrow_height]
+            result = _estimate_arrow(arrow_base, arrow_arrows, estimated)
+            return num if (result.base == arrow_base and result.arrows == arrow_arrows
+                           and estimated is arrow_height) else result
+        case OpSeqResult(times=seq_times, opseq=seq_ops):  # no-branch
+            return _estimate_opseq(seq_times, seq_ops, done)
+        case _:  # no-cover
+            raise AssertionError(type(num).__name__)
+
+
+def estimate_count(root: Num) -> Arrow:
+    from tm.rules import OpSeqResult  # ruff: ignore[import-outside-top-level]
+
+    done: dict[Num, Arrow] = {}
+    visiting: set[Num] = set()
+    stack: list[tuple[Num, bool]] = [(root, False)]
+
+    while stack:
+        num, ready = stack.pop()
+        if num in done:  # no-cover
+            continue
+
+        if ready:
+            visiting.remove(num)
+            done[num] = _estimate_resolved(num, done)
+            continue
+
+        if (isinstance(num, Add | Mul | Div | Exp)
+                and num.depth < 64
+                and (quick := estimate_digits(num)) is not None):
+            done[num] = quick
+            continue
+
+        assert num not in visiting
+
+        visiting.add(num)
+        stack.append((num, True))
+
+        children: tuple[Count, ...]
+        match num:
+            case Add(l=l, r=r) | Mul(l=l, r=r):
+                children = (l, r)
+            case Div(num=child) | Exp(exp=child) | Arrow(height=child) | OpSeqResult(times=child):  # no-branch
+                children = (child,)
+            case _:  # no-cover
+                raise NotImplementedError(type(num).__name__)
+
+        stack.extend(
+            (child, False) for child in reversed(children)
+            if isinstance(child, Num) and child not in done
+        )
+
+    result = done[root]
+
+    return (
+        Arrow(result.base, 2, 2)
+        if (result.arrows == 1
+            and isinstance(height := result.height, Arrow)
+            and height.base == result.base
+            and height.arrows == 1
+            and height.height == 1)
+        else result
+    )
 
 
 class Add(Num):
@@ -184,17 +355,7 @@ class Add(Num):
 
         self.depth = 1 + r.depth
 
-        if isinstance(l, int):
-            self.leaves = 1 + r.leaves
-            self.tower_est = r.tower_est
-
-        else:
-            self.leaves = l.leaves + r.leaves
-            self.tower_est = (
-                None
-                if l.tower_est is None or r.tower_est is None else
-                max(l.tower_est, r.tower_est)
-            )
+        self.leaves = (1 if isinstance(l, int) else l.leaves) + r.leaves
 
     def __repr__(self) -> str:
         l, r = self.l, self.r
@@ -368,9 +529,6 @@ class Add(Num):
             if l < lo and r < ro:
                 return True
 
-            if self.tower_est is None and other.tower_est is not None:
-                return False
-
         if other == r:
             return l < 0
 
@@ -421,17 +579,7 @@ class Mul(Num):
 
         self.depth = 1 + r.depth
 
-        if isinstance(l, int):
-            self.leaves = 1 + r.leaves
-            self.tower_est = r.tower_est
-
-        else:
-            self.leaves = l.leaves + r.leaves
-            self.tower_est = (
-                None
-                if l.tower_est is None or r.tower_est is None else
-                max(l.tower_est, r.tower_est)
-            )
+        self.leaves = (1 if isinstance(l, int) else l.leaves) + r.leaves
 
     def __repr__(self) -> str:
         l, r = self.l, self.r
@@ -692,8 +840,6 @@ class Div(Num):
 
         self.leaves = 1 + num.leaves
 
-        self.tower_est = num.tower_est
-
     def __repr__(self) -> str:
         num = (
             '...'
@@ -884,19 +1030,8 @@ class Exp(Num):
         self.base = base
         self.exp = exp
 
-        if isinstance(exp, int):
-            self.depth = 1
-            self.leaves = 2
-            self.tower_est = 2 if log10(exp) >= 1 else 1
-
-        else:
-            self.depth = 1 + exp.depth
-            self.leaves = 1 + exp.leaves
-            self.tower_est = (
-                None
-                if exp.tower_est is None else
-                1 + exp.tower_est
-            )
+        self.depth = 1 if isinstance(exp, int) else 1 + exp.depth
+        self.leaves = 2 if isinstance(exp, int) else 1 + exp.leaves
 
     def __repr__(self) -> str:
         exp = (
@@ -1191,12 +1326,13 @@ class Exp(Num):
 
             return self < r
 
-        if isinstance(other, Tet | PentPlus):
+        if isinstance(other, Arrow):
+            if other.arrows == 1 and other.base == base:
+                return exp < other.height
             return other > self
 
-        if not isinstance(other, Mul):
-            assert self.tower_est is not None
-            return True
+        if not isinstance(other, Mul):  # no-cover
+            raise_lt_not_implemented(self, other)
 
         l, r = other.l, other.r
 
@@ -1220,32 +1356,35 @@ class Exp(Num):
         return Exp.make(self.base, self.exp * other)
 
 
-class Tet(Num):
+class Arrow(Num):
     base: int
-    height: int
+    arrows: int
+    height: Count
 
-    def __init__(self, base: int, height: int):
+    def __init__(self, base: int, arrows: int, height: Count):
+        assert base >= 2
+        assert arrows >= 1
+        assert not isinstance(height, int) or height >= 1
+
         self.base = base
+        self.arrows = arrows
         self.height = height
 
         self.depth = 1
         self.leaves = 2
-        self.tower_est = height
 
     def __repr__(self) -> str:
-        return f'({self.base} ↑↑ {self.height})'
+        ops = '↑' * self.arrows if self.arrows <= 5 else f'↑^{self.arrows}'
+        return f'({self.base} {ops} {show_number(self.height)})'
 
     def __hash__(self) -> int:
         return id(self)
 
-    def digits(self) -> int:  # ruff:ignore[no-self-use]
+    def digits(self) -> int:  # ruff: ignore[no-self-use]
         raise OverflowError
 
-    def estimate(self) -> Tet:
-        return self
-
     def __neg__(self) -> Count:
-        raise NotImplementedError
+        return Mul.make(-1, self)
 
     def __int__(self) -> int:
         raise NotImplementedError
@@ -1255,31 +1394,52 @@ class Tet(Num):
 
     def __eq__(self, other: object) -> bool:
         return (
-            isinstance(other, Tet)
+            isinstance(other, Arrow)
             and self.base == other.base
+            and self.arrows == other.arrows
             and self.height == other.height
         )
 
-    def __rpow__(self, other: int) -> Exp | Tet:
-        if other != self.base:
+    def __rpow__(self, other: int) -> Exp | Arrow:
+        if self.arrows != 2 or other != self.base:
             return Exp.make(other, self)
 
-        return Tet(self.base, 1 + self.height)
+        return Arrow(self.base, 2, self.height + 1)
 
     def __lt__(self, other: Count) -> bool:
         if isinstance(other, int):
             return False
 
-        if isinstance(other, Tet):
-            if not self.base == other.base:
+        if isinstance(other, Arrow):
+            if self.base != other.base:
                 raise_lt_not_implemented(self, other)
 
-            return self.height < other.height
+            if self.arrows == other.arrows:
+                return self.height < other.height
 
-        assert isinstance(other, Exp)
+            if self.height == other.height and self.height > 2:  # no-cover
+                return self.arrows < other.arrows
 
-        if isinstance(other.exp, int) and 2 < self.height:
-            return False
+            raise_lt_not_implemented(self, other)
+
+        if isinstance(other, Exp) and self.base == other.base:
+            if self.arrows == 1:  # no-cover
+                return self.height < other.exp
+
+            if self.height == 1:  # no-cover
+                if other.exp == 1:
+                    raise_lt_not_implemented(self, other)
+                return other.exp > 1
+
+            if self.height == 2:  # no-cover
+                if other.exp == self.base:
+                    raise_lt_not_implemented(self, other)
+                return other.exp > self.base
+
+            if (isinstance(other.exp, int)  # no-branch
+                    and other.exp < self.base ** self.base
+                    and self.height > 2):
+                return False
 
         raise_lt_not_implemented(self, other)
 
@@ -1303,16 +1463,6 @@ class Tet(Num):
 
     def __floordiv__(self, other: Count) -> Count:
         raise NotImplementedError
-
-
-class PentPlus(Num):
-    def __repr__(self) -> str:
-        return '!!!'  # no-cover
-
-    def __lt__(self, other: Count) -> bool:
-        assert not isinstance(other, PentPlus)
-
-        return False
 
 
 def add_exponents(

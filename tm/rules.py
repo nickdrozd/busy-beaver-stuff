@@ -428,7 +428,6 @@ class OpSeqResult(Num):
 
         self.depth = 1
         self.leaves = 2
-        self.tower_est = None
 
     def __repr__(self) -> str:
         return '!!!'
@@ -464,8 +463,7 @@ class OpSeqResult(Num):
             return False
 
         if not isinstance(other, OpSeqResult):  # no-cover
-            assert other.tower_est is not None
-            return False
+            raise NotImplementedError(f'{self} < {other}')
 
         assert self.opseq == other.opseq
 
@@ -476,7 +474,7 @@ class OpSeqResult(Num):
             return False
 
         if self.count == other.count:
-            return self.times < other.times
+            return self.times < other.times  # no-cover
 
         if self.times == other.times:  # no-cover
             return self.count < other.count
