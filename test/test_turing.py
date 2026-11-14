@@ -1030,6 +1030,22 @@ class Prover(RunProver):
 
         self.assertEqual(missed, 49)
 
+    def test_mother(self):
+        children = {
+            "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RD 0LA": 156081,  # 4079
+            "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  1RD 0LA": 580444,  # 12978
+            "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0LD 0LA": 555877,  # 14006
+            "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA": 570235,  # 14006
+        }
+
+        for prog, cycles in children.items():
+            self.run_bb(prog, blocks = 2)
+
+            assert self.machine.blanks
+            assert self.machine.spnout
+
+            self.assert_cycles(cycles)
+
     def test_algebra(self):
         clear_caches()
 
