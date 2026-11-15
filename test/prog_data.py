@@ -3675,6 +3675,7 @@ INFRUL: set[str] = set(ALGEBRA['infrul']) | {
 
 MAYBE_HALTERS = {
     "1RB 2LC 1RC  2LC ... 2RB  2LA 0LB 0RA",
+    "1RB 2RA 3LB ... 2LB  2LA 0LA 4RB 0RB 1LA",
     "1RB 0RD  0RC 1RE  1RD 0LA  1LE 1LC  1RF 0LD  ... 0RA",
     "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 1LD  ... 0LC",
 } | CRYPTIDS
