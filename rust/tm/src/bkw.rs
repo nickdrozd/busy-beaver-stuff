@@ -10,7 +10,6 @@ use std::sync::Arc;
 
 use crate::{
     Color, Instr, Prog, Shift, Slot, State, Steps, instrs::Parse as _,
-    tape::Scan,
 };
 
 const MAX_STACK_DEPTH: usize = 64;
@@ -12863,12 +12862,6 @@ struct Tape {
     scan: Color,
     lspan: Span,
     rspan: Span,
-}
-
-impl Scan for Tape {
-    fn scan(&self) -> Color {
-        self.scan
-    }
 }
 
 impl fmt::Display for Tape {

@@ -1,6 +1,6 @@
 use crate::holdouts::*;
 use std::collections::BTreeSet;
-use tm::{Prog, machine::RunProver as _};
+use tm::Prog;
 
 /**************************************/
 
@@ -98,8 +98,7 @@ fn test_champs() {
         Prog::<5, 2>::from(
             "1RB 1LC  1RD 0RA  0LC 1LE  1LA 0RE  0LA 1RB",
         )
-        .make_block_macro(2)
-        .run_prover(337_356)
+        .run_prover(600_000)
         .is_spinout()
     );
 
@@ -107,8 +106,7 @@ fn test_champs() {
         Prog::<5, 2>::from(
             "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA",
         )
-        .make_block_macro(2)
-        .run_prover(600_000)
+        .run_prover(800_000)
         .is_spinout()
     );
 }

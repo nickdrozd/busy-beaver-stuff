@@ -15,7 +15,6 @@ use crate::{Color, Shift};
 
 /**************************************/
 
-pub type LilCount = u8;
 pub type MedCount = u16;
 pub type BigCount = u64;
 pub type AlgCount = BigUint;
@@ -37,7 +36,6 @@ pub trait Countable:
 {
 }
 
-impl Countable for LilCount {}
 impl Countable for MedCount {}
 impl Countable for BigCount {}
 impl Countable for AlgCount {}
@@ -78,7 +76,6 @@ pub struct BasicBlock<Count> {
     pub count: Count,
 }
 
-pub type LilBlock = BasicBlock<LilCount>;
 pub type MedBlock = BasicBlock<MedCount>;
 pub type BigBlock = BasicBlock<BigCount>;
 pub type AlgBlock = BasicBlock<AlgCount>;
@@ -242,17 +239,6 @@ impl<B: Block> Span<B> {
     fn counts(&self) -> Vec<B::Count> {
         self.iter().map(|block| block.get_count().clone()).collect()
     }
-
-    fn signature(&self) -> Vec<ColorCount> {
-        self.iter().map(Into::into).collect()
-    }
-
-    fn sig_compatible(&self, span: &SigSpan) -> bool {
-        self.iter()
-            .take(span.len())
-            .zip(span.iter())
-            .all(|(bk, cc)| bk.get_color() == cc.get_color())
-    }
 }
 
 impl<B: Block> IndexTrait<usize> for Span<B> {
@@ -320,61 +306,6 @@ impl<B: Block> Span<B> {
 
 /**************************************/
 
-#[derive(PartialEq, Eq, Debug, Clone, Hash)]
-pub enum ColorCount {
-    Just(Color),
-    Mult(Color),
-}
-
-use ColorCount::*;
-
-impl ColorCount {
-    pub(crate) const fn get_color(&self) -> Color {
-        match self {
-            Just(color) | Mult(color) => *color,
-        }
-    }
-}
-
-impl<B: Block> From<&B> for ColorCount {
-    fn from(block: &B) -> Self {
-        (if block.is_single() { Just } else { Mult })(block.get_color())
-    }
-}
-
-type SigSpan = Vec<ColorCount>;
-
-#[derive(PartialEq, Eq, Hash, Debug)]
-pub struct Signature {
-    pub scan: Color,
-    pub lspan: SigSpan,
-    pub rspan: SigSpan,
-}
-
-pub trait GetSig: Scan {
-    fn signature(&self) -> Signature;
-}
-
-pub type MinSig = (Signature, (bool, bool));
-
-impl Signature {
-    pub fn matches(&self, (other, (lex, rex)): &MinSig) -> bool {
-        self.scan == other.scan
-            && (if *lex {
-                self.lspan == other.lspan
-            } else {
-                self.lspan.starts_with(&other.lspan)
-            })
-            && (if *rex {
-                self.rspan == other.rspan
-            } else {
-                self.rspan.starts_with(&other.rspan)
-            })
-    }
-}
-
-/**************************************/
-
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Tape<B: Block> {
     pub scan: Color,
@@ -383,7 +314,6 @@ pub struct Tape<B: Block> {
     pub rspan: Span<B>,
 }
 
-pub type LilTape = Tape<LilBlock>;
 pub type MedTape = Tape<MedBlock>;
 pub type BigTape = Tape<BigBlock>;
 pub type AlgTape = Tape<AlgBlock>;
@@ -425,28 +355,6 @@ impl<B: Block> Display for Tape<B> {
                 .collect::<Vec<_>>()
                 .join(" ")
         )
-    }
-}
-
-impl<B: Block> GetSig for Tape<B> {
-    fn signature(&self) -> Signature {
-        Signature {
-            scan: self.scan(),
-            lspan: self.lspan.signature(),
-            rspan: self.rspan.signature(),
-        }
-    }
-}
-
-impl Scan for EnumTape {
-    fn scan(&self) -> Color {
-        self.tape.scan
-    }
-}
-
-impl GetSig for EnumTape {
-    fn signature(&self) -> Signature {
-        self.tape.signature()
     }
 }
 
@@ -497,27 +405,6 @@ impl<B: Block> Tape<B> {
 
     pub fn counts(&self) -> (Vec<B::Count>, Vec<B::Count>) {
         (self.lspan.counts(), self.rspan.counts())
-    }
-
-    pub fn sig_compatible(
-        &self,
-        Signature { scan, lspan, rspan }: &Signature,
-    ) -> bool {
-        self.scan == *scan
-            && self.lspan.len() >= lspan.len()
-            && self.rspan.len() >= rspan.len()
-            && self.lspan.sig_compatible(lspan)
-            && self.rspan.sig_compatible(rspan)
-    }
-}
-
-pub trait MachineTape {
-    fn mstep(&mut self, shift: Shift, color: Color, skip: bool);
-}
-
-impl<B: Block> MachineTape for Tape<B> {
-    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
-        self.step(shift, color, skip);
     }
 }
 
@@ -729,209 +616,22 @@ impl<B: Block> HeadTape<'_, B> {
 }
 
 /**************************************/
-
-#[derive(Clone, PartialEq, Eq)]
-struct EnumBlock {
-    block: AlgBlock,
-    index: Option<Index>,
-}
-
-impl Block for EnumBlock {
-    type Count = AlgCount;
-
-    fn new(color: Color, count: Self::Count) -> Self {
-        Self {
-            block: AlgBlock::new(color, count),
-            index: None,
-        }
-    }
-
-    fn get_color(&self) -> Color {
-        self.block.get_color()
-    }
-
-    fn get_count(&self) -> &Self::Count {
-        self.block.get_count()
-    }
-
-    fn add_count(&mut self, count: Self::Count) {
-        self.block.add_count(count);
-    }
-
-    fn decrement(&mut self) {
-        self.block.decrement();
-    }
-
-    fn set_count(&mut self, count: Self::Count) {
-        self.block.set_count(count);
-    }
-}
-
-impl Display for EnumBlock {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self.block)
-    }
-}
-
-pub struct EnumTape {
-    tape: Tape<EnumBlock>,
-
-    l_offset: Cell<usize>,
-    r_offset: Cell<usize>,
-
-    l_edge: Cell<bool>,
-    r_edge: Cell<bool>,
-}
-
-impl Display for EnumTape {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self.tape)
-    }
-}
-
-type AlgSpan = Span<AlgBlock>;
-type EnumSpan = Span<EnumBlock>;
-
-impl EnumSpan {
-    fn from(span: &AlgSpan, side: Shift) -> Self {
-        let len = span.len();
-
-        Self::new(
-            span.iter()
-                .rev()
-                .enumerate()
-                .map(|(i, block)| EnumBlock {
-                    block: block.clone(),
-                    index: Some((side, len - i)),
-                })
-                .collect(),
-        )
-    }
-}
-
-impl From<&AlgTape> for EnumTape {
-    fn from(tape: &AlgTape) -> Self {
-        Self {
-            tape: Tape {
-                scan: tape.scan,
-                lspan: EnumSpan::from(&tape.lspan, false),
-                rspan: EnumSpan::from(&tape.rspan, true),
-            },
-
-            l_offset: 0.into(),
-            r_offset: 0.into(),
-            l_edge: false.into(),
-            r_edge: false.into(),
-        }
-    }
-}
-
-impl EnumTape {
-    const fn offsets(&self) -> (usize, usize) {
-        (self.l_offset.get(), self.r_offset.get())
-    }
-
-    const fn edges(&self) -> (bool, bool) {
-        (self.l_edge.get(), self.r_edge.get())
-    }
-
-    fn touch_edge(&self, shift: Shift) {
-        (if shift { &self.r_edge } else { &self.l_edge }).set(true);
-    }
-
-    fn check_offsets(&self, block: &EnumBlock) {
-        let Some((side, offset)) = block.index else {
-            return;
-        };
-
-        let s_offset =
-            if side { &self.r_offset } else { &self.l_offset };
-
-        if offset > s_offset.get() {
-            s_offset.set(offset);
-        }
-    }
-
-    fn check_step(&self, shift: Shift, color: Color, skip: bool) {
-        let (pull, push) = if shift {
-            (&self.tape.rspan, &self.tape.lspan)
-        } else {
-            (&self.tape.lspan, &self.tape.rspan)
-        };
-
-        if pull.blank() {
-            self.touch_edge(shift);
-        } else {
-            let near_block = &pull[0];
-            self.check_offsets(near_block);
-
-            if skip && near_block.get_color() == self.tape.scan {
-                if pull.len() == 1 {
-                    self.touch_edge(shift);
-                } else {
-                    self.check_offsets(&pull[1]);
-                }
-            }
-        }
-
-        if !push.blank() {
-            let opp = &push[0];
-
-            if color == opp.get_color() {
-                self.check_offsets(opp);
-            }
-        }
-    }
-
-    pub fn get_min_sig(&self, sig: &Signature) -> MinSig {
-        let (lmax, rmax) = self.offsets();
-
-        (
-            Signature {
-                scan: sig.scan,
-                lspan: sig.lspan[..lmax].to_vec(),
-                rspan: sig.rspan[..rmax].to_vec(),
-            },
-            self.edges(),
-        )
-    }
-}
-
-impl IndexTape<AlgCount> for EnumTape {
-    fn get_count(&self, index: &Index) -> &AlgCount {
-        self.tape.get_count(index)
-    }
-
-    fn set_count(&mut self, index: &Index, val: AlgCount) {
-        self.tape.set_count(index, val);
-    }
-}
-
-impl MachineTape for EnumTape {
-    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
-        self.check_step(shift, color, skip);
-
-        self.tape.step(shift, color, skip);
-    }
-}
-
-/**************************************/
-/* Dynamic prover tape               */
+/* Adaptive prover tape              */
 /**************************************/
 
-const DYNAMIC_REBALANCE_WINDOW: usize = 64;
-const DYNAMIC_MAX_PATTERN: usize = 16;
-const DYNAMIC_MIN_PATTERN_REPEATS: usize = 3;
+const REBALANCE_WINDOW: usize = 64;
+const MAX_PATTERN: usize = 16;
+const MIN_PATTERN_REPEATS: usize = 3;
 
-pub type DynamicWord = Arc<[Color]>;
+pub type Word = Arc<[Color]>;
 
-fn dynamic_word_hash(word: &[Color]) -> u64 {
+fn word_hash_of(word: &[Color]) -> u64 {
     let mut hasher = DefaultHasher::new();
     word.hash(&mut hasher);
     hasher.finish()
 }
 
-fn dynamic_primitive(word: &[Color]) -> (&[Color], usize) {
+fn primitive_word(word: &[Color]) -> (&[Color], usize) {
     for width in 1..=word.len() / 2 {
         if !word.len().is_multiple_of(width) {
             continue;
@@ -946,7 +646,7 @@ fn dynamic_primitive(word: &[Color]) -> (&[Color], usize) {
     (word, 1)
 }
 
-fn dynamic_word_display(word: &[Color], reverse: bool) -> String {
+fn display_word(word: &[Color], reverse: bool) -> String {
     let shown: Vec<String> = if reverse {
         word.iter().rev().map(ToString::to_string).collect()
     } else {
@@ -961,14 +661,14 @@ fn dynamic_word_display(word: &[Color], reverse: bool) -> String {
 }
 
 #[derive(Clone, Eq, PartialEq)]
-pub struct DynamicBlock {
-    word: DynamicWord,
+pub struct WordBlock {
+    word: Word,
     count: AlgCount,
     origins: Vec<Index>,
     word_hash: u64,
 }
 
-impl DynamicBlock {
+impl WordBlock {
     fn new(color: Color, count: AlgCount) -> Self {
         Self::new_word(&[color], count)
     }
@@ -979,14 +679,14 @@ impl DynamicBlock {
             "a tape block cannot have an empty word"
         );
 
-        let (root, factor) = dynamic_primitive(word);
+        let (root, factor) = primitive_word(word);
         let count = if factor == 1 {
             count
         } else {
             count * AlgCount::from(factor)
         };
-        let word = DynamicWord::from(root.to_vec());
-        let word_hash = dynamic_word_hash(&word);
+        let word = Word::from(root.to_vec());
+        let word_hash = word_hash_of(&word);
 
         Self {
             word,
@@ -1039,19 +739,19 @@ impl DynamicBlock {
     }
 
     fn normalize_word(&mut self) {
-        let (root, factor) = dynamic_primitive(&self.word);
+        let (root, factor) = primitive_word(&self.word);
         if factor == 1 {
             return;
         }
 
         let root = root.to_vec();
-        self.word = DynamicWord::from(root);
-        self.word_hash = dynamic_word_hash(&self.word);
+        self.word = Word::from(root);
+        self.word_hash = word_hash_of(&self.word);
         self.count *= AlgCount::from(factor);
     }
 
     fn display(&self, reverse: bool) -> String {
-        let shown = dynamic_word_display(&self.word, reverse);
+        let shown = display_word(&self.word, reverse);
 
         if self.count.is_one() {
             shown
@@ -1063,20 +763,14 @@ impl DynamicBlock {
     }
 }
 
-impl Display for DynamicBlock {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self.display(false))
-    }
-}
-
 #[derive(Clone, Eq, PartialEq)]
-pub struct DynamicSpan {
+pub struct WordSpan {
     // Farthest-to-nearest, matching the original Span storage convention.
-    blocks: Vec<DynamicBlock>,
+    blocks: Vec<WordBlock>,
 }
 
-impl DynamicSpan {
-    const fn new(blocks: Vec<DynamicBlock>) -> Self {
+impl WordSpan {
+    const fn new(blocks: Vec<WordBlock>) -> Self {
         Self { blocks }
     }
 
@@ -1085,7 +779,7 @@ impl DynamicSpan {
     }
 
     fn init_stepped() -> Self {
-        Self::new(vec![DynamicBlock::new(1, AlgCount::one())])
+        Self::new(vec![WordBlock::new(1, AlgCount::one())])
     }
 
     const fn len(&self) -> usize {
@@ -1096,35 +790,32 @@ impl DynamicSpan {
         self.blocks.is_empty()
     }
 
-    fn iter(&self) -> impl DoubleEndedIterator<Item = &DynamicBlock> {
+    fn iter(&self) -> impl DoubleEndedIterator<Item = &WordBlock> {
         self.blocks.iter().rev()
     }
 
-    fn first(&self) -> Option<&DynamicBlock> {
+    fn first(&self) -> Option<&WordBlock> {
         self.blocks.last()
     }
 
-    fn first_mut(&mut self) -> Option<&mut DynamicBlock> {
+    fn first_mut(&mut self) -> Option<&mut WordBlock> {
         self.blocks.last_mut()
     }
 
-    fn pop_block(&mut self) -> DynamicBlock {
+    fn pop_block(&mut self) -> WordBlock {
         self.blocks.pop().unwrap()
     }
 
-    fn index(&self, pos: usize) -> &DynamicBlock {
+    fn index(&self, pos: usize) -> &WordBlock {
         &self.blocks[self.blocks.len() - 1 - pos]
     }
 
-    fn index_mut(&mut self, pos: usize) -> &mut DynamicBlock {
+    fn index_mut(&mut self, pos: usize) -> &mut WordBlock {
         let physical = self.blocks.len() - 1 - pos;
         &mut self.blocks[physical]
     }
 
-    fn merge_metadata(
-        into: &mut Option<DynamicBlock>,
-        block: &DynamicBlock,
-    ) {
+    fn merge_metadata(into: &mut Option<WordBlock>, block: &WordBlock) {
         if let Some(into) = into {
             into.merge_origins(block);
         } else {
@@ -1132,16 +823,12 @@ impl DynamicSpan {
         }
     }
 
-    fn subtract_usize(count: &mut AlgCount, value: usize) {
-        *count -= AlgCount::from(value);
-    }
-
     fn discard_prefix_from_first_block(&mut self, cells: usize) {
         let block = self.pop_block();
         let full_copies = cells / block.width();
         let offset = cells % block.width();
         let mut copies_left = block.count.clone();
-        Self::subtract_usize(&mut copies_left, full_copies);
+        copies_left -= AlgCount::from(full_copies);
 
         if offset != 0 {
             copies_left -= AlgCount::one();
@@ -1161,7 +848,7 @@ impl DynamicSpan {
     fn consume_matching_prefix(
         &mut self,
         color: Color,
-    ) -> (AlgCount, Option<DynamicBlock>) {
+    ) -> (AlgCount, Option<WordBlock>) {
         let mut consumed = AlgCount::zero();
         let mut metadata = None;
 
@@ -1233,7 +920,7 @@ impl DynamicSpan {
         &mut self,
         scan: Color,
         skip: bool,
-    ) -> (Color, AlgCount, Option<DynamicBlock>) {
+    ) -> (Color, AlgCount, Option<WordBlock>) {
         let (skipped, metadata) = if skip {
             self.consume_matching_prefix(scan)
         } else {
@@ -1249,7 +936,7 @@ impl DynamicSpan {
         &mut self,
         print: Color,
         stepped: &AlgCount,
-        metadata: Option<&DynamicBlock>,
+        metadata: Option<&WordBlock>,
     ) {
         match self.first_mut() {
             Some(block)
@@ -1262,8 +949,7 @@ impl DynamicSpan {
             },
             None if print == 0 => {},
             _ => {
-                let mut block =
-                    DynamicBlock::new(print, stepped.clone());
+                let mut block = WordBlock::new(print, stepped.clone());
                 if let Some(metadata) = metadata {
                     block.merge_origins(metadata);
                 }
@@ -1276,11 +962,11 @@ impl DynamicSpan {
         self.iter().map(|block| block.count.clone()).collect()
     }
 
-    fn signature(&self) -> Vec<DynamicColorCount> {
-        self.iter().map(DynamicColorCount::from).collect()
+    fn signature(&self) -> Vec<ColorCount> {
+        self.iter().map(ColorCount::from).collect()
     }
 
-    fn sig_compatible(&self, span: &[DynamicColorCount]) -> bool {
+    fn sig_compatible(&self, span: &[ColorCount]) -> bool {
         self.len() == span.len()
             && self
                 .iter()
@@ -1289,7 +975,7 @@ impl DynamicSpan {
     }
 
     fn merge_equal_neighbors(&mut self) {
-        let mut merged: Vec<DynamicBlock> =
+        let mut merged: Vec<WordBlock> =
             Vec::with_capacity(self.blocks.len());
 
         for block in self.blocks.drain(..) {
@@ -1323,7 +1009,7 @@ impl DynamicSpan {
     }
 
     fn trim_blank_edge(&mut self) {
-        while self.blocks.first().is_some_and(DynamicBlock::blank) {
+        while self.blocks.first().is_some_and(WordBlock::blank) {
             self.blocks.remove(0);
         }
 
@@ -1359,7 +1045,7 @@ impl DynamicSpan {
     fn prefix_cells(
         &self,
         outward_index: usize,
-        cells: &mut [Color; DYNAMIC_REBALANCE_WINDOW],
+        cells: &mut [Color; REBALANCE_WINDOW],
     ) -> usize {
         let mut size = 0;
 
@@ -1368,7 +1054,7 @@ impl DynamicSpan {
                 break;
             }
 
-            let remaining = DYNAMIC_REBALANCE_WINDOW - size;
+            let remaining = REBALANCE_WINDOW - size;
             if remaining == 0 {
                 break;
             }
@@ -1390,11 +1076,11 @@ impl DynamicSpan {
         &self,
         outward_index: usize,
     ) -> Option<(Vec<Color>, usize, usize)> {
-        let mut cells = [0; DYNAMIC_REBALANCE_WINDOW];
+        let mut cells = [0; REBALANCE_WINDOW];
         let size = self.prefix_cells(outward_index, &mut cells);
         let mut best: Option<(usize, usize, usize)> = None;
 
-        for width in 1..=DYNAMIC_MAX_PATTERN.min(size / 2) {
+        for width in 1..=MAX_PATTERN.min(size / 2) {
             let word = &cells[..width];
             let mut copies = 1;
 
@@ -1404,7 +1090,7 @@ impl DynamicSpan {
                 copies += 1;
             }
 
-            if copies < DYNAMIC_MIN_PATTERN_REPEATS {
+            if copies < MIN_PATTERN_REPEATS {
                 continue;
             }
 
@@ -1434,7 +1120,7 @@ impl DynamicSpan {
         &mut self,
         outward_index: usize,
         mut cells: usize,
-    ) -> (usize, Option<DynamicBlock>) {
+    ) -> (usize, Option<WordBlock>) {
         let mut physical = self.blocks.len() - 1 - outward_index;
         let insertion;
         let mut metadata = None;
@@ -1481,7 +1167,7 @@ impl DynamicSpan {
         let (insertion, metadata) =
             self.consume_prefix_at(outward_index, covered);
         let mut compound =
-            DynamicBlock::new_word(&word, AlgCount::from(copies));
+            WordBlock::new_word(&word, AlgCount::from(copies));
         if let Some(metadata) = &metadata {
             compound.merge_origins(metadata);
         }
@@ -1500,14 +1186,14 @@ impl DynamicSpan {
 
         let (insertion, metadata) = self.consume_prefix_at(0, covered);
         let mut compound =
-            DynamicBlock::new_word(&word, AlgCount::from(copies));
+            WordBlock::new_word(&word, AlgCount::from(copies));
         if let Some(metadata) = &metadata {
             compound.merge_origins(metadata);
         }
         self.blocks.insert(insertion, compound);
 
         self.merge_near_neighbors();
-        if self.blocks.first().is_some_and(DynamicBlock::blank) {
+        if self.blocks.first().is_some_and(WordBlock::blank) {
             self.trim_blank_edge();
         }
         true
@@ -1516,7 +1202,7 @@ impl DynamicSpan {
     fn normalize_boundary(&mut self) {
         self.merge_near_neighbors();
 
-        if self.blocks.first().is_some_and(DynamicBlock::blank) {
+        if self.blocks.first().is_some_and(WordBlock::blank) {
             self.trim_blank_edge();
         }
 
@@ -1560,7 +1246,7 @@ impl DynamicSpan {
 
     fn visit_dependency_prefix(
         &self,
-        mut visit: impl FnMut(&DynamicBlock),
+        mut visit: impl FnMut(&WordBlock),
     ) {
         let mut cells = 0_usize;
 
@@ -1577,7 +1263,7 @@ impl DynamicSpan {
 
             cells = cells
                 .saturating_add(block.width().saturating_mul(count));
-            if cells >= DYNAMIC_REBALANCE_WINDOW {
+            if cells >= REBALANCE_WINDOW {
                 break;
             }
         }
@@ -1585,13 +1271,13 @@ impl DynamicSpan {
 }
 
 #[derive(Debug, Clone)]
-pub enum DynamicSigWord {
+pub enum SigWord {
     Single(Color),
-    Compound { word: DynamicWord, hash: u64 },
+    Compound { word: Word, hash: u64 },
 }
 
-impl DynamicSigWord {
-    fn from_block(block: &DynamicBlock) -> Self {
+impl SigWord {
+    fn from_block(block: &WordBlock) -> Self {
         if block.homogeneous() {
             Self::Single(block.first())
         } else {
@@ -1610,15 +1296,15 @@ impl DynamicSigWord {
     }
 }
 
-impl PartialEq for DynamicSigWord {
+impl PartialEq for SigWord {
     fn eq(&self, other: &Self) -> bool {
         self.word() == other.word()
     }
 }
 
-impl Eq for DynamicSigWord {}
+impl Eq for SigWord {}
 
-impl Hash for DynamicSigWord {
+impl Hash for SigWord {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             Self::Single(color) => {
@@ -1634,12 +1320,12 @@ impl Hash for DynamicSigWord {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum DynamicColorCount {
-    Just(DynamicSigWord),
-    Mult(DynamicSigWord),
+pub enum ColorCount {
+    Just(SigWord),
+    Mult(SigWord),
 }
 
-impl DynamicColorCount {
+impl ColorCount {
     fn word(&self) -> &[Color] {
         match self {
             Self::Just(word) | Self::Mult(word) => word.word(),
@@ -1647,9 +1333,9 @@ impl DynamicColorCount {
     }
 }
 
-impl From<&DynamicBlock> for DynamicColorCount {
-    fn from(block: &DynamicBlock) -> Self {
-        let word = DynamicSigWord::from_block(block);
+impl From<&WordBlock> for ColorCount {
+    fn from(block: &WordBlock) -> Self {
+        let word = SigWord::from_block(block);
         if block.is_single() {
             Self::Just(word)
         } else {
@@ -1659,16 +1345,16 @@ impl From<&DynamicBlock> for DynamicColorCount {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct DynamicSignature {
+pub struct Signature {
     pub scan: Color,
-    pub lspan: Vec<DynamicColorCount>,
-    pub rspan: Vec<DynamicColorCount>,
+    pub lspan: Vec<ColorCount>,
+    pub rspan: Vec<ColorCount>,
 }
 
-pub type DynamicMinSig = (DynamicSignature, (bool, bool));
+pub type MinSig = (Signature, (bool, bool));
 
-impl DynamicSignature {
-    pub fn matches(&self, (other, (lex, rex)): &DynamicMinSig) -> bool {
+impl Signature {
+    pub fn matches(&self, (other, (lex, rex)): &MinSig) -> bool {
         self.scan == other.scan
             && (if *lex {
                 self.lspan == other.lspan
@@ -1683,42 +1369,15 @@ impl DynamicSignature {
     }
 }
 
-impl From<&Signature> for DynamicSignature {
-    fn from(sig: &Signature) -> Self {
-        fn convert(span: &[ColorCount]) -> Vec<DynamicColorCount> {
-            span.iter()
-                .map(|entry| {
-                    let word =
-                        DynamicSigWord::Single(entry.get_color());
-                    match entry {
-                        ColorCount::Just(_) => {
-                            DynamicColorCount::Just(word)
-                        },
-                        ColorCount::Mult(_) => {
-                            DynamicColorCount::Mult(word)
-                        },
-                    }
-                })
-                .collect()
-        }
-
-        Self {
-            scan: sig.scan,
-            lspan: convert(&sig.lspan),
-            rspan: convert(&sig.rspan),
-        }
-    }
-}
-
-pub trait DynamicGetSig: Scan {
-    fn dynamic_signature(&self) -> DynamicSignature;
+pub trait GetSig: Scan {
+    fn signature(&self) -> Signature;
 }
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct DynamicTape {
     pub scan: Color,
-    pub lspan: DynamicSpan,
-    pub rspan: DynamicSpan,
+    pub lspan: WordSpan,
+    pub rspan: WordSpan,
 }
 
 impl DynamicTape {
@@ -1786,7 +1445,7 @@ impl DynamicTape {
         (self.lspan.counts(), self.rspan.counts())
     }
 
-    pub fn sig_compatible(&self, sig: &DynamicSignature) -> bool {
+    pub fn sig_compatible(&self, sig: &Signature) -> bool {
         self.scan == sig.scan
             && self.lspan.sig_compatible(&sig.lspan)
             && self.rspan.sig_compatible(&sig.rspan)
@@ -1820,33 +1479,27 @@ impl Init for DynamicTape {
     fn init() -> Self {
         Self {
             scan: 0,
-            lspan: DynamicSpan::init_blank(),
-            rspan: DynamicSpan::init_blank(),
+            lspan: WordSpan::init_blank(),
+            rspan: WordSpan::init_blank(),
         }
     }
 
     fn init_stepped() -> Self {
         Self {
             scan: 0,
-            lspan: DynamicSpan::init_stepped(),
-            rspan: DynamicSpan::init_blank(),
+            lspan: WordSpan::init_stepped(),
+            rspan: WordSpan::init_blank(),
         }
     }
 }
 
-impl DynamicGetSig for DynamicTape {
-    fn dynamic_signature(&self) -> DynamicSignature {
-        DynamicSignature {
+impl GetSig for DynamicTape {
+    fn signature(&self) -> Signature {
+        Signature {
             scan: self.scan,
             lspan: self.lspan.signature(),
             rspan: self.rspan.signature(),
         }
-    }
-}
-
-impl MachineTape for DynamicTape {
-    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
-        self.step(shift, color, skip);
     }
 }
 
@@ -1866,46 +1519,22 @@ impl IndexTape<AlgCount> for DynamicTape {
     }
 }
 
-impl From<&AlgTape> for DynamicTape {
-    fn from(tape: &AlgTape) -> Self {
-        fn convert(span: &Span<AlgBlock>) -> DynamicSpan {
-            DynamicSpan::new(
-                span.iter()
-                    .rev()
-                    .map(|block| {
-                        DynamicBlock::new(
-                            block.color,
-                            block.count.clone(),
-                        )
-                    })
-                    .collect(),
-            )
-        }
+pub trait TapeOps: GetSig + IndexTape<AlgCount> {
+    fn mstep(&mut self, shift: Shift, color: Color, skip: bool);
+    fn normalize_after_rule(&mut self);
+}
 
-        let mut dynamic = Self {
-            scan: tape.scan,
-            lspan: convert(&tape.lspan),
-            rspan: convert(&tape.rspan),
-        };
-        dynamic.rebalance();
-        dynamic
+impl TapeOps for DynamicTape {
+    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
+        self.step(shift, color, skip);
+    }
+
+    fn normalize_after_rule(&mut self) {
+        Self::normalize(self);
     }
 }
 
-pub trait DynamicTapeOps:
-    DynamicGetSig + MachineTape + IndexTape<AlgCount>
-{
-    fn normalize_dynamic(&mut self);
-}
-
-impl DynamicTapeOps for DynamicTape {
-    fn normalize_dynamic(&mut self) {
-        self.normalize();
-    }
-}
-
-#[derive(Clone)]
-pub struct DynamicEnumTape {
+pub struct EnumTape {
     tape: DynamicTape,
     l_offset: Cell<usize>,
     r_offset: Cell<usize>,
@@ -1913,12 +1542,12 @@ pub struct DynamicEnumTape {
     r_edge: Cell<bool>,
 }
 
-impl From<&DynamicTape> for DynamicEnumTape {
+impl From<&DynamicTape> for EnumTape {
     fn from(tape: &DynamicTape) -> Self {
-        fn convert(span: &DynamicSpan, side: Shift) -> DynamicSpan {
+        fn convert(span: &WordSpan, side: Shift) -> WordSpan {
             let len = span.len();
 
-            DynamicSpan::new(
+            WordSpan::new(
                 span.iter()
                     .rev()
                     .enumerate()
@@ -1945,12 +1574,12 @@ impl From<&DynamicTape> for DynamicEnumTape {
     }
 }
 
-impl DynamicEnumTape {
+impl EnumTape {
     fn touch_edge(&self, shift: Shift) {
         (if shift { &self.r_edge } else { &self.l_edge }).set(true);
     }
 
-    fn check_offsets(&self, block: &DynamicBlock) {
+    fn check_offsets(&self, block: &WordBlock) {
         for &(side, offset) in &block.origins {
             let target =
                 if side { &self.r_offset } else { &self.l_offset };
@@ -1958,7 +1587,7 @@ impl DynamicEnumTape {
         }
     }
 
-    fn check_dependency_prefix(&self, span: &DynamicSpan) {
+    fn check_dependency_prefix(&self, span: &WordSpan) {
         span.visit_dependency_prefix(|block| self.check_offsets(block));
     }
 
@@ -1990,12 +1619,12 @@ impl DynamicEnumTape {
         self.check_dependency_prefix(push);
     }
 
-    pub fn get_min_sig(&self, sig: &DynamicSignature) -> DynamicMinSig {
+    pub fn get_min_sig(&self, sig: &Signature) -> MinSig {
         let lmax = self.l_offset.get().min(sig.lspan.len());
         let rmax = self.r_offset.get().min(sig.rspan.len());
 
         (
-            DynamicSignature {
+            Signature {
                 scan: sig.scan,
                 lspan: sig.lspan[..lmax].to_vec(),
                 rspan: sig.rspan[..rmax].to_vec(),
@@ -2005,32 +1634,19 @@ impl DynamicEnumTape {
     }
 }
 
-impl Display for DynamicEnumTape {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self.tape)
-    }
-}
-
-impl Scan for DynamicEnumTape {
+impl Scan for EnumTape {
     fn scan(&self) -> Color {
         self.tape.scan
     }
 }
 
-impl DynamicGetSig for DynamicEnumTape {
-    fn dynamic_signature(&self) -> DynamicSignature {
-        self.tape.dynamic_signature()
+impl GetSig for EnumTape {
+    fn signature(&self) -> Signature {
+        self.tape.signature()
     }
 }
 
-impl MachineTape for DynamicEnumTape {
-    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
-        self.check_step(shift, skip);
-        self.tape.step(shift, color, skip);
-    }
-}
-
-impl IndexTape<AlgCount> for DynamicEnumTape {
+impl IndexTape<AlgCount> for EnumTape {
     fn get_count(&self, &(side, pos): &Index) -> &AlgCount {
         let span = if side {
             &self.tape.rspan
@@ -2047,8 +1663,13 @@ impl IndexTape<AlgCount> for DynamicEnumTape {
     }
 }
 
-impl DynamicTapeOps for DynamicEnumTape {
-    fn normalize_dynamic(&mut self) {
+impl TapeOps for EnumTape {
+    fn mstep(&mut self, shift: Shift, color: Color, skip: bool) {
+        self.check_step(shift, skip);
+        self.tape.step(shift, color, skip);
+    }
+
+    fn normalize_after_rule(&mut self) {
         self.tape.normalize();
     }
 }
@@ -2058,19 +1679,9 @@ impl DynamicTapeOps for DynamicEnumTape {
 #[cfg(test)]
 impl AlgTape {
     #[track_caller]
-    fn assert(&self, marks: u32, tape_str: &str, sig: &str) {
+    fn assert(&self, marks: u32, tape_str: &str) {
         assert_eq!(self.blank(), marks == 0);
-
         assert_eq!(self.to_string(), tape_str);
-
-        let signature = self.signature();
-
-        assert_eq!(signature, sig.into());
-
-        assert!(
-            signature
-                .matches(&EnumTape::from(self).get_min_sig(&signature))
-        );
     }
 
     #[track_caller]
@@ -2083,7 +1694,7 @@ impl AlgTape {
 }
 
 #[cfg(test)]
-impl AlgSpan {
+impl Span<AlgBlock> {
     fn from_data(data: Vec<(Color, usize)>) -> Self {
         Self::new(
             data.into_iter()
@@ -2145,78 +1756,25 @@ impl From<&str> for AlgTape {
     }
 }
 
-#[cfg(test)]
-impl From<&str> for EnumTape {
-    fn from(s: &str) -> Self {
-        (&AlgTape::from(s)).into()
-    }
-}
-
-#[cfg(test)]
-impl From<&str> for Signature {
-    fn from(s: &str) -> Self {
-        let parts: Vec<&str> = s.split_whitespace().collect();
-
-        let lspan: Vec<ColorCount> = parts
-            .iter()
-            .take_while(|p| !p.starts_with('['))
-            .map(|&p| p.into())
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .collect();
-
-        let scan = parts
-            .iter()
-            .find(|p| p.starts_with('['))
-            .and_then(|p| {
-                p.trim_matches(|c| c == '[' || c == ']').parse().ok()
-            })
-            .unwrap();
-
-        let rspan_start = parts
-            .iter()
-            .position(|&p| p.starts_with('['))
-            .map_or(parts.len(), |pos| pos + 1);
-
-        let rspan: Vec<ColorCount> =
-            parts[rspan_start..].iter().map(|&p| p.into()).collect();
-
-        Self { scan, lspan, rspan }
-    }
-}
-
-#[cfg(test)]
-impl From<&str> for ColorCount {
-    fn from(s: &str) -> Self {
-        s.strip_prefix('(')
-            .and_then(|s| s.strip_suffix(')'))
-            .map_or_else(
-                || Mult(s.parse().unwrap()),
-                |t| Just(t.parse().unwrap()),
-            )
-    }
-}
-
 #[test]
 fn test_init() {
-    Tape::init().assert(0, "[0]", "[0]");
+    Tape::init().assert(0, "[0]");
 
     let mut tape = Tape::init_stepped();
 
-    tape.assert(1, "1 [0]", "(1) [0]");
+    tape.assert(1, "1 [0]");
 
     tape.tstep(1, 1, 0);
 
-    tape.assert(2, "1^2 [0]", "1 [0]");
+    tape.assert(2, "1^2 [0]");
 
     tape.tstep(0, 0, 0);
 
-    tape.assert(2, "1 [1]", "(1) [1]");
+    tape.assert(2, "1 [1]");
 
     tape.tstep(0, 0, 1);
 
-    tape.assert(0, "[0]", "[0]");
+    tape.assert(0, "[0]");
 }
 
 #[test]
@@ -2273,10 +1831,10 @@ fn test_clone() {
     copy_1.tstep(0, 2, 0);
     copy_2.tstep(1, 1, 0);
 
-    copy_1.assert(6, "1 0 [1] 2^2 1^2", "(1) (0) [1] 2 1");
-    copy_2.assert(6, "1 0 1^2 [2] 1^2", "(1) (0) 1 [2] 1");
+    copy_1.assert(6, "1 0 [1] 2^2 1^2");
+    copy_2.assert(6, "1 0 1^2 [2] 1^2");
 
-    tape.assert(6, "1 0 1 [2] 2 1^2", "(1) (0) (1) [2] (2) 1");
+    tape.assert(6, "1 0 1 [2] 2 1^2");
 }
 
 #[cfg(test)]
@@ -2314,39 +1872,35 @@ macro_rules! rule {
 fn test_apply_1() {
     let mut tape = tape!("2^3 1^12 [3] 4^15 5^2 6^2");
 
-    tape.assert(35, "2^3 1^12 [3] 4^15 5^2 6^2", "2 1 [3] 4 5 6");
+    tape.assert(35, "2^3 1^12 [3] 4^15 5^2 6^2");
 
     tape.apply_rule(&rule![
         (0, 1) => plus!(3),
         (1, 0) => plus!(-2),
     ]);
 
-    tape.assert(42, "2^24 1^12 [3] 4 5^2 6^2", "2 1 [3] (4) 5 6");
+    tape.assert(42, "2^24 1^12 [3] 4 5^2 6^2");
 }
 
 #[test]
 fn test_apply_2() {
     let mut tape = tape!("4^2 [4] 5^60 2 4 5^7 1");
 
-    tape.assert(73, "4^2 [4] 5^60 2 4 5^7 1", "4 [4] 5 (2) (4) 5 (1)");
+    tape.assert(73, "4^2 [4] 5^60 2 4 5^7 1");
 
     tape.apply_rule(&rule![
         (0, 0) => plus!(4),
         (1, 0) => plus!(-2),
     ]);
 
-    tape.assert(
-        131,
-        "4^118 [4] 5^2 2 4 5^7 1",
-        "4 [4] 5 (2) (4) 5 (1)",
-    );
+    tape.assert(131, "4^118 [4] 5^2 2 4 5^7 1");
 }
 
 #[test]
 fn test_apply_3() {
     let mut tape = tape!("3 2^655345 1^152 [0]");
 
-    tape.assert(655_498, "3 2^655345 1^152 [0]", "(3) 2 1 [0]");
+    tape.assert(655_498, "3 2^655345 1^152 [0]");
 
     let rule = rule! [
         (0, 1) => plus!(-2),
@@ -2366,162 +1920,12 @@ fn test_apply_3() {
 fn test_apply_4() {
     let mut tape = tape!("2^506 [2] 2 1 0^10 1");
 
-    tape.assert(510, "2^506 [2] 2 1 0^10 1", "2 [2] (2) (1) 0 (1)");
+    tape.assert(510, "2^506 [2] 2 1 0^10 1");
 
     tape.apply_rule(&rule![
         (0, 0) => mult!(2, 6),
         (1, 2) => plus!(-1),
     ]);
 
-    tape.assert(
-        0x0003_FFFE,
-        "2^262138 [2] 2 1 0 1",
-        "2 [2] (2) (1) (0) (1)",
-    );
-}
-
-/**************************************/
-
-#[cfg(test)]
-impl EnumTape {
-    #[track_caller]
-    fn assert(
-        &self,
-        tape_str: &str,
-        offsets: (usize, usize),
-        edges: (usize, usize),
-    ) {
-        assert_eq!(self.to_string(), tape_str);
-
-        assert_eq!(self.offsets(), offsets);
-
-        assert_eq!(self.edges(), {
-            let (l_edge, r_edge) = edges;
-
-            assert!(matches!(l_edge, 0 | 1));
-            assert!(matches!(r_edge, 0 | 1));
-
-            (l_edge == 1, r_edge == 1)
-        });
-    }
-
-    #[track_caller]
-    fn tstep(&mut self, shift: u8, color: Color, skip: u8) {
-        assert!(matches!(shift, 0 | 1));
-        assert!(matches!(skip, 0 | 1));
-
-        self.mstep(shift != 0, color, skip != 0);
-    }
-}
-
-#[cfg(test)]
-macro_rules! enum_tape {
-    ($tape:expr) => {
-        EnumTape::from($tape)
-    };
-}
-
-#[test]
-fn test_offsets_1() {
-    let mut tape = enum_tape!("2 3^11 4 1^11 [0]");
-
-    tape.assert("2 3^11 4 1^11 [0]", (0, 0), (0, 0));
-
-    tape.tstep(0, 0, 0);
-
-    tape.assert("2 3^11 4 1^10 [1]", (1, 0), (0, 0));
-
-    tape.tstep(0, 2, 1);
-
-    tape.assert("2 3^11 [4] 2^11", (2, 0), (0, 0));
-
-    tape.tstep(0, 2, 1);
-
-    tape.assert("2 3^10 [3] 2^12", (3, 0), (0, 0));
-
-    tape.tstep(0, 2, 0);
-
-    tape.assert("2 3^9 [3] 2^13", (3, 0), (0, 0));
-
-    tape.tstep(1, 4, 0);
-
-    tape.assert("2 3^9 4 [2] 2^12", (3, 0), (0, 0));
-
-    tape.tstep(1, 1, 1);
-
-    tape.assert("2 3^9 4 1^13 [0]", (3, 0), (0, 1));
-
-    tape.tstep(1, 1, 0);
-
-    tape.assert("2 3^9 4 1^14 [0]", (3, 0), (0, 1));
-}
-
-#[test]
-fn test_offsets_2() {
-    let mut tape = enum_tape!("3^6 2^414422565 [0]");
-
-    tape.assert("3^6 2^414422565 [0]", (0, 0), (0, 0));
-
-    tape.tstep(0, 5, 0);
-
-    tape.assert("3^6 2^414422564 [2] 5", (1, 0), (0, 0));
-
-    tape.tstep(0, 5, 1);
-
-    tape.assert("3^5 [3] 5^414422566", (2, 0), (0, 0));
-
-    tape.tstep(1, 2, 0);
-
-    tape.assert("3^5 2 [5] 5^414422565", (2, 0), (0, 0));
-
-    tape.tstep(1, 2, 1);
-
-    tape.assert("3^5 2^414422567 [0]", (2, 0), (0, 1));
-}
-
-#[test]
-fn test_offsets_3() {
-    let mut tape = enum_tape!("3^9 [3] 1^10");
-
-    tape.tstep(0, 1, 0);
-
-    tape.assert("3^8 [3] 1^11", (1, 1), (0, 0));
-}
-
-#[test]
-fn test_offsets_4() {
-    let mut tape = enum_tape!("6 30^6 [28] 27^5 12");
-
-    tape.assert("6 30^6 [28] 27^5 12", (0, 0), (0, 0));
-
-    let sig = tape.signature();
-
-    tape.tstep(1, 29, 0);
-    tape.tstep(0, 28, 0);
-    tape.tstep(1, 30, 0);
-
-    tape.assert("6 30^7 [28] 27^4 12", (1, 1), (0, 0));
-
-    assert_eq!(
-        tape.get_min_sig(&sig),
-        ("30 [28] 27".into(), (false, false))
-    );
-}
-
-#[test]
-fn test_edges_1() {
-    let mut tape = enum_tape!("[0]");
-
-    tape.tstep(0, 1, 0);
-
-    tape.assert("[0] 1", (0, 0), (1, 0));
-}
-
-#[test]
-fn test_edges_2() {
-    let mut tape = enum_tape!("1^3 [1]");
-
-    tape.tstep(0, 2, 1);
-
-    tape.assert("[0] 2^4", (1, 0), (1, 0));
+    tape.assert(0x0003_FFFE, "2^262138 [2] 2 1 0 1");
 }

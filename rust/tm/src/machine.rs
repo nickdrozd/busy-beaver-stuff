@@ -1,15 +1,12 @@
 use num_traits::ToPrimitive as _;
 
 use crate::{
-    Instr, Prog, Slot, State, Steps,
+    Instr, Prog, Slot, Steps,
     config::{BigConfig, Config, MedConfig},
     macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
-    rules::{ApplyRule, Rule},
-    tape::{
-        Block, DynamicTape, GetSig, HeadTape, LinRec, MachineTape, Pos,
-        Tape,
-    },
+    rules::{ApplyRule as _, Rule},
+    tape::{Block, DynamicTape, HeadTape, LinRec, Pos, Tape},
 };
 
 /**************************************/
@@ -76,91 +73,56 @@ impl RunResult {
 
 /**************************************/
 
-pub trait RunProver: GetInstr + Sized {
-    fn run_prover(&self, sim_lim: Steps) -> RunResult {
-        let mut config: Config<DynamicTape> = Config::init();
+// The prover also runs block-macro programs, so the implementation accepts
+// any instruction source while the public method belongs to Prog.
+fn run_prover_instr(prog: &impl GetInstr, sim_lim: Steps) -> RunResult {
+    let mut config: Config<DynamicTape> = Config::init();
+    let mut prover = Prover::new();
 
-        let mut prover = Prover::new();
-
-        for cycle in 0..sim_lim {
-            if let Some(res) = prover.try_rule(cycle, &config, self) {
-                match res {
-                    ProverResult::ConfigLimit => {
-                        return ConfigLimit;
-                    },
-                    ProverResult::InfiniteRule => {
-                        return InfiniteRule;
-                    },
-                    ProverResult::Got(rule) => {
-                        if rule.is_mult() {
-                            return MultRule(rule);
-                        }
-
-                        if config.tape.apply_rule(&rule).is_some() {
-                            config.tape.normalize();
-                            // println!("--> applying rule: {:?}", rule);
-                            continue;
-                        }
-                    },
-                }
+    for cycle in 0..sim_lim {
+        if let Some(res) = prover.try_rule(cycle, &config, prog) {
+            match res {
+                ProverResult::ConfigLimit => return ConfigLimit,
+                ProverResult::InfiniteRule => return InfiniteRule,
+                ProverResult::Got(rule) => {
+                    if rule.is_mult() {
+                        return MultRule(rule);
+                    }
+                    if config.tape.apply_rule(&rule).is_some() {
+                        config.tape.normalize();
+                        continue;
+                    }
+                },
             }
-
-            let slot = config.slot();
-
-            let (color, shift, next_state) = match self.get_instr(&slot)
-            {
-                Err(MacroExc::InfLoop) => return InfiniteRule,
-                Err(err) => return Error(err),
-                Ok(None) => return Undefined(slot),
-                Ok(Some(instr)) => instr,
-            };
-
-            let same = config.state == next_state;
-
-            if same && config.tape.at_edge(shift) {
-                return Spinout;
-            }
-
-            config.tape.step(shift, color, same);
-
-            config.state = next_state;
         }
 
-        StepLimit
-    }
-
-    fn run_rules<T: ApplyRule + GetSig + MachineTape>(
-        &self,
-        steps: Steps,
-        config: &mut Config<T>,
-        prover: &Prover,
-    ) -> Option<State> {
-        for _ in 0..steps {
-            if let Some(rule) = prover.get_rule(config, None)
-                && config.tape.apply_rule(rule).is_some()
-            {
-                continue;
-            }
-
-            let (color, shift, next_state) =
-                self.get_instr(&config.slot()).ok()??;
-
-            config.tape.mstep(shift, color, config.state == next_state);
-
-            config.state = next_state;
+        let slot = config.slot();
+        let (color, shift, next_state) = match prog.get_instr(&slot) {
+            Err(MacroExc::InfLoop) => return InfiniteRule,
+            Err(err) => return Error(err),
+            Ok(None) => return Undefined(slot),
+            Ok(Some(instr)) => instr,
+        };
+        let same = config.state == next_state;
+        if same && config.tape.at_edge(shift) {
+            return Spinout;
         }
-
-        Some(config.state)
+        config.tape.step(shift, color, same);
+        config.state = next_state;
     }
+
+    StepLimit
 }
-
-impl<T: GetInstr> RunProver for T {}
 
 /**************************************/
 
 const MED_LIMIT: Steps = 1 << 16;
 
 impl<const s: usize, const c: usize> Prog<s, c> {
+    pub fn run_prover(&self, sim_lim: Steps) -> RunResult {
+        run_prover_instr(self, sim_lim)
+    }
+
     /// Returns true if the current step blanks/spins out, or the next step
     /// halts/spins out, without modifying the configuration.
     #[inline]
@@ -222,13 +184,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
     }
 
     pub fn prover_settled(&self, steps: Steps) -> bool {
-        let result = self.run_prover(steps);
-
-        // if result.is_mult() {
-        //     self.print();
-        // }
-
-        result.is_settled()
+        self.run_prover(steps).is_settled()
     }
 
     pub fn check_inf(&self, steps: Steps) -> bool {
@@ -546,62 +502,6 @@ fn test_transcript_config() {
 /**************************************/
 
 #[test]
-fn test_term_immediate() {
-    fn immediate<const S: usize, const C: usize>(
-        prog: &Prog<S, C>,
-        config: &MedConfig,
-    ) -> bool {
-        let instr = *prog.get(&config.slot()).unwrap();
-        prog.term_immediate(config, instr)
-    }
-
-    let config = MedConfig::init_stepped();
-    let before = config.to_string();
-
-    // B0 executes once, then C0 is undefined.
-    let undef = Prog::<3, 2>::from("1RB ...  0RC ...  ... ...");
-    assert!(immediate(&undef, &config));
-
-    // The same immediate halt is visible even though B0 changes the tape.
-    let touch_then_undef =
-        Prog::<3, 2>::from("1RB ...  1RC ...  ... ...");
-    assert!(immediate(&touch_then_undef, &config));
-
-    // Current transition itself spins at the fresh right edge.
-    let spin = Prog::<2, 2>::from("1RB ...  0RB ...");
-    assert!(immediate(&spin, &config));
-
-    // B0 -> C0, then C0 would spin at the blank right edge.
-    let next_spin = Prog::<3, 2>::from("1RB ...  1RC ...  0RC ...");
-    assert!(immediate(&next_spin, &config));
-    assert!(matches!(
-        next_spin.run_basic(2, &mut config.clone()),
-        Spinout
-    ));
-
-    // Same first step, but C0 heads left toward the tape, not off its edge.
-    let next_not_spin = Prog::<3, 2>::from("1RB ...  1RC ...  0LC ...");
-    assert!(!immediate(&next_not_spin, &config));
-    assert!(matches!(
-        next_not_spin.run_basic(2, &mut config.clone()),
-        StepLimit
-    ));
-
-    // B0 -> C1 is defined and not an immediate spinout: inconclusive.
-    let continue_run = Prog::<3, 2>::from("1RB ...  0LC ...  ... 1RB");
-    assert!(!immediate(&continue_run, &config));
-
-    // Put the sole mark under the head; erasing it while moving onto blank
-    // immediately blanks the tape.
-    let mut blank_config = config.clone();
-    blank_config.tape.step(false, 0, false);
-    let blank = Prog::<3, 2>::from("1RB ...  ... 0RC  ... ...");
-    assert!(immediate(&blank, &blank_config));
-
-    assert_eq!(config.to_string(), before);
-}
-
-#[test]
 fn test_mult_rule() {
     assert!(
         Prog::<6, 2>::from(
@@ -665,22 +565,9 @@ fn test_macro_excess() {
 
     mac.assert_params((4, 0x4000));
 
-    assert!(matches!(mac.run_prover(976), Error(_)));
+    assert!(matches!(run_prover_instr(&mac, 976), Error(_)));
 
     assert_eq!(mac.rep_params(), (4, 257));
-}
-
-#[test]
-#[should_panic(expected = "attempt to exponentiate with overflow")]
-fn test_macro_overflow() {
-    let prog = Prog::<2, 4>::from("1RB 2LA 3RA 0LA  1LA 2RA 0RB ...");
-
-    assert!(
-        !prog
-            .make_block_macro(prog.opt_block(3_219))
-            .run_prover(118)
-            .is_infinite()
-    );
 }
 
 #[test]

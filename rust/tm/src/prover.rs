@@ -5,13 +5,9 @@ use ahash::AHashMap as Dict;
 use crate::{
     Slot, State, Steps,
     config::Config,
-    machine::RunProver,
+    macros::GetInstr,
     rules::{ApplyRule, Rule, make_rule},
-    tape::{
-        DynamicEnumTape, DynamicGetSig, DynamicMinSig,
-        DynamicSignature, DynamicTape, DynamicTapeOps, GetSig,
-        Signature,
-    },
+    tape::{DynamicTape, EnumTape, GetSig, MinSig, Signature, TapeOps},
 };
 
 /**************************************/
@@ -25,8 +21,8 @@ pub enum ProverResult {
 use ProverResult::*;
 
 pub struct Prover {
-    rules: Dict<Slot, Vec<(DynamicMinSig, Rule)>>,
-    configs: Dict<DynamicSignature, PastConfigs>,
+    rules: Dict<Slot, Vec<(MinSig, Rule)>>,
+    configs: Dict<Signature, PastConfigs>,
     attempts: usize,
 }
 
@@ -43,11 +39,11 @@ impl Prover {
         self.configs.len()
     }
 
-    fn get_dynamic_rule_for<T: DynamicGetSig>(
+    fn get_rule_for<T: GetSig>(
         &self,
         state: State,
         tape: &T,
-        sig: Option<&DynamicSignature>,
+        sig: Option<&Signature>,
     ) -> Option<&Rule> {
         let rules = self.rules.get(&(state, tape.scan()))?;
 
@@ -56,7 +52,7 @@ impl Prover {
         let sig = if let Some(sig) = sig {
             sig
         } else {
-            owned_sig = tape.dynamic_signature();
+            owned_sig = tape.signature();
             &owned_sig
         };
 
@@ -76,50 +72,21 @@ impl Prover {
             .map(|(_, rule)| rule)
     }
 
-    // Preserve the original public lookup API for callers replaying rules on
-    // an ordinary run-length tape. Rules involving compound dynamic words do
-    // not match the converted one-symbol signature and are simply ignored.
-    pub fn get_rule<T: GetSig>(
-        &self,
-        config: &Config<T>,
-        sig: Option<&Signature>,
-    ) -> Option<&Rule> {
-        let owned_sig;
-        #[expect(clippy::option_if_let_else)]
-        let sig = if let Some(sig) = sig {
-            sig
-        } else {
-            owned_sig = config.tape.signature();
-            &owned_sig
-        };
-        let dynamic_sig = DynamicSignature::from(sig);
-
-        self.get_dynamic_rule_for(
-            config.state,
-            &StaticDynamicSig {
-                scan: config.tape.scan(),
-                sig: dynamic_sig,
-            },
-            None,
-        )
-    }
-
     fn run_simulator<T>(
         &self,
         steps: Steps,
         mut state: State,
         tape: &mut T,
-        prog: &impl RunProver,
+        prog: &impl GetInstr,
     ) -> Option<State>
     where
-        T: ApplyRule + DynamicTapeOps,
+        T: ApplyRule + TapeOps,
     {
         for _ in 0..steps {
-            if let Some(rule) =
-                self.get_dynamic_rule_for(state, tape, None)
+            if let Some(rule) = self.get_rule_for(state, tape, None)
                 && tape.apply_rule(rule).is_some()
             {
-                tape.normalize_dynamic();
+                tape.normalize_after_rule();
                 continue;
             }
 
@@ -139,15 +106,15 @@ impl Prover {
         rule: &Rule,
         steps: Steps,
         config: &Config<DynamicTape>,
-        sig: &DynamicSignature,
-        prog: &impl RunProver,
+        sig: &Signature,
+        prog: &impl GetInstr,
     ) {
         // Keep dependency replay in the exact block coordinate system in
         // which the candidate signature and rule were observed. Rebalancing
         // here would change block indices while `sig` and `rule` still refer
         // to the live tape's original coordinates.
         let replay_tape = config.tape.clone();
-        let mut enum_tape = DynamicEnumTape::from(&replay_tape);
+        let mut enum_tape = EnumTape::from(&replay_tape);
 
         let _ = self.run_simulator(
             steps,
@@ -183,15 +150,13 @@ impl Prover {
         &mut self,
         cycle: usize,
         config: &Config<DynamicTape>,
-        prog: &impl RunProver,
+        prog: &impl GetInstr,
     ) -> Option<ProverResult> {
-        let sig = config.tape.dynamic_signature();
+        let sig = config.tape.signature();
 
-        if let Some(rule) = self.get_dynamic_rule_for(
-            config.state,
-            &config.tape,
-            Some(&sig),
-        ) {
+        if let Some(rule) =
+            self.get_rule_for(config.state, &config.tape, Some(&sig))
+        {
             return Some(Got(rule.clone()));
         }
 
@@ -242,8 +207,8 @@ impl Prover {
         &mut self,
         deltas: (Steps, Steps, Steps),
         config: &Config<DynamicTape>,
-        sig: &DynamicSignature,
-        prog: &impl RunProver,
+        sig: &Signature,
+        prog: &impl GetInstr,
     ) -> Option<Rule> {
         self.attempts += 1;
 
@@ -271,25 +236,6 @@ impl Prover {
             &counts[1],
             &counts[2],
         )
-    }
-}
-
-// Lightweight adapter used only to preserve Prover::get_rule for ordinary
-// tapes. It exposes a precomputed dynamic signature without owning a tape.
-struct StaticDynamicSig {
-    scan: crate::Color,
-    sig: DynamicSignature,
-}
-
-impl crate::tape::Scan for StaticDynamicSig {
-    fn scan(&self) -> crate::Color {
-        self.scan
-    }
-}
-
-impl DynamicGetSig for StaticDynamicSig {
-    fn dynamic_signature(&self) -> DynamicSignature {
-        self.sig.clone()
     }
 }
 

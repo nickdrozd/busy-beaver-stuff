@@ -6,7 +6,7 @@ use std::collections::hash_map::Entry;
 
 use ahash::AHashMap as Dict;
 
-use crate::{Color, Goal, Prog, Shift, config, macros::GetInstr};
+use crate::{Color, Goal, Prog, Shift, State, macros::GetInstr};
 
 use Goal::*;
 
@@ -546,7 +546,7 @@ impl TailSig {
             let old = (packed >> shift) & Self::CHANNEL_MASK;
             let next = (color + u16::from(base) * u16::from(old))
                 % u16::from(modulus);
-            let mask = Self::CHANNEL_MASK << shift;
+            let mask = (Self::CHANNEL_MASK) << shift;
             packed = (packed & !mask) | ((next as u8) << shift);
         }
 
@@ -1493,7 +1493,10 @@ impl Spans {
 
 /**************************************/
 
-type Config = config::Config<Tape>;
+struct Config {
+    state: State,
+    tape: Tape,
+}
 
 impl Config {
     fn init(rad: Radius, pool: &mut SpanPool) -> Self {
@@ -1614,12 +1617,6 @@ impl Tape {
             ),
             scan,
         }
-    }
-}
-
-impl config::Scan for Tape {
-    fn scan(&self) -> Color {
-        self.scan
     }
 }
 
