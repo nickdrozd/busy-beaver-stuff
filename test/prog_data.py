@@ -2369,10 +2369,15 @@ PROVER_HALT: ProverEst = {
     "1RB 1LA ... ...  1RC 3LB 1RB ...  2LA 2LC 3LA 0LC": "(10 ↑↑ 3)",                  # 3x4 BBi(8) ext
     "1RB ... ... ...  2RC 2RB ... 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...": "(10 ↑↑ 3)", # 4x4 no-A
     "1RB 1LA ... ...  1RC 3LB 1RB 0LC  2LA 2LC ... 3LC": (1.2, 443682),                # 3x4 BBi(8) ext
-    "1RB 1LA ... ... ...  1RC 3LB 1RB ... 0LC  2LA 2LC ... 4LC ...": (1.2, 443682),     # 3x5 BBi(8) ext
-    "1RB ... 0LD  2RC ... 2RB  2LA ... 0RC  2LD 2LC 0RD": (4.0, 19728),                # 2x5
+    "1RB 1LA ... ... ...  1RC 3LB 1RB ... 0LC  2LA 2LC ... 4LC ...": (1.2, 443682),    # 3x5 BBi(8) ext
+    "1RB ... 0LD  2RC ... 2RB  2LA ... 0RC  2LD 2LC 0RD": (4.0, 19728),                # 4x3
     "1RB 2LB 4LB 3LA ...  1LA 3RA 3LB 0LB 0RA": (7.3, 19016),                          # 2x5 pavel
     "1RB ... 2LA ...  1LC 2RC 1LB ...  1LA 2RC 3LC 1LB": (1.9, 2458),                  # 3x4
+
+    # BBi(10)
+    "1RB 0RC 1LB  2LC 2RD 1LC  1RC 0LC 1LB  ... 1RA ...": "(10 ↑↑ 139)",
+    "1RB 1RD 2LD  0RC ... 2RB  2LC 2LA 1RC  0RB ... 0RD": "(10 ↑↑ 10)",
+    "1RB 0LC 1RA  0RC ... 2RB  2LD 0RC 2RD  2LA ... 0RC": "(10 ↑↑ 8)",
 
     # 2/5
     "1RB 2LA 1RA 2LB 2LA  0LA 2RB 3RB 4RA ...": (1.7, 352),
@@ -2574,6 +2579,7 @@ MACRO_FAILURES = {
     "1RB 3LB ... 2RA  2LC 3RB 1LC 2RA  3RB 1LB 3LC 2RC": 0,
 
     "1RB 2LC 1LB  2LA 2RD 0RC  2LB 0LA 1RB  ... 2RB 2LA": 4,
+    "1RB 0LC 1RA  0RC ... 2RB  2LD 0RC 2RD  2LA ... 0RC": 2,
 
     "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB": 0,
     "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1RF 1RB": 0,
@@ -2630,11 +2636,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 366169,
-    "divs": 53436,
-    "exps": 233436,
-    "muls": 166893,
-    "totl": 819934,
+    "adds": 387119,
+    "divs": 72161,
+    "exps": 234385,
+    "muls": 169627,
+    "totl": 863292,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -2959,6 +2965,24 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "(10 ↑↑ 10)",
             "(1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))))))))))))))))))",
             "(81 + (((((3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))) + ((3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** 25))))))) + ((3 * (2 ** (1 + (3 * (2 ** 25))))) + ((2 ** 24) * (9 + (3 * (2 ** (-24 + (3 * (2 ** 25)))))))))) + (3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25))))))))))) + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))) + (3 * (2 ** (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** (1 + (3 * (2 ** 25)))))))))))))))))))))))))))",
+        ),
+        "1RB 0LC 1RA  0RC ... 2RB  2LD 0RC 2RD  2LA ... 0RC": (
+            3329,
+            "(10 ↑↑ 8)",
+            "((43 + (17 * (2 ** ((88 + (17 * (2 ** ((328 + (17 * (2 ** ((208 + (17 * (2 ** ((328 + (17 * (2 ** ((208 + (17 * (2 ** ((328 + (17 * (2 ** 104))) // 45)))) // 45)))) // 45)))) // 45)))) // 45)))) // 45)))) // 15)",
+            "(... // 45)",
+        ),
+        "1RB 1RD 2LD  0RC ... 2RB  2LC 2LA 1RC  0RB ... 0RD": (
+            580,
+            "(10 ↑↑ 10)",
+            "((-16 + (13 * (2 ** ((-14 + (13 * (2 ** ((1 + (13 * (2 ** ((1 + (13 * (2 ** ((13 + (13 * (2 ** ((-11 + (13 * (2 ** ((13 + (13 * (2 ** ((-11 + (13 * (2 ** ((1 + (13 * (2 ** 11833))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 9)))) // 3)",
+            "(... // 9)",
+        ),
+        "1RB 0RC 1LB  2LC 2RD 1LC  1RC 0LC 1LB  ... 1RA ...": (
+            58903,
+            "(10 ↑↑ 139)",
+            "(... // 3)",
+            "(... // 9)",
         ),
         "1RB 2LA 0RC  2LC ... 1RD  1RA 1LD 0LB  2LA 2LC 0RA": (
             2124,
@@ -4042,17 +4066,17 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     "far": {
         "halt": 1,
         "blank": 1,
-        "spinout": 1,
+        "spinout": 2,
     },
     "cps": {
         "halt": 6,
         "blank": 7,
-        "spinout": 19,
+        "spinout": 20,
     },
     "bkw": {
          "halt": 19,
         "blank": 7,
-        "spinout": 33,
+        "spinout": 34,
         "twostep": 10,
         "zloop": 1,
     },
@@ -4068,6 +4092,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
         },
         "spinout": {
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
+            "1RB 0RC 1LB  2LC 2RD 1LC  1RC 0LC 1LB  ... 1RA ...",
         },
     },
     "cps": {
@@ -4106,6 +4131,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
+            "1RB 0RC 1LB  2LC 2RD 1LC  1RC 0LC 1LB  ... 1RA ...",
             "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
             "1RB 0LD  1RC 0RF  1LA 0RE  1LD 1LB  0RF 1RE  0RG 0RB  1LD 0RA",
         },
@@ -4173,6 +4199,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
             "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
+            "1RB 0RC 1LB  2LC 2RD 1LC  1RC 0LC 1LB  ... 1RA ...",
             "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
             "1RB 0LD  1RC 0RF  1LA 0RE  1LD 1LB  0RF 1RE  0RG 0RB  1LD 0RA",
         },
