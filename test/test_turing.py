@@ -1028,7 +1028,7 @@ class Prover(RunProver):
                 missed += 1
                 print(prog)
 
-        self.assertEqual(missed, 49)
+        self.assertEqual(missed, 50)
 
     def test_mother(self):
         children = {

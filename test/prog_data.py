@@ -2288,6 +2288,8 @@ DO_BLANK: set[str] = {
     "1RB 1LC  0LD 0LB  0RD 0LA  0LE 1LD  1RE 1RA",  # 10^14006
     "1RB 1LE  0LC 0LB  0LD 1LC  1RD 1RA  0RC 0LA",  # 10^14006 TNF
 
+    "1RB 2RD ...  0RC 1RC ...  1LC 0LA 0RD  0RB 0RD ...",  # 10^690
+
     "1RB 2LD 2LA  1RC 0RD 2LA  1LA 2LB 0LC  2RD 2RC 0LD",  # "(10 ↑↑ 53)"
 
     "1RB 1RC  1LD ...  0RE 0LF  0LF 1LD  1LF ...  1RG 0LF  1RG 1RA",
@@ -2295,6 +2297,8 @@ DO_BLANK: set[str] = {
     "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA",
 
     "1RB 0RA ... ...  2RC 2RB 0RA 0RB  1LD 1RC ... ...  1LB 3RD 1LD ...",  # (10 ↑↑ 3) A -> A
+
+    "1RB 0LD  1RC 0RF  1LA 0RE  1LD 1LB  0RF 1RE  0RG 0RB  1LD 0RA",  # A -> A
 }
 
 DO_SPINOUT: set[str] = {
@@ -2529,6 +2533,7 @@ PROVER_SPINOUT: ProverEst = {
 
     # 4/3
     "1RB 2LD 2LA  1RC 0RD 2LA  1LA 2LB 0LC  2RD 2RC 0LD": 0,
+    "1RB 2RD ...  0RC 1RC ...  1LC 0LA 0RD  0RB 0RD ...": 2,
 
     # 4/7 block-compiled from 5/2 marks champ
     "1RB 1LC 2LC 2RA  2LD 3RE 1RB ...  0LC 2RA 2LF 3LD  ... 1LF 1RE 3LC  1LC 3LC 3RE 2RG  1RB 1RE 2LC 3RE  0LD 2RA 1RB 3LD": (3.2, 544),
@@ -2568,6 +2573,8 @@ MACRO_FAILURES = {
 
     "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  ... 1RB": 0,
     "1RB 0RC  1RC 0RA  1RD 1RC  1LE 1RF  0LB 1LE  1RF 1RB": 0,
+
+    "1RB 0LD  1RC 0RF  1LA 0RE  1LD 1LB  0RF 1RE  0RG 0RB  1LD 0RA": 2,
 }
 
 PROVER_FAILURES = {
@@ -2599,6 +2606,7 @@ SUSPECTED_RULES = {
     "1RB 2LA 1RA 2LB 2RA  0LA 2RB 3RB 4RA ...",
 
     "1RB ... 2LA ...  1LC 2RC 1LB ...  1LA 2RC 3LC 1LB",
+    "1RB 2RD ...  0RC 1RC ...  1LC 0LA 0RD  0RB 0RD ...",
     "1RB 0RB 1LD  2LC 0RA 1LA  2LA 1LB ...  2RA 1LB 0RD",
     "1RB 2LD ...  2LC 2RC 2RB  1LD 0RC 1RC  2LA 2LD 0LB",
     "1RB 0RB 1LC  2LD 0RA 1LA  2RA 1LB 0RC  2LA 1LB ...",
@@ -2618,11 +2626,11 @@ REQUIRES_BACKSYM = {
 ########################################
 
 ALGEBRA_NUM_COUNTS = {
-    "adds": 362369,
-    "divs": 52621,
-    "exps": 231540,
-    "muls": 164900,
-    "totl": 811430,
+    "adds": 363164,
+    "divs": 52656,
+    "exps": 231666,
+    "muls": 165060,
+    "totl": 812546,
 }
 
 ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
@@ -3196,6 +3204,12 @@ ALGEBRA: dict[str, dict[str, tuple[int, str, str, str]]] = {
             "0",
             "0",
             "((6297 + ((3 ** 548) * (1 + (2 * (3 ** ((-2189 + (3 ** 548)) // 4)))))) // 4)",
+        ),
+        "1RB 0LD  1RC 0RF  1LA 0RE  1LD 1LB  0RF 1RE  0RG 0RB  1LD 0RA": (
+            1690,
+            "0",
+            "0",
+            "(... // 3)",
         ),
         "1RB 1LA ... ...  2LC 0LC 3LA ...  1RC 0LB 1RB 1LA": (
             326,
@@ -4017,12 +4031,12 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     "cps": {
         "halt": 6,
         "blank": 7,
-        "spinout": 18,
+        "spinout": 19,
     },
     "bkw": {
          "halt": 19,
         "blank": 7,
-        "spinout": 32,
+        "spinout": 33,
         "twostep": 10,
         "zloop": 1,
     },
@@ -4077,6 +4091,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
             "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
+            "1RB 0LD  1RC 0RF  1LA 0RE  1LD 1LB  0RF 1RE  0RG 0RB  1LD 0RA",
         },
     },
     "bkw": {
@@ -4143,6 +4158,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
             "1RB 1LD  0RC 1LE  0RD 1RA  1LD 0LA  0LB 1LE",
             "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
+            "1RB 0LD  1RC 0RF  1LA 0RE  1LD 1LB  0RF 1RE  0RG 0RB  1LD 0RA",
         },
         "twostep": {
             "1RB 2LA 1LB 3RB  0LA 2RB 3LB 2RA",
