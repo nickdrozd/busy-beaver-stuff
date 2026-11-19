@@ -23,11 +23,6 @@ pub fn term_or_rec(prog: &str, sim_lim: Steps) -> bool {
 }
 
 #[pyfunction]
-pub fn run_transcript(prog: &str, sim_lim: Steps) -> bool {
-    Prog::from(prog).run_transcript_fresh(sim_lim).is_settled()
-}
-
-#[pyfunction]
 pub fn check_inf(prog: &str, sim_lim: Steps) -> bool {
     Prog::from(prog).check_inf(sim_lim)
 }
@@ -438,7 +433,7 @@ mod rust_stuff {
         bkw_cant_twostep, bkw_cant_zloop, check_inf, cps_cant_blank,
         cps_cant_halt, cps_cant_spinout, far_cant_blank, far_cant_halt,
         far_cant_spinout, opt_block, read_instr, run_quick_machine,
-        run_transcript, show_comp, show_instr, show_slot, show_state,
-        tcompile, term_or_rec,
+        show_comp, show_instr, show_slot, show_state, tcompile,
+        term_or_rec,
     };
 }

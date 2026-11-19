@@ -27,7 +27,6 @@ from tm.rust_stuff import (
     MachineResult,
     check_inf,
     run_quick_machine,
-    run_transcript,
     term_or_rec,
 )
 from tools.graph import Graph
@@ -388,10 +387,6 @@ class Recur(TuringTest):
                 term_or_rec(prog, steps),
                 prog)
 
-            self.assertFalse(
-                run_transcript(prog, steps),
-                prog)
-
             self.assertIsNotNone(
                 run_loose_linrec_machine(prog, steps).xlimit)
 
@@ -496,7 +491,6 @@ class Recur(TuringTest):
     def test_infrul(self):
         for prog in INFRUL - BLANKERS:
             self.assertFalse(term_or_rec(prog, 10_000))
-            self.assertFalse(run_transcript(prog, 1_000))
 
     def test_zloop(self):
         too_long = {

@@ -470,8 +470,6 @@ impl<B: Block> IndexTape<B::Count> for Tape<B> {
 
 /**************************************/
 
-pub type Pos = isize;
-
 #[expect(clippy::partial_pub_fields)]
 #[derive(Clone, Copy)]
 pub struct StepPreview {
@@ -548,6 +546,8 @@ impl<B: Block> Tape<B> {
 }
 
 /**************************************/
+
+pub type Pos = isize;
 
 pub struct HeadTape<'t, B: Block> {
     head: Pos,
