@@ -743,13 +743,22 @@ const FAST: &[fn()] = &[test_bkw, test_deciders, test_enum_8];
 const SLOW: &[fn()] = &[test_enum_p, test_enum_9, test_pipeline_8];
 
 fn main() {
-    FAST.par_iter().for_each(|f| f());
-
-    if !std::env::args().any(|x| x == "--all") {
-        return;
-    }
-
-    test_holdouts();
-
-    SLOW.par_iter().for_each(|f| f());
+    assert_visited![
+        (6, 2) => [
+            2 => [
+                TREE_LIM,
+                20_368_321_792,
+                [
+                    "0LB" => 301_977_086,
+                    "0LA" => 395_597_726,
+                    "1LB" => 708_163_348,
+                    "1LA" => 1_308_680_518,
+                    "0LC" => 2_250_632_116,
+                    "0RC" => 3_861_944_967,
+                    "1RC" => 5_565_707_594,
+                    "1LC" => 5_975_618_437,
+                ],
+            ],
+        ],
+    ];
 }
