@@ -286,6 +286,22 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
     }
 }
 
+pub trait GetInstr {
+    #[expect(clippy::result_unit_err)]
+    fn get_instr(&self, slot: &Slot) -> Result<Option<Instr>, ()>;
+    fn is_blank(&self, color: Color) -> bool;
+}
+
+impl<const s: usize, const c: usize> GetInstr for Prog<s, c> {
+    fn get_instr(&self, slot: &Slot) -> Result<Option<Instr>, ()> {
+        Ok(self.get(slot).copied())
+    }
+
+    fn is_blank(&self, color: Color) -> bool {
+        color == 0
+    }
+}
+
 /**************************************/
 
 #[cfg(test)]

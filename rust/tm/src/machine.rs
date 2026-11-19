@@ -3,7 +3,6 @@ use num_traits::ToPrimitive as _;
 use crate::{
     Instr, Prog, Slot, Steps,
     config::{BigConfig, Config, MedConfig},
-    macros::{GetInstr, MacroExc},
     prover::{Prover, ProverResult},
     rules::{ApplyRule as _, Rule},
     tape::{Block, DynamicTape, HeadTape, LinRec, Tape},
@@ -21,7 +20,6 @@ pub enum RunResult {
     Undefined(Slot),
     StepLimit,
     ConfigLimit,
-    Error(MacroExc),
 }
 
 use RunResult::*;
@@ -73,9 +71,11 @@ impl RunResult {
 
 /**************************************/
 
-// The prover also runs block-macro programs, so the implementation accepts
-// any instruction source while the public method belongs to Prog.
-fn run_prover_instr(prog: &impl GetInstr, sim_lim: Steps) -> RunResult {
+// The prover now runs only ordinary programs.
+fn run_prover_program<const s: usize, const c: usize>(
+    prog: &Prog<s, c>,
+    sim_lim: Steps,
+) -> RunResult {
     let mut config: Config<DynamicTape> = Config::init();
     let mut prover = Prover::new();
 
@@ -97,11 +97,8 @@ fn run_prover_instr(prog: &impl GetInstr, sim_lim: Steps) -> RunResult {
         }
 
         let slot = config.slot();
-        let (color, shift, next_state) = match prog.get_instr(&slot) {
-            Err(MacroExc::InfLoop) => return InfiniteRule,
-            Err(err) => return Error(err),
-            Ok(None) => return Undefined(slot),
-            Ok(Some(instr)) => instr,
+        let Some(&(color, shift, next_state)) = prog.get(&slot) else {
+            return Undefined(slot);
         };
         let same = config.state == next_state;
         if same && config.tape.at_edge(shift) {
@@ -120,7 +117,7 @@ const MED_LIMIT: Steps = 1 << 16;
 
 impl<const s: usize, const c: usize> Prog<s, c> {
     pub fn run_prover(&self, sim_lim: Steps) -> RunResult {
-        run_prover_instr(self, sim_lim)
+        run_prover_program(self, sim_lim)
     }
 
     /// Returns true if the current step blanks/spins out, or the next step
@@ -338,23 +335,6 @@ fn test_check_inf() {
         Prog::<2, 4>::from("1RB 0LA 3LB 1RA  2LB 3LA 0RB 2RA")
             .check_inf(2000)
     );
-}
-
-#[test]
-fn test_macro_excess() {
-    let prog = Prog::<2, 4>::from("1RB 2LA 2RB 3RA  1LB 1RA 3LB 0RB");
-
-    let blocks = prog.opt_block(300);
-
-    assert_eq!(blocks, 7);
-
-    let mac = prog.make_block_macro(blocks);
-
-    mac.assert_params((4, 0x4000));
-
-    assert!(matches!(run_prover_instr(&mac, 976), Error(_)));
-
-    assert_eq!(mac.rep_params(), (4, 257));
 }
 
 #[test]

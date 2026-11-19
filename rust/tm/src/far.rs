@@ -28,7 +28,7 @@ use core::{
 
 use ahash::{AHashMap as Map, AHashSet as Set};
 
-use crate::{Color, Goal, Prog, State, macros::GetInstr};
+use crate::{Color, Goal, Prog, State, prog::GetInstr};
 
 // -----------------------------------------------------------------------------
 // Top-level tuning constants
@@ -2441,9 +2441,9 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
         }
     }
 
-    /// For Blank on a tape macro, decorated macro colors may still represent
-    /// a semantically blank base-tape cell. Spinout deliberately requires the
-    /// canonical zero ray, so only literal color 0 counts there.
+    /// Blank is a semantic predicate on the base tape: a history-tagged
+    /// macro color may still carry base color zero. Spinout instead requires
+    /// the literal all-zero macro ray.
     fn word_is_zero_context(&self, wid: WordId) -> bool {
         let word = self.words.get(wid);
         match self.goal {
@@ -3239,9 +3239,6 @@ impl<P: GetInstr, S: Summary> FarDecider<'_, P, S> {
 /// `hit_blank` and continues to the same exit/local-loop boundary, so the B2/B3
 /// conditional closure can saturate its ordinary return relations as well.
 ///
-/// A macro instruction lookup may fail with `Err`; as in standalone CPS this
-/// makes the proof attempt inconclusive rather than turning the macro error into
-/// a halting transition.
 #[expect(clippy::cast_sign_loss)]
 fn far_raw_word_update_lemma<P: GetInstr>(
     prog: &P,
@@ -3308,7 +3305,9 @@ fn far_raw_word_update_lemma<P: GetInstr>(
         let input = w1.get(pos as usize);
         let (out_color, shift_right, next_state) =
             match prog.get_instr(&(s1, input)) {
-                Err(_) => return RawWordUpdateOutcome::Incomplete,
+                Err(()) => {
+                    return RawWordUpdateOutcome::Incomplete;
+                },
                 Ok(None) => {
                     return RawWordUpdateOutcome::Exit(
                         RawWordUpdateLemma::exit_oriented(
@@ -3492,6 +3491,8 @@ fn far_decide_with_config<P: GetInstr, S: Summary>(
     ) else {
         return false;
     };
+    // An exhausted history-color alphabet yields an incomplete block step,
+    // which the decider treats as inconclusive.
     decider.run().is_ok()
 }
 

@@ -9,7 +9,6 @@ pub mod cps;
 pub mod far;
 pub mod instrs;
 pub mod machine;
-pub mod macros;
 pub mod prog;
 pub mod prover;
 pub mod rules;

@@ -3,9 +3,8 @@ use std::collections::hash_map::Entry;
 use ahash::AHashMap as Dict;
 
 use crate::{
-    Slot, State, Steps,
+    Prog, Slot, State, Steps,
     config::Config,
-    macros::GetInstr,
     rules::{ApplyRule, Rule, make_rule},
     tape::{DynamicTape, EnumTape, GetSig, MinSig, Signature, TapeOps},
 };
@@ -72,12 +71,12 @@ impl Prover {
             .map(|(_, rule)| rule)
     }
 
-    fn run_simulator<T>(
+    fn run_simulator<const s: usize, const c: usize, T>(
         &self,
         steps: Steps,
         mut state: State,
         tape: &mut T,
-        prog: &impl GetInstr,
+        prog: &Prog<s, c>,
     ) -> Option<State>
     where
         T: ApplyRule + TapeOps,
@@ -91,8 +90,7 @@ impl Prover {
             }
 
             let slot = (state, tape.scan());
-            let (color, shift, next_state) =
-                prog.get_instr(&slot).ok().flatten()?;
+            let &(color, shift, next_state) = prog.get(&slot)?;
 
             tape.mstep(shift, color, state == next_state);
             state = next_state;
@@ -101,13 +99,13 @@ impl Prover {
         Some(state)
     }
 
-    fn set_rule(
+    fn set_rule<const s: usize, const c: usize>(
         &mut self,
         rule: &Rule,
         steps: Steps,
         config: &Config<DynamicTape>,
         sig: &Signature,
-        prog: &impl GetInstr,
+        prog: &Prog<s, c>,
     ) {
         // Keep dependency replay in the exact block coordinate system in
         // which the candidate signature and rule were observed. Rebalancing
@@ -146,11 +144,11 @@ impl Prover {
             .push(((min_sig, exact), rule.clone()));
     }
 
-    pub fn try_rule(
+    pub fn try_rule<const s: usize, const c: usize>(
         &mut self,
         cycle: usize,
         config: &Config<DynamicTape>,
-        prog: &impl GetInstr,
+        prog: &Prog<s, c>,
     ) -> Option<ProverResult> {
         let sig = config.tape.signature();
 
@@ -203,12 +201,12 @@ impl Prover {
         Some(Got(rule))
     }
 
-    fn prove_rule(
+    fn prove_rule<const s: usize, const c: usize>(
         &mut self,
         deltas: (Steps, Steps, Steps),
         config: &Config<DynamicTape>,
         sig: &Signature,
-        prog: &impl GetInstr,
+        prog: &Prog<s, c>,
     ) -> Option<Rule> {
         self.attempts += 1;
 
