@@ -393,43 +393,38 @@ fn show_num(n: u64) -> String {
 
 /**************************************/
 
+const BKW_DCD: usize = 10_000;
+
 fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(22).is_refuted()
+    prog.bkw_cant_spinout(BKW_DCD).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_spinout(21)
+        || prog.far_cant_spinout(3)
+}
+
+fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_blank(BKW_DCD).is_refuted()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.prover_settled(INF_MIN)
+        || prog.cps_cant_blank(9)
+        || prog.prover_settled(INF_MOR)
+}
+
+fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_spinout(BKW_DCD).is_refuted()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.prover_settled(INF_MIN)
+        || prog.cps_cant_spinout(19)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MOR)
         || prog.far_cant_spinout(3)
 }
 
-fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(51).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_blank(20)
-        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-}
-
-fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(50).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_spinout(11)
-        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-        || prog.far_cant_spinout(4)
-}
-
 fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(51).is_refuted()
+    prog.bkw_cant_blank(BKW_DCD).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_blank(20)
-        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-        || prog.far_cant_blank(6)
+        || prog.far_cant_blank(3)
 }
 
 fn test_deciders() {
