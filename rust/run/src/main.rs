@@ -399,7 +399,6 @@ fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_spinout(BKW_DCD).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MIN)
-        || prog.far_cant_spinout(3)
 }
 
 fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
@@ -417,14 +416,13 @@ fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_spinout(19)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MOR)
-        || prog.far_cant_spinout(3)
 }
 
 fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_blank(BKW_DCD).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MIN)
-        || prog.far_cant_blank(3)
+        || prog.cps_cant_blank(12)
 }
 
 fn _5_2_0(prog: &Prog<5, 2>, config: &mut PassConfig<'_>) -> bool {
@@ -434,7 +432,6 @@ fn _5_2_0(prog: &Prog<5, 2>, config: &mut PassConfig<'_>) -> bool {
         || prog.cps_cant_halt(30)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MOR)
-        || prog.far_cant_halt(3)
 }
 
 fn test_deciders() {
@@ -444,12 +441,12 @@ fn test_deciders() {
         (4, 2) => [
             1 => (_4_2_1, 99, (0, 258_229)),
             2 => (_4_2_2, 99, (0, 949_480)),
-            3 => (_4_2_3, 99, (3, 1_828_723)),
+            3 => (_4_2_3, 99, (0, 1_828_723)),
         ],
         (2, 4) => [
             1 => (_2_4_1, TREE_LIM, (_2_4_1_, 358_596)),
             2 => (_2_4_2, TREE_LIM, (0, 622_367)),
-            3 => (_2_4_3, TREE_LIM, (8, 1_563_752)),
+            3 => (_2_4_3, TREE_LIM, (2, 1_563_752)),
         ],
         (5, 2) => [
             0 => (_5_2_0, TREE_LIM, (_5_2_0_, 72_682_619)),
@@ -507,9 +504,9 @@ fn test_bkw() {
             109,
             81_810_021,
             [
-                0 => 62,
-                1 => 8,
-                2 => 1,
+                0 => 4,
+                1 => 0,
+                2 => 0,
                 3 => 0,
             ],
         ],

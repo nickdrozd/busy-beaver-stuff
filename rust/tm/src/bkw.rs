@@ -44,7 +44,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
         let slots = self.halt_slots_disp_side(&idx);
         let instrs = BkwInstrs::new(self);
         let (slots, seed) =
-            self.halt_slots_side_excursion(slots, &instrs);
+            Self::halt_slots_side_excursion(slots, &instrs);
 
         cant_reach(
             self,
@@ -53,7 +53,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             Some(entrypoints),
             halt_configs,
             false,
-            Some(instrs),
+            Some(&instrs),
             seed,
         )
     }
@@ -65,16 +65,22 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
         let instrs = BkwInstrs::new(self);
         let (slots, seed) = self.blank_slots_side_clean(&instrs);
-        cant_reach(
+        let result = cant_reach(
             self,
             steps,
             slots,
             None,
             erase_configs,
             false,
-            Some(instrs),
+            Some(&instrs),
             seed,
-        )
+        );
+        if !result.is_refuted()
+            && CrossingContexts::block_erase_closure(&instrs).is_some()
+        {
+            return Refuted(0);
+        }
+        result
     }
 
     pub fn bkw_cant_spinout(&self, steps: Steps) -> BackwardResult {
@@ -87,7 +93,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             None,
             zr_configs,
             false,
-            Some(instrs),
+            Some(&instrs),
             seed,
         )
     }
@@ -102,7 +108,7 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             None,
             zr_configs,
             false,
-            Some(instrs),
+            Some(&instrs),
             seed,
         )
     }
@@ -4095,87 +4101,8 @@ struct BlankSidePossible<const S: usize, const C: usize> {
 /// is a set of the nine possible `(left_count, right_count)` combinations.
 /// This strictly refines the old single-color presence abstraction while
 /// retaining the same exact-window conditioning.
-struct ColorTailCountPossible<const S: usize, const C: usize> {
-    exact: Vec<u16>,
-    by_left: Vec<u16>,
-    by_right: Vec<u16>,
-    any: Vec<u16>,
-}
-
-impl<const S: usize, const C: usize> ColorTailCountPossible<S, C> {
-    const fn exact_index(
-        st: usize,
-        scan: usize,
-        left: usize,
-        right: usize,
-        color: usize,
-    ) -> usize {
-        bkw_window_index::<C>(st, scan, left, right) * C + color
-    }
-
-    const fn side_index(
-        st: usize,
-        scan: usize,
-        neighbor: usize,
-        color: usize,
-    ) -> usize {
-        (((st * C) + scan) * C + neighbor) * C + color
-    }
-
-    const fn any_index(st: usize, scan: usize, color: usize) -> usize {
-        ((st * C) + scan) * C + color
-    }
-
-    fn new() -> Self {
-        Self {
-            exact: vec![0; S * C * C * C * C],
-            by_left: vec![0; S * C * C * C],
-            by_right: vec![0; S * C * C * C],
-            any: vec![0; S * C * C],
-        }
-    }
-
-    fn add(
-        &mut self,
-        st: usize,
-        scan: usize,
-        left: usize,
-        right: usize,
-        color: usize,
-        status: u8,
-    ) {
-        debug_assert!(status < 9);
-        let bit = 1_u16 << status;
-        self.exact[Self::exact_index(st, scan, left, right, color)] |=
-            bit;
-        self.by_left[Self::side_index(st, scan, left, color)] |= bit;
-        self.by_right[Self::side_index(st, scan, right, color)] |= bit;
-        self.any[Self::any_index(st, scan, color)] |= bit;
-    }
-
-    fn mask(
-        &self,
-        st: usize,
-        scan: usize,
-        left: Option<usize>,
-        right: Option<usize>,
-        color: usize,
-    ) -> u16 {
-        match (left, right) {
-            (Some(left), Some(right)) => {
-                self.exact
-                    [Self::exact_index(st, scan, left, right, color)]
-            },
-            (Some(left), None) => {
-                self.by_left[Self::side_index(st, scan, left, color)]
-            },
-            (None, Some(right)) => {
-                self.by_right[Self::side_index(st, scan, right, color)]
-            },
-            (None, None) => self.any[Self::any_index(st, scan, color)],
-        }
-    }
-}
+type ColorTailCountPossible<const S: usize, const C: usize> =
+    TailMasks<S, C, false>;
 
 /// Same-run pairwise tail-presence possibilities, conditioned on the exact
 /// local window. For each unordered nonblank color pair `(a, b)`, a concrete
@@ -4189,77 +4116,78 @@ impl<const S: usize, const C: usize> ColorTailCountPossible<S, C> {
 /// Each stored `u16` is a set of those 16 concrete statuses. This retains the
 /// correlation between two colors that the independent per-color abstraction
 /// deliberately joins away.
-struct PairTailPresencePossible<const S: usize, const C: usize> {
+type PairTailPresencePossible<const S: usize, const C: usize> =
+    TailMasks<S, C, true>;
+
+struct TailMasks<const S: usize, const C: usize, const PAIRS: bool> {
     exact: Vec<u16>,
     by_left: Vec<u16>,
     by_right: Vec<u16>,
     any: Vec<u16>,
 }
 
-impl<const S: usize, const C: usize> PairTailPresencePossible<S, C> {
-    const fn pair_count() -> usize {
+impl<const S: usize, const C: usize, const PAIRS: bool>
+    TailMasks<S, C, PAIRS>
+{
+    const ITEMS: usize = if PAIRS {
         C.saturating_sub(1) * C.saturating_sub(2) / 2
-    }
-
-    /// Dense index for `1 <= a < b < C`, in lexicographic pair order.
-    const fn pair_index(a: usize, b: usize) -> usize {
-        debug_assert!(0 < a && a < b && b < C);
-        let before = (a - 1) * (2 * C - a - 2) / 2;
-        before + (b - a - 1)
-    }
+    } else {
+        C
+    };
 
     const fn exact_index(
         st: usize,
         scan: usize,
         left: usize,
         right: usize,
-        pair: usize,
+        item: usize,
     ) -> usize {
-        let window = bkw_window_index::<C>(st, scan, left, right);
-        window * Self::pair_count() + pair
+        bkw_window_index::<C>(st, scan, left, right) * Self::ITEMS
+            + item
     }
 
     const fn side_index(
         st: usize,
         scan: usize,
         neighbor: usize,
-        pair: usize,
+        item: usize,
     ) -> usize {
-        let side = ((st * C) + scan) * C + neighbor;
-        side * Self::pair_count() + pair
+        (((st * C) + scan) * C + neighbor) * Self::ITEMS + item
     }
 
-    const fn any_index(st: usize, scan: usize, pair: usize) -> usize {
-        ((st * C) + scan) * Self::pair_count() + pair
+    const fn any_index(st: usize, scan: usize, item: usize) -> usize {
+        ((st * C) + scan) * Self::ITEMS + item
     }
 
     fn new() -> Self {
-        let pairs = Self::pair_count();
         Self {
-            exact: vec![0; S * C * C * C * pairs],
-            by_left: vec![0; S * C * C * pairs],
-            by_right: vec![0; S * C * C * pairs],
-            any: vec![0; S * C * pairs],
+            exact: vec![0; S * C * C * C * Self::ITEMS],
+            by_left: vec![0; S * C * C * Self::ITEMS],
+            by_right: vec![0; S * C * C * Self::ITEMS],
+            any: vec![0; S * C * Self::ITEMS],
         }
     }
 
-    fn add(
+    fn insert(
         &mut self,
         st: usize,
         scan: usize,
         left: usize,
         right: usize,
-        a: usize,
-        b: usize,
+        item: usize,
         status: u8,
-    ) {
-        let pair = Self::pair_index(a, b);
+    ) -> bool {
         let bit = 1_u16 << status;
-        self.exact[Self::exact_index(st, scan, left, right, pair)] |=
-            bit;
-        self.by_left[Self::side_index(st, scan, left, pair)] |= bit;
-        self.by_right[Self::side_index(st, scan, right, pair)] |= bit;
-        self.any[Self::any_index(st, scan, pair)] |= bit;
+        let exact = &mut self.exact
+            [Self::exact_index(st, scan, left, right, item)];
+        if *exact & bit != 0 {
+            return false;
+        }
+        *exact |= bit;
+        self.by_left[Self::side_index(st, scan, left, item)] |= bit;
+        self.by_right[Self::side_index(st, scan, right, item)] |= bit;
+        self.any[Self::any_index(st, scan, item)] |= bit;
+        true
     }
 
     fn mask(
@@ -4268,23 +4196,30 @@ impl<const S: usize, const C: usize> PairTailPresencePossible<S, C> {
         scan: usize,
         left: Option<usize>,
         right: Option<usize>,
-        a: usize,
-        b: usize,
+        item: usize,
     ) -> u16 {
-        let pair = Self::pair_index(a, b);
         match (left, right) {
             (Some(left), Some(right)) => {
                 self.exact
-                    [Self::exact_index(st, scan, left, right, pair)]
+                    [Self::exact_index(st, scan, left, right, item)]
             },
             (Some(left), None) => {
-                self.by_left[Self::side_index(st, scan, left, pair)]
+                self.by_left[Self::side_index(st, scan, left, item)]
             },
             (None, Some(right)) => {
-                self.by_right[Self::side_index(st, scan, right, pair)]
+                self.by_right[Self::side_index(st, scan, right, item)]
             },
-            (None, None) => self.any[Self::any_index(st, scan, pair)],
+            (None, None) => self.any[Self::any_index(st, scan, item)],
         }
+    }
+}
+
+impl<const S: usize, const C: usize> TailMasks<S, C, true> {
+    /// Dense index for `1 <= a < b < C`, in lexicographic pair order.
+    const fn pair_index(a: usize, b: usize) -> usize {
+        debug_assert!(0 < a && a < b && b < C);
+        let before = (a - 1) * (2 * C - a - 2) / 2;
+        before + (b - a - 1)
     }
 }
 
@@ -4456,8 +4391,8 @@ impl FiveCellWindows {
         let Some(windows) = self.by_slot.get(&slot) else {
             return false;
         };
-        let (left, nl) = Self::known_prefix(&tape.lspan);
-        let (right, nr) = Self::known_prefix(&tape.rspan);
+        let (left, nl) = tape.lspan.known_prefix::<5>();
+        let (right, nr) = tape.rspan.known_prefix::<5>();
         if windows.len() >= WINDOW_SORT_THRESHOLD && nl != 0 {
             // Unknown suffixes are zero in known_prefix. This is the
             // smallest joint word that could match the requested prefixes.
@@ -4474,32 +4409,6 @@ impl FiveCellWindows {
             sides[0][..nl] == left[..nl]
                 && sides[1][..nr] == right[..nr]
         })
-    }
-
-    fn known_prefix(span: &Span) -> (FiveCells, usize) {
-        let mut cells = [0; 5];
-        let mut len = 0;
-        for block in span.span.iter() {
-            let (minimum, stride) = phase_repetitions(block);
-            for _ in 0..minimum {
-                for &color in block.word() {
-                    cells[len] = color;
-                    len += 1;
-                    if len == cells.len() {
-                        return (cells, len);
-                    }
-                }
-            }
-            // Beyond the minimum, different legal counts can put different
-            // cells at the next position. Leave the rest unconstrained.
-            if stride.is_some() {
-                return (cells, len);
-            }
-        }
-        if span.end == TapeEnd::Blanks {
-            len = cells.len();
-        }
-        (cells, len)
     }
 }
 
@@ -4526,6 +4435,29 @@ struct BlockTarget {
 }
 
 impl BlockTarget {
+    fn from_tape(tape: &Tape) -> Self {
+        Self {
+            blank_sides: Self::blank_sides(tape),
+            left: tape.lspan.known_prefix::<5>(),
+            right: tape.rspan.known_prefix::<5>(),
+        }
+    }
+
+    // Keep the constraints available at every cell of a crossing block.
+    // Ignoring a longer known prefix only enlarges the target.
+    fn matches_neighbors(
+        &self,
+        blank: [bool; 2],
+        neighbors: [usize; 2],
+    ) -> bool {
+        (!self.blank_sides[0] || blank[0])
+            && (!self.blank_sides[1] || blank[1])
+            && (self.left.1 == 0
+                || usize::from(self.left.0[0]) == neighbors[0])
+            && (self.right.1 == 0
+                || usize::from(self.right.0[0]) == neighbors[1])
+    }
+
     fn blank_sides(tape: &Tape) -> [bool; 2] {
         [&tape.lspan, &tape.rspan]
             .map(|span| span.end == TapeEnd::Blanks && span.blank())
@@ -4744,13 +4676,10 @@ impl<
             let state = usize::from(config.state);
             let scan = usize::from(tape.scan);
             has_defined_target |= instrs.get(state, scan).is_some();
-            targets.entry((state, scan)).or_default().push(
-                BlockTarget {
-                    blank_sides: BlockTarget::blank_sides(tape),
-                    left: FiveCellWindows::known_prefix(&tape.lspan),
-                    right: FiveCellWindows::known_prefix(&tape.rspan),
-                },
-            );
+            targets
+                .entry((state, scan))
+                .or_default()
+                .push(BlockTarget::from_tape(tape));
         }
 
         let (seen, pending, edges) =
@@ -4950,7 +4879,7 @@ fn cant_reach<const s: usize, const c: usize, T: Ord, F>(
     entrypoints: Option<Entrypoints>,
     get_configs: F,
     use_exact_seen: bool,
-    instrs: Option<BkwInstrs<s, c>>,
+    instrs: Option<&BkwInstrs<s, c>>,
     window_seed: Option<BkwWindowSeed<s, c>>,
 ) -> BackwardResult
 where
@@ -4971,9 +4900,12 @@ where
 
     // The common path is still one ordinary BKW pass: no cycle-edge history
     // is built unless a real u8 count overflow is encountered.
-    let instrs = instrs.unwrap_or_else(|| BkwInstrs::new(prog));
+    let local_instrs = OnceCell::new();
+    let instrs = instrs.unwrap_or_else(|| {
+        local_instrs.get_or_init(|| BkwInstrs::new(prog))
+    });
     let Some(mut prepared) =
-        prepare_bkw(prog, &instrs, &slots, &get_configs, window_seed)
+        prepare_bkw(instrs, &slots, &get_configs, window_seed)
     else {
         return Refuted(0);
     };
@@ -4981,16 +4913,16 @@ where
         &prepared,
         steps,
         &entrypoints,
-        &instrs,
+        instrs,
         use_exact_seen,
     );
 
     if !matches!(first, StepLimit | DepthLimit | CountLimit) {
-        return first;
+        return RunCrossings::finish(first, instrs, &prepared.configs);
     }
     // Resume the preparation probe with the surviving targets and full budget.
     if prepared.pair_search.refutes(
-        &instrs,
+        instrs,
         &prepared.configs,
         false,
         512,
@@ -5016,7 +4948,7 @@ where
             &prepared,
             cycle_steps,
             &entrypoints,
-            &instrs,
+            instrs,
             use_exact_seen,
         ) {
             return Refuted(step);
@@ -5026,7 +4958,7 @@ where
     // A translated block boundary keeps different reversals exact. Widen
     // the block only when both pair alignments have failed to certify.
     if BlockWindowSearch::<2>::new(1).refutes(
-        &instrs,
+        instrs,
         &prepared.configs,
         false,
         512,
@@ -5042,14 +4974,14 @@ where
         .any(|cfg| BlockTarget::blank_sides(&cfg.tape).contains(&true));
     let wide_refuted = if has_blank_side {
         BlockWindowSearch::<4, 1>::new(0).refutes(
-            &instrs,
+            instrs,
             &prepared.configs,
             false,
             768,
         )
     } else {
         BlockWindowSearch::<4>::new(0).refutes(
-            &instrs,
+            instrs,
             &prepared.configs,
             false,
             768,
@@ -5065,7 +4997,7 @@ where
         .iter()
         .all(|cfg| BlockTarget::blank_sides(&cfg.tape) == [true; 2])
         && BlockWindowSearch::<2, 1>::new(0).refutes(
-            &instrs,
+            instrs,
             &prepared.configs,
             false,
             512,
@@ -5078,40 +5010,1592 @@ where
     // agree on both the current colors and the reads that preceded the writes.
     let configs = &prepared.configs;
     if BlockWindowSearch::<2, 1, true>::new(0)
-        .refutes(&instrs, configs, false, 1024)
+        .refutes(instrs, configs, false, 1024)
         || BlockWindowSearch::<3, 1, true>::new(0)
-            .refutes(&instrs, configs, false, 1024)
+            .refutes(instrs, configs, false, 1024)
     {
         return Refuted(0);
     }
     if has_blank_side
         && BlockWindowSearch::<8, 1, true>::new(0)
-            .refutes(&instrs, configs, false, 512)
+            .refutes(instrs, configs, false, 512)
     {
         return Refuted(0);
     }
     // The first writer is an immutable cell annotation. Matching it across
     // an overlap prevents joining regions produced by different origins.
     if BlockWindowSearch::<1, 1, true, true>::new(0)
-        .refutes(&instrs, configs, false, 512)
+        .refutes(instrs, configs, false, 512)
         || BlockWindowSearch::<2, 1, true, true>::new(0)
-            .refutes(&instrs, configs, false, 1024)
+            .refutes(instrs, configs, false, 1024)
     {
         return Refuted(0);
     }
     if has_blank_side
         && BlockWindowSearch::<3, 1, true, true>::new(0)
-            .refutes(&instrs, configs, false, 1024)
+            .refutes(instrs, configs, false, 1024)
     {
         return Refuted(0);
     }
-    if (has_blank_side && tail_automata_refute(&instrs, configs))
-        || two_writer_history_refutes(&instrs, configs)
-        || deeper_writer_history_refutes(&instrs, configs)
+    if (has_blank_side && tail_automata_refute(instrs, configs))
+        || two_writer_history_refutes(instrs, configs)
+        || deeper_writer_history_refutes(instrs, configs)
     {
         return Refuted(0);
     }
-    first
+    RunCrossings::finish(first, instrs, &prepared.configs)
+}
+
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash)]
+enum CrossingWrite {
+    #[default]
+    Unmarked,
+    ChangedColor,
+    ByState(State),
+    BoundaryHistory(u8),
+    AdjacentHistories(u8, u8),
+}
+
+impl CrossingWrite {
+    const fn history(self) -> u8 {
+        match self {
+            Self::BoundaryHistory(bits) => bits,
+            _ => 0,
+        }
+    }
+}
+
+// A push records the writing slot and the opposite half as it was at the
+// call site. Those annotations stay with this frame until it is popped.
+// Shallow variants also carry per-color residues for the remote tail.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct CrossingFrame {
+    half: u16,
+    opposite: u16,
+    writer: Option<Slot>,
+    incoming_write: CrossingWrite,
+}
+
+impl CrossingFrame {
+    const BLANK: Self = Self {
+        half: 0,
+        opposite: 0,
+        writer: None,
+        incoming_write: CrossingWrite::Unmarked,
+    };
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+struct CrossingNode<Entry = Slot> {
+    slot: Entry,
+    sides: [u16; 2],
+}
+
+#[derive(Default)]
+struct FrameExtensions<Half = u16, Entry = Slot> {
+    half: Half,
+    write: CrossingWrite,
+    remainders: Vec<u16>,
+    waiting: Vec<CrossingNode<Entry>>,
+}
+
+#[derive(Clone, Copy, Default, PartialEq, Eq, Hash)]
+struct CountedHalf {
+    runs: u64,
+    // Exact at 0 and 1; 2 includes every larger count.
+    count: u8,
+}
+
+struct RunCrossings {
+    targets: Dict<(usize, usize), Vec<BlockTarget>>,
+    cell_bits: usize,
+}
+
+impl RunCrossings {
+    fn finish<const S: usize, const C: usize>(
+        result: BackwardResult,
+        instrs: &BkwInstrs<S, C>,
+        configs: &[Config],
+    ) -> BackwardResult {
+        if result.is_refuted() {
+            return result;
+        }
+        #[expect(clippy::disallowed_names)]
+        let colors = instrs
+            .writers
+            .iter()
+            .rposition(|row| !row.is_empty())
+            .map_or(1, |last| last + 1);
+        if colors > 8 {
+            return result;
+        }
+        let mut targets = Dict::<_, Vec<_>>::new();
+        let mut blank_half = false;
+        let mut blank_tape = true;
+        let mut defined_target = false;
+        let mut multi_state_frontier = false;
+        for cfg in configs {
+            let goal = BlockTarget::from_tape(&cfg.tape);
+            blank_half |= goal.blank_sides.contains(&true);
+            blank_tape &= goal.blank_sides == [true; 2];
+            let slot =
+                (usize::from(cfg.state), usize::from(cfg.tape.scan));
+            let instr = instrs.get(slot.0, slot.1);
+            defined_target |= instr.is_some();
+            multi_state_frontier |= slot.1 == 0
+                && goal.blank_sides.contains(&true)
+                && instr.is_some_and(|(_, _, next)| next != slot.0);
+            targets.entry(slot).or_default().push(goal);
+        }
+        let search = Self {
+            targets,
+            cell_bits: (colors - 1).bit_width().max(1) as usize,
+        };
+        let Some(candidates) = search.candidate_colors(instrs, colors)
+        else {
+            return result;
+        };
+        for tracked in candidates {
+            if search.closes(instrs, 1, 1, 2, 0, 512, tracked).is_some()
+            {
+                return Refuted(0);
+            }
+        }
+        if multi_state_frontier
+            && search.closes(instrs, 1, 3, 2, 0, 1536, [0; 2]).is_some()
+        {
+            return Refuted(0);
+        }
+        // Keep the original target constraints throughout each independent
+        // closure. Short blocks retain run-count residues across reversals.
+        // Wider blocks execute more of an excursion exactly before a pop.
+        // Each plan is (cells per block, retained runs, modulus, offset, limit).
+        let plans: &[(usize, usize, u8, usize, usize)] =
+            if !defined_target {
+                &[
+                    (2, 3, 3, 0, 4096),
+                    (4, 3, 2, 0, 4096),
+                    (1, 3, 2, 0, 1024),
+                    (1, 3, 3, 0, 2048),
+                    (2, 2, 2, 0, 2048),
+                    (6, 3, 2, 0, 4096),
+                    (8, 2, 2, 0, 8192),
+                ]
+            } else if blank_tape {
+                &[(4, 3, 2, 0, 768)]
+            } else if blank_half && !multi_state_frontier {
+                &[
+                    (2, 3, 3, 0, 1536),
+                    (3, 3, 2, 1, 2048),
+                    (3, 2, 2, 0, 4096),
+                    (4, 3, 2, 0, 4096),
+                    (6, 3, 2, 0, 4096),
+                    (8, 2, 2, 0, 2048),
+                ]
+            } else if blank_half {
+                &[(2, 3, 3, 0, 1536), (3, 3, 2, 1, 2048)]
+            } else {
+                &[(2, 3, 3, 0, 256), (4, 3, 2, 0, 512)]
+            };
+        for &(width, depth, modulus, offset, limit) in plans {
+            if search
+                .closes(
+                    instrs, width, depth, modulus, offset, limit,
+                    [0; 2],
+                )
+                .is_some()
+            {
+                return Refuted(0);
+            }
+        }
+        result
+    }
+
+    // A concrete match skips this fallback. Otherwise the sample ranks colors;
+    // every proof starts again from blank and tracks the exact balance.
+    #[expect(clippy::disallowed_names)]
+    fn candidate_colors<const S: usize, const C: usize>(
+        &self,
+        instrs: &BkwInstrs<S, C>,
+        colors: usize,
+    ) -> Option<Vec<[usize; 2]>> {
+        const STEPS: usize = 384;
+        let mut tape = [0_usize; 2 * STEPS + 1];
+        let mut head = STEPS;
+        let mut state = 0;
+        let mut printed = [false; 8];
+        let mut counts = [[0_i16; 8]; 2];
+        let mut ranges = [[(0_i16, 0_i16); 8]; 8];
+        for _ in 0..STEPS {
+            if let Some(goals) = self.targets.get(&(state, tape[head]))
+            {
+                let blank = counts
+                    .each_ref()
+                    .map(|row| row[1..colors].iter().all(|&n| n == 0));
+                let neighbors = [tape[head - 1], tape[head + 1]];
+                if goals.iter().any(|goal| {
+                    goal.matches_neighbors(blank, neighbors)
+                }) {
+                    return None;
+                }
+            }
+            let Some((print, right, next)) =
+                instrs.get(state, tape[head])
+            else {
+                break;
+            };
+            let pull = usize::from(right);
+            tape[head] = print;
+            head = if right { head + 1 } else { head - 1 };
+            if print != 0 {
+                printed[print] = true;
+                counts[1 - pull][print] += 1;
+            }
+            if tape[head] != 0 {
+                counts[pull][tape[head]] -= 1;
+            }
+            state = next;
+            for (l, row) in ranges[..colors].iter_mut().enumerate() {
+                for (r, (low, high)) in
+                    row[..colors].iter_mut().enumerate()
+                {
+                    let difference = counts[0][l] - counts[1][r];
+                    *low = (*low).min(difference);
+                    *high = (*high).max(difference);
+                }
+            }
+        }
+        let mut ranked = Vec::new();
+        for (l, row) in ranges[..colors].iter().enumerate() {
+            for (r, &(low, high)) in row[..colors].iter().enumerate() {
+                if (printed[l] || printed[r]) && low >= -8 && high <= 8
+                {
+                    ranked.push((high - low, l == 0 || r == 0, [l, r]));
+                }
+            }
+        }
+        ranked.sort_unstable();
+        Some(
+            ranked
+                .into_iter()
+                .take(4)
+                .map(|(_, _, pair)| pair)
+                .collect(),
+        )
+    }
+
+    fn closes<const S: usize, const C: usize>(
+        &self,
+        instrs: &BkwInstrs<S, C>,
+        width: usize,
+        depth: usize,
+        modulus: u8,
+        initial_offset: usize,
+        limit: usize,
+        tracked: [usize; 2],
+    ) -> Option<()> {
+        let bits = self.cell_bits;
+        let cell_mask = (1_u64 << bits) - 1;
+        let word_bits = bits * width;
+        let word_mask = (1_u64 << word_bits) - 1;
+        let run_bits = word_bits + 2;
+        let runs_mask = (1_u64 << (run_bits * depth)) - 1;
+        type Entry = (usize, usize, u64, i8);
+        let initial = CrossingNode {
+            slot: (0, initial_offset, 0, 0),
+            sides: [0; 2],
+        };
+        let mut seen = Set::new();
+        seen.insert(initial);
+        let mut pending = vec![initial];
+        let mut ids: [Dict<
+            (CountedHalf, CountedHalf, (usize, usize, u64)),
+            u16,
+        >; 2] = core::array::from_fn(|_| Dict::new());
+        #[expect(clippy::disallowed_names)]
+        let mut rows: [Vec<FrameExtensions<CountedHalf, Entry>>;
+            2] = core::array::from_fn(|_| {
+            vec![FrameExtensions {
+                remainders: vec![0],
+                ..FrameExtensions::default()
+            }]
+        });
+        let mut children = Vec::new();
+        let mut edges = 0;
+        let mut steps = 0;
+        // A deterministic block that has taken this many steps without an
+        // exit must repeat internally. The work limit is separate.
+        let local_limit = S.saturating_mul(width).saturating_mul(
+            usize::try_from(word_mask + 1).unwrap_or(usize::MAX),
+        );
+        'work: while let Some(node) = pending.pop() {
+            let (mut state, mut offset, mut word, balance) = node.slot;
+            let origin = (state, offset, word);
+            let halves = [0, 1]
+                .map(|j| rows[j][usize::from(node.sides[j])].half);
+            let mut local = 0;
+            let right = loop {
+                if local == local_limit {
+                    continue 'work;
+                }
+                local += 1;
+                steps += 1;
+                if steps > 32 * limit {
+                    return None;
+                }
+                let pos = offset * bits;
+                let scan =
+                    usize::try_from((word >> pos) & cell_mask).ok()?;
+                if let Some(goals) = self.targets.get(&(state, scan)) {
+                    let before = word & ((1 << pos) - 1);
+                    let after = word >> (pos + bits);
+                    let left = if offset == 0 {
+                        (halves[0].runs & word_mask)
+                            >> (word_bits - bits)
+                    } else {
+                        word >> (pos - bits)
+                    } & cell_mask;
+                    let right_cell = if offset + 1 == width {
+                        halves[1].runs
+                    } else {
+                        after
+                    } & cell_mask;
+                    let blank = [
+                        before == 0 && halves[0].runs == 0,
+                        after == 0 && halves[1].runs == 0,
+                    ];
+                    let neighbors = [
+                        usize::try_from(left).ok()?,
+                        usize::try_from(right_cell).ok()?,
+                    ];
+                    if goals.iter().any(|goal| {
+                        goal.matches_neighbors(blank, neighbors)
+                    }) {
+                        return None;
+                    }
+                }
+                let Some((print, right, next)) =
+                    instrs.get(state, scan)
+                else {
+                    continue 'work;
+                };
+                word = (word & !(cell_mask << pos))
+                    | ((print as u64) << pos);
+                state = next;
+                if (right && offset + 1 == width)
+                    || (!right && offset == 0)
+                {
+                    break right;
+                }
+                offset = if right { offset + 1 } else { offset - 1 };
+            };
+            let pull = usize::from(right);
+            let push = 1 - pull;
+            let source = halves[pull];
+            let old = halves[push];
+            let pulled = source.runs & word_mask;
+            // Count classes 1..=modulus cycle; zero is the infinite blank
+            // run. A pop restores the published tail, including its count.
+            let runs = if old.runs & word_mask == word {
+                let count = (old.runs >> word_bits) & 3;
+                if count == 0 {
+                    old.runs
+                } else {
+                    (old.runs & !(3 << word_bits))
+                        | ((1 + count % u64::from(modulus))
+                            << word_bits)
+                }
+            } else {
+                ((old.runs << run_bits) & runs_mask)
+                    | (1 << word_bits)
+                    | word
+            };
+            let added = u8::from(
+                tracked[push] != 0 && word == tracked[push] as u64,
+            );
+            let removed = u8::from(
+                tracked[pull] != 0 && pulled == tracked[pull] as u64,
+            );
+            let change = i8::from(added != 0) + i8::from(removed != 0);
+            let balance =
+                balance + if right { change } else { -change };
+            if balance.abs() > 16 {
+                return None;
+            }
+            let half = CountedHalf {
+                runs,
+                count: (old.count + added).min(2),
+            };
+            let id = *ids[push]
+                .entry((half, source, origin))
+                .or_insert_with(|| {
+                    let id = u16::try_from(rows[push].len())
+                        .expect("bounded crossing rows");
+                    rows[push].push(FrameExtensions {
+                        half,
+                        ..FrameExtensions::default()
+                    });
+                    id
+                });
+            let mut next = CrossingNode {
+                slot: (
+                    state,
+                    if right { 0 } else { width - 1 },
+                    pulled,
+                    balance,
+                ),
+                sides: [0; 2],
+            };
+            next.sides[push] = id;
+            CrossingContexts::replay_crossing(
+                &mut rows,
+                node,
+                next,
+                pull,
+                |mut child, side, tail| {
+                    edges += 1;
+                    if edges > 4 * limit {
+                        return None;
+                    }
+                    child.sides[side] = tail;
+                    children.push(child);
+                    Some(())
+                },
+            )?;
+            for &child in &children {
+                // Delayed replay can emit an earlier waiter. Use its own
+                // balance and the summaries of its two restored halves.
+                let [l, r] = [0, 1].map(|j| {
+                    rows[j][usize::from(child.sides[j])].half.count
+                });
+                let difference = i16::from(l) - i16::from(r);
+                let needed = i16::from(child.slot.3);
+                if (needed > difference && l < 2)
+                    || (needed < difference && r < 2)
+                {
+                    continue;
+                }
+                if seen.insert(child) {
+                    if seen.len() > limit {
+                        return None;
+                    }
+                    pending.push(child);
+                }
+            }
+            children.clear();
+        }
+        Some(())
+    }
+}
+
+enum BinaryBlockExit {
+    Trapped,
+    Cross(usize, bool, u16),
+}
+
+struct CrossingContexts {
+    depth: usize,
+    by_slot: Dict<(usize, usize), Vec<[u16; 2]>>,
+}
+
+impl CrossingContexts {
+    const TWO_CELL_TAIL: u8 = 4;
+    const BOUNDARY_HISTORY: u8 = 5;
+    const ADJACENT_HISTORY: u8 = 6;
+
+    #[expect(clippy::disallowed_names)]
+    fn replay_crossing<H, Entry: Copy + PartialEq>(
+        rows: &mut [Vec<FrameExtensions<H, Entry>>; 2],
+        node: CrossingNode<Entry>,
+        next: CrossingNode<Entry>,
+        pull: usize,
+        mut emit: impl FnMut(CrossingNode<Entry>, usize, u16) -> Option<()>,
+    ) -> Option<()> {
+        let push = 1 - pull;
+        let pushed = next.sides[push];
+        let old_id = node.sides[push];
+        let source_id = usize::from(node.sides[pull]);
+        // A pop either exposes the initial blank or undoes a previous
+        // push with this frame. Replay both arrival orders of these facts.
+        let pushed_row = &mut rows[push][usize::from(pushed)];
+        if !pushed_row.remainders.contains(&old_id) {
+            pushed_row.remainders.push(old_id);
+            for &child in &pushed_row.waiting {
+                emit(child, push, old_id)?;
+            }
+        }
+        let pulled_row = &mut rows[pull][source_id];
+        // An identical waiter already received every published remainder.
+        // Bound the duplicate scan on highly ambiguous rows.
+        if pulled_row.waiting.len() <= 16
+            && pulled_row.waiting.contains(&next)
+        {
+            return Some(());
+        }
+        for &tail in &pulled_row.remainders {
+            emit(next, pull, tail)?;
+        }
+        pulled_row.waiting.push(next);
+        Some(())
+    }
+
+    // An undefined instruction aborts the proof. A repeated local
+    // configuration stays inside the block forever and has no successor.
+    fn binary_block_exit<
+        const WIDTH: usize,
+        const S: usize,
+        const C: usize,
+    >(
+        instrs: &BkwInstrs<S, C>,
+        mut state: usize,
+        entry: usize,
+    ) -> Option<BinaryBlockExit> {
+        let mut offset = entry >> 2;
+        let mut word = u16::try_from(entry & 3)
+            .expect("two-bit entry fits in u16");
+        for _ in 0..S * WIDTH * (1 << WIDTH) {
+            let scan = usize::from((word >> offset) & 1);
+            let (print, right, next) = instrs.get(state, scan)?;
+            let bit = 1 << offset;
+            if print == 0 {
+                word &= !bit;
+            } else {
+                word |= bit;
+            }
+            state = next;
+            if (right && offset + 1 == WIDTH) || (!right && offset == 0)
+            {
+                return Some(BinaryBlockExit::Cross(
+                    state, right, word,
+                ));
+            }
+            if right {
+                offset += 1;
+            } else {
+                offset -= 1;
+            }
+        }
+        Some(BinaryBlockExit::Trapped)
+    }
+
+    // Aligned binary words are stored with the left cell in bit zero.
+    // The balance is the number of 10 pairs minus the number of 01 pairs
+    // on the entire tape. A block exit changes only the current word.
+    fn pair_balance_halt_closure<const S: usize, const C: usize>(
+        instrs: &BkwInstrs<S, C>,
+    ) -> Option<()> {
+        const POSITIVE: u16 = 4;
+        const NEGATIVE: u16 = 8;
+        let weight = |word: u16| match word {
+            1 => 1_i8,
+            2 => -1,
+            _ => 0,
+        };
+        // Each half records its nearest pair and the presence of each
+        // signed word anywhere on that half, including the nearest pair.
+        #[expect(clippy::disallowed_names)]
+        let mut rows: [Vec<
+            FrameExtensions<(), (usize, usize, i8)>,
+        >; 2] = core::array::from_fn(|_| {
+            let mut side: Vec<_> =
+                (0..16).map(|_| FrameExtensions::default()).collect();
+            side[0].remainders.push(0);
+            side
+        });
+        let initial = CrossingNode {
+            slot: (0, 0, 0_i8),
+            sides: [0; 2],
+        };
+        let mut seen = Set::new();
+        seen.insert(initial);
+        let mut pending = vec![initial];
+        let mut edges = 0;
+        while let Some(node) = pending.pop() {
+            let (state, entry, balance) = node.slot;
+            let BinaryBlockExit::Cross(state, right, word) =
+                Self::binary_block_exit::<2, S, C>(
+                    instrs, state, entry,
+                )?
+            else {
+                continue;
+            };
+            let balance = balance + weight(word)
+                - weight(
+                    u16::try_from(entry & 3)
+                        .expect("two-bit entry fits in u16"),
+                );
+            if balance.abs() > 12 {
+                return None;
+            }
+            let pull = usize::from(right);
+            let push = 1 - pull;
+            let source = node.sides[pull];
+            let old = node.sides[push];
+            let flag = match word {
+                1 => POSITIVE,
+                2 => NEGATIVE,
+                _ => 0,
+            };
+            let next_entry =
+                usize::from(source & 3) | (usize::from(!right) << 2);
+            let mut next = CrossingNode {
+                slot: (state, next_entry, balance),
+                sides: [0; 2],
+            };
+            next.sides[push] =
+                (old & (POSITIVE | NEGATIVE)) | flag | word;
+            Self::replay_crossing(
+                &mut rows,
+                node,
+                next,
+                pull,
+                |mut child, side, tail| {
+                    edges += 1;
+                    if edges > 192 {
+                        return None;
+                    }
+                    child.sides[side] = tail;
+                    // A delayed replay can belong to an earlier waiter.
+                    // Use that child's balance and scanned block.
+                    let (_, entry, balance) = child.slot;
+                    let needed = balance
+                        - weight(
+                            u16::try_from(entry & 3)
+                                .expect("two-bit entry fits in u16"),
+                        );
+                    let [l, r] = child.sides;
+                    let positive = i8::from(l & POSITIVE != 0)
+                        + i8::from(r & POSITIVE != 0);
+                    let negative = i8::from(l & NEGATIVE != 0)
+                        + i8::from(r & NEGATIVE != 0);
+                    // Each flagged half contributes at least one occurrence.
+                    // With both signs present the total is unrestricted.
+                    if (positive == 0 && needed > -negative)
+                        || (negative == 0 && needed < positive)
+                    {
+                        return Some(());
+                    }
+                    if seen.insert(child) {
+                        if seen.len() > 96 {
+                            return None;
+                        }
+                        pending.push(child);
+                    }
+                    Some(())
+                },
+            )?;
+        }
+        Some(())
+    }
+
+    // Each nibble stores a block word and a run-length class. Class zero
+    // denotes the infinite blank exterior; finite classes range from 1 to MOD.
+    fn run_halt_closure<
+        const WIDTH: usize,
+        const RUNS: usize,
+        const MOD: u16,
+        const S: usize,
+        const C: usize,
+    >(
+        instrs: &BkwInstrs<S, C>,
+    ) -> Option<()> {
+        debug_assert!(matches!(
+            (WIDTH, RUNS, MOD),
+            (2, 4, 2) | (1, 2, 3)
+        ));
+        let mask = u16::MAX >> (16 - 4 * RUNS);
+        let initial = CrossingNode {
+            slot: (0, 0),
+            sides: [0; 2],
+        };
+        let mut seen = Set::new();
+        seen.insert(initial);
+        let mut pending = vec![initial];
+        let mut edges = 0;
+        let mut ids: [Dict<(u16, u16, Slot), u16>; 2] =
+            core::array::from_fn(|_| Dict::new());
+        #[expect(clippy::disallowed_names)]
+        let mut rows: [Vec<FrameExtensions>; 2] =
+            core::array::from_fn(|_| {
+                vec![FrameExtensions {
+                    remainders: vec![0],
+                    ..FrameExtensions::default()
+                }]
+            });
+
+        while let Some(node) = pending.pop() {
+            let BinaryBlockExit::Cross(state, right, word) =
+                Self::binary_block_exit::<WIDTH, S, C>(
+                    instrs,
+                    usize::from(node.slot.0),
+                    usize::from(node.slot.1),
+                )?
+            else {
+                continue;
+            };
+            let pull = usize::from(right);
+            let push = 1 - pull;
+            let source = rows[pull][usize::from(node.sides[pull])].half;
+            let old = rows[push][usize::from(node.sides[push])].half;
+            let half = if old & 3 == word {
+                let count = (old >> 2) & 3;
+                if count == 0 {
+                    old
+                } else {
+                    (old & !0b1100) | ((1 + count % MOD) << 2)
+                }
+            } else {
+                ((old << 4) & mask) | 4 | word
+            };
+            let key = (half, source, node.slot);
+            let pushed = *ids[push].entry(key).or_insert_with(|| {
+                let id = u16::try_from(rows[push].len())
+                    .expect("bounded crossing rows");
+                rows[push].push(FrameExtensions {
+                    half,
+                    ..FrameExtensions::default()
+                });
+                id
+            });
+            // The next block is read in tape order on either side.
+            let offset = if right { 0 } else { WIDTH - 1 };
+            let entry = (offset << 2) | usize::from(source & 3);
+            let mut next = CrossingNode {
+                slot: (
+                    State::try_from(state).ok()?,
+                    Color::try_from(entry).ok()?,
+                ),
+                sides: [0; 2],
+            };
+            next.sides[push] = pushed;
+            Self::replay_crossing(
+                &mut rows,
+                node,
+                next,
+                pull,
+                |mut child, side, tail| {
+                    edges += 1;
+                    if edges > 512 || edges > seen.len() + 128 {
+                        return None;
+                    }
+                    child.sides[side] = tail;
+                    if seen.insert(child) {
+                        if seen.len() > 256 {
+                            return None;
+                        }
+                        pending.push(child);
+                    }
+                    Some(())
+                },
+            )?;
+        }
+        Some(())
+    }
+
+    // Check erasure inside a three-cell block, then join crossings only at
+    // its boundaries. Words are stored left-to-right on both sides.
+    fn block_erase_closure<const S: usize, const C: usize>(
+        instrs: &BkwInstrs<S, C>,
+    ) -> Option<()> {
+        const BLOCK_MASK: u32 = 63;
+        const REMOTE_INK: u32 = 1 << 18;
+        let initial = CrossingNode {
+            slot: (0, 0),
+            sides: [0; 2],
+        };
+        let mut pending = vec![initial];
+        let mut seen = Set::new();
+        seen.insert(initial);
+        let mut ids: [Dict<(u32, u32, Slot), u16>; 2] =
+            core::array::from_fn(|_| Dict::new());
+        #[expect(clippy::disallowed_names)]
+        let mut rows: [Vec<FrameExtensions<u32>>; 2] =
+            core::array::from_fn(|_| {
+                vec![FrameExtensions {
+                    remainders: vec![0],
+                    ..FrameExtensions::default()
+                }]
+            });
+        let mut steps = 0;
+        let mut edges = 0;
+        'work: while let Some(node) = pending.pop() {
+            // The low state bit gives the entry end (0 = left, 1 = right).
+            let mut state = usize::from(node.slot.0) / 2;
+            let mut offset = usize::from(node.slot.0 & 1) * 2;
+            let mut word = u32::from(node.slot.1);
+            let sides = [0, 1]
+                .map(|i| rows[i][usize::from(node.sides[i])].half);
+            let right = loop {
+                let shift = 2 * offset;
+                let scan = ((word >> shift) & 3) as usize;
+                let Some((print, right, next)) =
+                    instrs.get(state, scan)
+                else {
+                    continue 'work;
+                };
+                steps += 1;
+                if steps > 4096 || print > 3 {
+                    return None;
+                }
+                word = (word & !(3 << shift))
+                    | (u32::try_from(print).ok()? << shift);
+                if word == 0 && sides == [0, 0] {
+                    return None;
+                }
+                state = next;
+                if (right && offset == 2) || (!right && offset == 0) {
+                    break right;
+                }
+                if right {
+                    offset += 1;
+                } else {
+                    offset -= 1;
+                }
+            };
+            let pull = usize::from(right);
+            let push = 1 - pull;
+            let source = sides[pull];
+            let old = sides[push];
+            // Keep three exact blocks and a bit for ink beyond them. The
+            // displaced third block and any older ink enter the new exterior.
+            let half = ((old << 6) & (REMOTE_INK - 1))
+                | word
+                | if old >> 12 != 0 { REMOTE_INK } else { 0 };
+            let key = (half, source, node.slot);
+            let pushed = *ids[push].entry(key).or_insert_with(|| {
+                let id = u16::try_from(rows[push].len())
+                    .expect("bounded crossing rows");
+                rows[push].push(FrameExtensions {
+                    half,
+                    ..FrameExtensions::default()
+                });
+                id
+            });
+            let mut next = CrossingNode {
+                slot: (
+                    State::try_from(2 * state + usize::from(!right))
+                        .ok()?,
+                    Color::try_from(source & BLOCK_MASK).ok()?,
+                ),
+                sides: [0; 2],
+            };
+            next.sides[push] = pushed;
+            Self::replay_crossing(
+                &mut rows,
+                node,
+                next,
+                pull,
+                |mut child, side, tail| {
+                    edges += 1;
+                    if edges > 2048 {
+                        return None;
+                    }
+                    child.sides[side] = tail;
+                    if seen.insert(child) {
+                        if seen.len() > 1280 {
+                            return None;
+                        }
+                        pending.push(child);
+                    }
+                    Some(())
+                },
+            )?;
+        }
+        Some(())
+    }
+
+    // Moduli 2 and 3 keep one neighbor and per-color remote counts.
+    // Split parity separates alternating remote cells into two bit planes.
+    // Modulus 0 uses the payload for the wider literal window instead.
+    fn build<
+        const MODULUS: u8,
+        const SPLIT_PARITY: bool,
+        const S: usize,
+        const C: usize,
+    >(
+        instrs: &BkwInstrs<S, C>,
+        depth: usize,
+        windows: &WinPossible<S, C>,
+        node_limit: usize,
+        edge_limit: usize,
+    ) -> Option<(Self, usize, usize)> {
+        Self::build_frames::<MODULUS, SPLIT_PARITY, 4, S, C>(
+            instrs, depth, depth, windows, node_limit, edge_limit,
+            false,
+        )
+    }
+
+    fn build_frames<
+        const MODULUS: u8,
+        const SPLIT_PARITY: bool,
+        const CELL_BITS: usize,
+        const S: usize,
+        const C: usize,
+    >(
+        instrs: &BkwInstrs<S, C>,
+        depth: usize,
+        output_depth: usize,
+        windows: &WinPossible<S, C>,
+        mut node_limit: usize,
+        edge_limit: usize,
+        halt_only: bool,
+    ) -> Option<(Self, usize, usize)> {
+        let histories = MODULUS == Self::BOUNDARY_HISTORY
+            || MODULUS == Self::ADJACENT_HISTORY;
+        debug_assert!(!SPLIT_PARITY || MODULUS == 2);
+        debug_assert!(
+            MODULUS == 0
+                || histories
+                || (matches!(MODULUS, 2 | 3) && depth == 1)
+                || (MODULUS == Self::TWO_CELL_TAIL && depth == 2)
+        );
+        let binary_tail = MODULUS == Self::TWO_CELL_TAIL
+            && instrs.writers.iter().skip(2).all(Vec::is_empty);
+        debug_assert!(
+            CELL_BITS == 4
+                || ((MODULUS == 0 || histories)
+                    && output_depth <= depth)
+        );
+        debug_assert!(CELL_BITS * depth < 16);
+        let replay_limit = if halt_only { 128 } else { 16 };
+        let symbol = (1_u16 << CELL_BITS) - 1;
+        let dirty_bit = 1_u16 << (CELL_BITS * depth);
+        let cells = dirty_bit - 1;
+        let last_cell = symbol << (CELL_BITS * (depth - 1));
+        // Intern frames separately on each side. Row zero is the blank
+        // frame and its pop returns itself on the infinite blank tape.
+        let mut ids: [Dict<CrossingFrame, u16>; 2] =
+            core::array::from_fn(|_| {
+                let mut map = Dict::new();
+                map.insert(CrossingFrame::BLANK, 0);
+                map
+            });
+        #[expect(clippy::disallowed_names)]
+        let mut rows: [Vec<FrameExtensions>; 2] =
+            core::array::from_fn(|_| {
+                vec![FrameExtensions {
+                    remainders: vec![0],
+                    ..FrameExtensions::default()
+                }]
+            });
+        let initial = CrossingNode {
+            slot: (0, 0),
+            sides: [0; 2],
+        };
+        let mut seen = Set::new();
+        seen.insert(initial);
+        let mut pending = vec![initial];
+        let mut edges = 0;
+        while let Some(node) = pending.pop() {
+            let state = usize::from(node.slot.0);
+            let scan = usize::from(node.slot.1);
+            if MODULUS == 3 || SPLIT_PARITY {
+                let left =
+                    rows[0][usize::from(node.sides[0])].half & 15;
+                let right =
+                    rows[1][usize::from(node.sides[1])].half & 15;
+                if windows.right[state][scan][usize::from(left)]
+                    & (1_u64 << right)
+                    == 0
+                {
+                    continue;
+                }
+            }
+            let Some((print, right, next_state)) =
+                instrs.get(state, scan)
+            else {
+                if halt_only {
+                    return None;
+                }
+                // Once a halt is possible, finish only a small optional
+                // refinement. A partial table is never used to reject a node.
+                if MODULUS == 3 || SPLIT_PARITY {
+                    node_limit = node_limit.min(96);
+                    if seen.len() > node_limit {
+                        return None;
+                    }
+                }
+                continue;
+            };
+            if print > usize::from(symbol)
+                || (MODULUS == Self::TWO_CELL_TAIL && print > 7)
+                || (MODULUS == 2 && print > 11)
+                || ((MODULUS == 3 || SPLIT_PARITY) && print > 5)
+            {
+                return None;
+            }
+            let pull = usize::from(right);
+            let push = 1 - pull;
+            let source_id = usize::from(node.sides[pull]);
+            let source = rows[pull][source_id].half;
+            // An abstract spinout witness suffices to abandon this optional
+            // pass. Only a completed closure can exclude a target.
+            if histories
+                && !halt_only
+                && scan == 0
+                && source == 0
+                && next_state == state
+            {
+                return None;
+            }
+            let next_scan = usize::from(source & symbol);
+            if MODULUS == 0 || MODULUS == Self::TWO_CELL_TAIL {
+                // Before publishing this push both new neighbors are known:
+                // the written cell and the second cell of the pulled half.
+                let second =
+                    usize::from((source >> CELL_BITS) & symbol);
+                let (left, right) = if right {
+                    (print, second)
+                } else {
+                    (second, print)
+                };
+                if windows.right[next_state][next_scan][left]
+                    & (1_u64 << right)
+                    == 0
+                {
+                    continue;
+                }
+            }
+            let old_id = node.sides[push];
+            let old = rows[push][usize::from(old_id)].half;
+            let dirty = old & (dirty_bit | last_cell) != 0;
+            let mut half = ((old << CELL_BITS) & cells)
+                | u16::try_from(print).ok()?;
+            if dirty {
+                half |= dirty_bit;
+            }
+            if MODULUS == Self::TWO_CELL_TAIL {
+                // Bits 0..7 hold two cells, bit 8 records any remote ink.
+                // On pop the saved frame restores the entire tail summary.
+                let displaced = usize::from((old >> 4) & 15);
+                let remote = old >> 9;
+                let summary = if binary_tail {
+                    (remote + u16::from(displaced != 0)) & 3
+                } else {
+                    remote | Self::color_bit(displaced)
+                };
+                half |= summary << 9;
+            } else if SPLIT_PARITY {
+                // Tail position zero is the cell just beyond the neighbor.
+                // A push shifts both distance classes and puts the displaced
+                // neighbor in class zero. A pop restores the saved frame.
+                let displaced = Self::color_bit(usize::from(old & 15));
+                let even = ((old >> 10) & 31) ^ displaced;
+                let odd = (old >> 5) & 31;
+                half |= (even << 5) | (odd << 10);
+            } else if MODULUS == 2 {
+                // The displaced neighbor enters the remote tail. A pop
+                // restores the whole previous frame, including its parities.
+                let displaced = usize::from(old & 15);
+                half |= ((old >> 5) ^ Self::color_bit(displaced)) << 5;
+            } else if MODULUS == 3 {
+                // The two five-bit planes are disjoint: a color is in the
+                // lower plane for residue one and the upper plane for two.
+                let bit = Self::color_bit(usize::from(old & 15)) << 5;
+                let high = bit << 5;
+                let mut counts = old & 0x7fe0;
+                if counts & high != 0 {
+                    counts ^= high;
+                } else if counts & bit != 0 {
+                    counts ^= bit | high;
+                } else {
+                    counts |= bit;
+                }
+                half |= counts;
+            }
+            let incoming = rows[pull][source_id].write;
+            let frame = CrossingFrame {
+                half,
+                opposite: source,
+                writer: Some(node.slot),
+                incoming_write: if MODULUS == Self::ADJACENT_HISTORY {
+                    // A pop can restore only remainders published under both
+                    // edge histories as they stood at the original push.
+                    CrossingWrite::AdjacentHistories(
+                        incoming.history(),
+                        rows[push][usize::from(old_id)].write.history(),
+                    )
+                } else {
+                    incoming
+                },
+            };
+            // A side gains at most one row per expanded node.
+            let pushed = *ids[push].entry(frame).or_insert_with(|| {
+                let id = u16::try_from(rows[push].len())
+                    .expect("bounded crossing rows");
+                // Later pulls see this cell's own write, not the history
+                // of the cell that was opposite it when it was pushed.
+                let write = if histories {
+                    let prior = incoming.history();
+                    let bits = if MODULUS == Self::ADJACENT_HISTORY
+                        && halt_only
+                    {
+                        // Five base-three digits fit in a byte. State labels
+                        // outside the first three share their residue class.
+                        u8::try_from(
+                            (3 * usize::from(prior) + next_state % 3)
+                                % 243,
+                        )
+                        .expect("five ternary digits fit in a byte")
+                    } else {
+                        let next =
+                            (prior << 1) | u8::from(next_state != 0);
+                        if MODULUS == Self::ADJACENT_HISTORY {
+                            next
+                        } else {
+                            next & 63
+                        }
+                    };
+                    if bits == 0 {
+                        CrossingWrite::Unmarked
+                    } else {
+                        CrossingWrite::BoundaryHistory(bits)
+                    }
+                } else if MODULUS == 3 {
+                    CrossingWrite::ByState(node.slot.0)
+                } else if MODULUS == 2 && !SPLIT_PARITY && scan != print
+                {
+                    CrossingWrite::ChangedColor
+                } else {
+                    CrossingWrite::Unmarked
+                };
+                rows[push].push(FrameExtensions {
+                    half,
+                    write,
+                    ..FrameExtensions::default()
+                });
+                id
+            });
+            let mut next = CrossingNode {
+                slot: (
+                    State::try_from(next_state).ok()?,
+                    Color::try_from(next_scan).ok()?,
+                ),
+                sides: [0; 2],
+            };
+            next.sides[push] = pushed;
+            let emit = |mut child: CrossingNode, side: usize, tail| {
+                edges += 1;
+                // Long literals help when they separate competing remainders.
+                // Abandon this optional pass if replay keeps revisiting nodes.
+                if edges > edge_limit
+                    || (CELL_BITS < 4
+                        && edges > seen.len() + replay_limit)
+                {
+                    return None;
+                }
+                child.sides[side] = tail;
+                if seen.insert(child) {
+                    if seen.len() > node_limit {
+                        return None;
+                    }
+                    pending.push(child);
+                }
+                Some(())
+            };
+            Self::replay_crossing(&mut rows, node, next, pull, emit)?;
+        }
+        let mut by_slot = Dict::<_, Vec<_>>::new();
+        let remaining_nodes = node_limit - seen.len();
+        for node in seen {
+            let slot =
+                (usize::from(node.slot.0), usize::from(node.slot.1));
+            let pair = [0, 1].map(|side| {
+                rows[side][usize::from(node.sides[side])].half
+            });
+            let pairs = by_slot.entry(slot).or_default();
+            if output_depth == 0 {
+                // Only four joint blank/nonblank combinations are possible.
+                let sides = pair.map(|half| u16::from(half != 0));
+                if !pairs.contains(&sides) {
+                    pairs.push(sides);
+                }
+                continue;
+            }
+            pairs.push(if CELL_BITS < 4 {
+                // Restore the ordinary nibble representation only after closure.
+                pair.map(|mut half| {
+                    let mut result = 0;
+                    for i in 0..output_depth {
+                        result |= (half & symbol) << (4 * i);
+                        half >>= CELL_BITS;
+                    }
+                    result
+                        | (u16::from(half != 0) << (4 * output_depth))
+                })
+            } else if MODULUS == Self::TWO_CELL_TAIL {
+                pair.map(|half| half & (cells | dirty_bit))
+            } else {
+                pair
+            });
+        }
+        for pairs in by_slot.values_mut() {
+            pairs.sort_unstable();
+            pairs.dedup();
+        }
+        Some((
+            Self {
+                depth: output_depth,
+                by_slot,
+            },
+            remaining_nodes,
+            edge_limit - edges,
+        ))
+    }
+
+    const fn color_bit(color: usize) -> u16 {
+        if color == 0 { 0 } else { 1_u16 << (color - 1) }
+    }
+
+    fn wide<const S: usize, const C: usize>(
+        instrs: &BkwInstrs<S, C>,
+        windows: &WinPossible<S, C>,
+        targets: &[Config],
+    ) -> Option<Self> {
+        let build = |depth| {
+            Self::build::<0, false, S, C>(
+                instrs, depth, windows, 1280, 4096,
+            )
+        };
+        let (mut wide, nodes, edges) = build(3).or_else(|| build(2))?;
+        if nodes > 0
+            && edges > 0
+            && targets
+                .iter()
+                .any(|cfg| wide.allows(cfg.state, &cfg.tape))
+            && let Some((spatial, ..)) = Self::build::<2, true, S, C>(
+                instrs,
+                1,
+                windows,
+                nodes.min(512),
+                edges.min(2048),
+            )
+        {
+            wide.intersect_spatial(&spatial);
+        }
+        if targets.iter().any(|cfg| {
+            BlockTarget::blank_sides(&cfg.tape).contains(&true)
+                && wide.allows(cfg.state, &cfg.tape)
+        }) && let Some((short, ..)) =
+            Self::build::<{ Self::TWO_CELL_TAIL }, false, S, C>(
+                instrs,
+                2,
+                windows,
+                (2 * (1280 - nodes)).min(768),
+                (4 * (4096 - edges)).min(3072),
+            )
+        {
+            // Project a longer half onto the two cells and the remote-ink bit.
+            wide.by_slot.retain(|slot, pairs| {
+                let Some(reached) = short.by_slot.get(slot) else {
+                    return false;
+                };
+                pairs.retain(|pair| {
+                    let key = pair.map(|h| {
+                        (h & 255) | (u16::from(h >> 8 != 0) << 8)
+                    });
+                    reached.binary_search(&key).is_ok()
+                });
+                !pairs.is_empty()
+            });
+        }
+        let used_nodes = 1280 - nodes;
+        let used_edges = 4096 - edges;
+        if used_edges > used_nodes && used_edges <= 2 * used_nodes {
+            #[expect(clippy::disallowed_names)]
+            let max_print =
+                instrs.writers.iter().rposition(|row| !row.is_empty());
+            // Reserve the six-cell halt pass for large three-color closures.
+            // It can stop at the first undefined instruction.
+            let blank_side = targets.iter().any(|cfg| {
+                BlockTarget::blank_sides(&cfg.tape).contains(&true)
+                    && wide.allows(cfg.state, &cfg.tape)
+            });
+            let halt_only = !blank_side
+                && max_print == Some(2)
+                && used_nodes >= 640
+                && targets.iter().all(|cfg| {
+                    instrs
+                        .get(
+                            usize::from(cfg.state),
+                            usize::from(cfg.tape.scan),
+                        )
+                        .is_none()
+                })
+                && targets
+                    .iter()
+                    .any(|cfg| wide.allows(cfg.state, &cfg.tape));
+            if !blank_side && !halt_only {
+                return Some(wide);
+            }
+            let node_limit = (3 * used_nodes).min(1280);
+            let edge_limit = (3 * used_edges).min(4096);
+            let packed = match max_print {
+                Some(0 | 1) => Self::build_frames::<0, false, 1, S, C>(
+                    instrs, 10, wide.depth, windows, node_limit,
+                    edge_limit, false,
+                ),
+                Some(2 | 3) => Self::build_frames::<0, false, 2, S, C>(
+                    instrs,
+                    if halt_only { 6 } else { 7 },
+                    wide.depth,
+                    windows,
+                    node_limit,
+                    edge_limit,
+                    halt_only,
+                ),
+                _ => None,
+            };
+            if let Some((packed, ..)) = packed {
+                wide.by_slot.retain(|slot, pairs| {
+                    let Some(reached) = packed.by_slot.get(slot) else {
+                        return false;
+                    };
+                    pairs.retain(|pair| {
+                        reached.binary_search(pair).is_ok()
+                    });
+                    !pairs.is_empty()
+                });
+            }
+        }
+        Some(wide)
+    }
+
+    // Match both halves against one reached pair at the same (state, scan).
+    // When the wide window ends in blanks all distant parities are known.
+    // Otherwise only its nearest color and the presence of remote ink are used.
+    fn intersect_spatial(&mut self, spatial: &Self) {
+        const UNKNOWN_TAIL: u16 = 1 << 15;
+        const DIRTY: u16 = 1 << 4;
+        let depth = self.depth;
+        let signature = |half: u16| {
+            let mut key = half & 15;
+            if half >> (4 * depth) != 0 {
+                return Some(key | UNKNOWN_TAIL | DIRTY);
+            }
+            for i in 1..depth {
+                let color = usize::from((half >> (4 * i)) & 15);
+                if color > 5 {
+                    return None;
+                }
+                if color != 0 {
+                    key |= DIRTY;
+                    key ^= Self::color_bit(color)
+                        << (5 + 5 * ((i - 1) % 2));
+                }
+            }
+            Some(key)
+        };
+        let mut keys = Set::new();
+        self.by_slot.retain(|slot, pairs| {
+            let Some(reached) = spatial.by_slot.get(slot) else {
+                return false;
+            };
+            keys.clear();
+            for &[l, r] in reached {
+                keys.insert([l, r]);
+                let partial_l = UNKNOWN_TAIL | (l & 31);
+                let partial_r = UNKNOWN_TAIL | (r & 31);
+                if l & DIRTY != 0 {
+                    keys.insert([partial_l, r]);
+                }
+                if r & DIRTY != 0 {
+                    keys.insert([l, partial_r]);
+                    if l & DIRTY != 0 {
+                        keys.insert([partial_l, partial_r]);
+                    }
+                }
+            }
+            pairs.retain(|&[l, r]| {
+                signature(l).zip(signature(r)).is_some_and(|pair| {
+                    let key: [u16; 2] = pair.into();
+                    keys.contains(&key)
+                })
+            });
+            !pairs.is_empty()
+        });
+    }
+
+    // Project a single jointly reached pair into the existing exact-window
+    // masks. The ordinary window fixed point rebuilds their aggregates.
+    fn refine_parities<const S: usize, const C: usize>(
+        &self,
+        windows: &mut WinPossible<S, C>,
+    ) -> bool {
+        let track_colors = WinPossible::<S, C>::color_parity_enabled();
+        let mut masks = vec![(0_u8, 0_u64); windows.side_parity.len()];
+        for (&(state, scan), pairs) in &self.by_slot {
+            for &[l, r] in pairs {
+                let left = usize::from(l & 15);
+                let right = usize::from(r & 15);
+                let lp = (l >> 5) ^ Self::color_bit(left);
+                let rp = (r >> 5) ^ Self::color_bit(right);
+                let index = WinPossible::<S, C>::window_index(
+                    state, scan, left, right,
+                );
+                let (sides, colors) = &mut masks[index];
+                let pair = (lp.count_ones() & 1)
+                    | ((rp.count_ones() & 1) << 1);
+                *sides |= 1 << pair;
+                if track_colors {
+                    *colors |=
+                        1_u64 << (lp ^ rp ^ Self::color_bit(scan));
+                }
+            }
+        }
+        for (index, (sides, colors)) in masks.iter_mut().enumerate() {
+            windows.side_parity[index] &= *sides;
+            *sides = windows.side_parity[index];
+            if track_colors {
+                windows.color_parity[index] &= *colors;
+                if windows.color_parity[index] == 0 {
+                    *sides = 0;
+                }
+            }
+        }
+        windows.retain_exact_windows(|st, scan, left, right| {
+            let index = WinPossible::<S, C>::window_index(
+                st, scan, left, right,
+            );
+            masks[index].0 != 0
+        })
+    }
+
+    fn refine_mod3<const S: usize, const C: usize>(
+        &self,
+        windows: &mut WinPossible<S, C>,
+    ) -> bool {
+        // The table counts the whole half, so put the immediate neighbor
+        // back before projecting the two tails into a joint residue pair.
+        let residue = |half: u16| {
+            (u32::from(half & 15 != 0)
+                + ((half >> 5) & 31).count_ones()
+                + 2 * ((half >> 10) & 31).count_ones())
+                % 3
+        };
+        let mut masks = vec![0_u16; windows.side_mod3.len()];
+        for (&(state, scan), pairs) in &self.by_slot {
+            for &[left, right] in pairs {
+                let index = WinPossible::<S, C>::window_index(
+                    state,
+                    scan,
+                    usize::from(left & 15),
+                    usize::from(right & 15),
+                );
+                masks[index] |=
+                    1 << (residue(left) + 3 * residue(right));
+            }
+        }
+        for (allowed, reached) in
+            windows.side_mod3.iter_mut().zip(&mut masks)
+        {
+            *allowed &= *reached;
+            *reached = *allowed;
+        }
+        windows.retain_exact_windows(|st, scan, left, right| {
+            masks[WinPossible::<S, C>::window_index(
+                st, scan, left, right,
+            )] != 0
+        })
+    }
+
+    fn refine<const S: usize, const C: usize>(
+        &self,
+        windows: &mut WinPossible<S, C>,
+    ) -> bool {
+        let mut reachable = [[[0_u64; C]; C]; S];
+        for (&(state, scan), pairs) in &self.by_slot {
+            for &[left, right] in pairs {
+                reachable[state][scan][usize::from(left & 15)] |=
+                    1_u64 << (right & 15);
+            }
+        }
+        windows.refine_crossing_reachability_relation(&reachable)
+    }
+
+    // Build the literal-prefix and remote-ink requirements in one pass.
+    // After a variable repetition, only the minimum length remains known.
+    fn half_requirement(
+        span: &Span,
+        depth: usize,
+    ) -> Option<(u16, u16)> {
+        let dirty = 1_u16 << (4 * depth);
+        let mut value = 0;
+        let mut known = 0;
+        let mut remaining = depth;
+        let mut variable = false;
+        let mut may_have_ink = span.end == TapeEnd::Unknown;
+        for block in span.span.iter() {
+            let (copies, stride) = phase_repetitions(block);
+            let word = block.word();
+            let length = word.len().saturating_mul(copies);
+            if !variable {
+                for &color in
+                    word.iter().cycle().take(remaining.min(length))
+                {
+                    if color >= 16 {
+                        return None;
+                    }
+                    value |= u16::from(color) << (4 * known);
+                    known += 1;
+                }
+            }
+            if length > remaining {
+                // The last mandatory copy is the farthest one. Its suffix
+                // decides whether even the shortest span has remote ink.
+                let start = remaining.saturating_sub(
+                    word.len().saturating_mul(copies - 1),
+                );
+                if word[start..].iter().any(|&color| color != 0) {
+                    return Some((
+                        ((1_u16 << (4 * known)) - 1) | dirty,
+                        value | dirty,
+                    ));
+                }
+            }
+            variable |= stride.is_some();
+            if variable && !may_have_ink {
+                may_have_ink = block.contains_nonblank();
+            }
+            remaining = remaining.saturating_sub(length);
+        }
+        if !variable && span.end == TapeEnd::Blanks {
+            known = depth;
+        }
+        let mask = (1_u16 << (4 * known)) - 1;
+        Some((if may_have_ink { mask } else { mask | dirty }, value))
+    }
+
+    fn allows(&self, state: State, tape: &Tape) -> bool {
+        let Some(pairs) = self
+            .by_slot
+            .get(&(usize::from(state), usize::from(tape.scan)))
+        else {
+            return false;
+        };
+        let (Some((lm, lv)), Some((rm, rv))) = (
+            Self::half_requirement(&tape.lspan, self.depth),
+            Self::half_requirement(&tape.rspan, self.depth),
+        ) else {
+            return false;
+        };
+        // Wide tables contain only literals and the dirty bit. Shallow
+        // residue tables also carry higher bits, so they use masked matching.
+        if self.depth >= 2
+            && pairs.len() >= WINDOW_SORT_THRESHOLD
+            && lm == (1_u16 << (4 * self.depth + 1)) - 1
+        {
+            if rm == lm {
+                return pairs.binary_search(&[lv, rv]).is_ok();
+            }
+            let start = pairs.partition_point(|pair| pair[0] < lv);
+            return pairs[start..]
+                .iter()
+                .take_while(|pair| pair[0] == lv)
+                .any(|pair| pair[1] & rm == rv);
+        }
+        pairs.iter().any(|&[l, r]| l & lm == lv && r & rm == rv)
+    }
 }
 
 // A finite-state summary retains order across arbitrarily long tails:
@@ -5322,8 +6806,6 @@ fn deeper_writer_history_refutes<const S: usize, const C: usize>(
 /// identical clean/unrestricted excursions and half-blank relations.
 struct BkwHalfblankTargets<const S: usize, const C: usize> {
     windows: WinPossible<S, C>,
-    left_clean: SideExcursions<S, C>,
-    right_clean: SideExcursions<S, C>,
     left_any: SideExcursions<S, C>,
     right_any: SideExcursions<S, C>,
     left_half: [[u64; C]; S],
@@ -5471,6 +6953,7 @@ impl<const S: usize, const C: usize> PhaseFilters<S, C> {
 struct BkwPrepared<const s: usize, const c: usize> {
     pair_search: BlockWindowSearch<2>,
     wide_windows: OnceCell<Option<FiveCellWindows>>,
+    crossing_contexts: Option<CrossingContexts>,
     configs: Configs,
     phase_filters: PhaseFilters<s, c>,
     win_possible: WinPossible<s, c>,
@@ -7608,8 +9091,82 @@ fn quad_phase_prefix_heads(colors: u8) -> u64 {
     mask
 }
 
+fn visit_triple_successors<const S: usize, const C: usize>(
+    windows: &WinPossible<S, C>,
+    source: &WindowSideSummary<C>,
+    [left, right]: [usize; 2],
+    (print, shift, next): (usize, Shift, usize),
+    mut visit: impl FnMut(usize, usize, usize, usize, usize),
+) {
+    if shift {
+        let mut exposed = source.pairs[RIGHT_SIDE][right]
+            & windows.right[next][right][print];
+        while exposed != 0 {
+            let color = exposed.trailing_zeros() as usize;
+            exposed &= exposed - 1;
+            visit(print, right, color, LEFT_SIDE, left);
+        }
+    } else {
+        let mut exposed = source.pairs[LEFT_SIDE][left]
+            & windows.left[next][left][print];
+        while exposed != 0 {
+            let color = exposed.trailing_zeros() as usize;
+            exposed &= exposed - 1;
+            visit(color, left, print, RIGHT_SIDE, right);
+        }
+    }
+}
+
+fn any_matching_window<const C: usize>(
+    known_left: Option<usize>,
+    known_right: Option<usize>,
+    mut matches_window: impl FnMut(usize, usize) -> bool,
+) -> bool {
+    match (known_left, known_right) {
+        (Some(left), Some(right)) => matches_window(left, right),
+        (Some(left), None) => {
+            (0..C).any(|right| matches_window(left, right))
+        },
+        (None, Some(right)) => {
+            (0..C).any(|left| matches_window(left, right))
+        },
+        (None, None) => (0..C).any(|left| {
+            (0..C).any(|right| matches_window(left, right))
+        }),
+    }
+}
+
+fn window_side_allows<const S: usize, const C: usize>(
+    state: State,
+    tape: &Tape,
+    windows: &WinPossible<S, C>,
+    sides: &SidePossible<S, C>,
+    radius2: &Radius2Possible<S, C>,
+    required_parity: u16,
+) -> bool {
+    window_side_nonblank_parity_possible(
+        state,
+        tape,
+        windows,
+        required_parity,
+    ) && window_side_nonblank_mod3_possible(state, tape, windows)
+        && window_color_parity_possible(state, tape, windows)
+        && tape.obeys_state_side(state, windows, sides)
+        && window_radius2_possible(state, tape, radius2)
+}
+
+fn tails_allow<const S: usize, const C: usize>(
+    state: State,
+    tape: &Tape,
+    blanks: &BlankSidePossible<S, C>,
+    counts: &ColorTailCountPossible<S, C>,
+    pairs: &PairTailPresencePossible<S, C>,
+) -> bool {
+    tape.obeys_blank_side_possible(state, blanks)
+        && tape.obeys_tail_presence(state, counts, pairs)
+}
+
 fn prepare_bkw<const s: usize, const c: usize, T: Ord, F>(
-    prog: &Prog<s, c>,
     instrs: &BkwInstrs<s, c>,
     slots: &Set<(State, T)>,
     get_configs: &F,
@@ -7695,7 +9252,7 @@ where
     // blank tape. If a generated predecessor configuration demands an
     // immediate neighbor color that is impossible in this
     // over-approximation, we can safely prune it.
-    let (mut win_possible, initial_crossings, initial_any) =
+    let (mut win_possible, mut initial_crossings, mut initial_any) =
         match window_seed {
             Some(seed) => {
                 (seed.windows, seed.crossings, seed.initial_any)
@@ -7711,6 +9268,43 @@ where
             ),
         };
 
+    if let Some((contexts, ..)) = CrossingContexts::build::<
+        2,
+        false,
+        s,
+        c,
+    >(
+        instrs, 1, &win_possible, 640, 2048
+    ) {
+        configs.retain(|cfg| contexts.allows(cfg.state, &cfg.tape));
+        if configs.is_empty() {
+            return None;
+        }
+        if contexts.refine_parities(&mut win_possible) {
+            // Cached excursions were computed on the larger window relation.
+            initial_crossings = None;
+            initial_any = None;
+        }
+    }
+
+    if let Some((contexts, ..)) = CrossingContexts::build::<
+        3,
+        false,
+        s,
+        c,
+    >(
+        instrs, 1, &win_possible, 640, 2048
+    ) {
+        configs.retain(|cfg| contexts.allows(cfg.state, &cfg.tape));
+        if configs.is_empty() {
+            return None;
+        }
+        if contexts.refine_mod3(&mut win_possible) {
+            initial_crossings = None;
+            initial_any = None;
+        }
+    }
+
     // Reduce the exact local-window relation jointly with whole-side
     // reachability.  Each time `SidePossible` removes a window, the exact-front
     // excursion grammar may lose recursive continuations and remove more; each
@@ -7723,7 +9317,6 @@ where
         mut crossing_right_any,
         mut radius2_possible,
     ) = refine_windows_by_crossings_and_sides(
-        prog,
         instrs,
         &mut win_possible,
         initial_crossings,
@@ -7736,46 +9329,37 @@ where
     // these summaries already refute never enter the expensive prefix/window
     // feedback fixed point.
     let mut color_tail_count =
-        color_tail_count_from_blank(prog, instrs, &win_possible);
+        color_tail_count_from_blank(instrs, &win_possible);
     side_possible.refine_zero_tail_pairs(&color_tail_count);
 
     let mut blank_side_possible =
         blank_side_possible_from_blank_with_any(
-            prog,
             instrs,
             &win_possible,
             &crossing_left_any,
             &crossing_right_any,
         );
     let mut pair_tail_presence =
-        pair_tail_presence_from_blank(prog, instrs, &win_possible);
+        pair_tail_presence_from_blank(instrs, &win_possible);
 
     // Halt targets begin with two unknown neighbors, so the
     // `(state, scanned color)` pair must still occur in at least one reachable
     // window after the cheaper side filters above have canonicalized the tape.
     configs.retain(|Config { state, tape }| {
-        window_side_nonblank_parity_possible(
+        window_side_allows(
             *state,
             tape,
             &win_possible,
-        ) && window_side_nonblank_mod3_possible(
+            &side_possible,
+            &radius2_possible,
+            tape.required_side_parities(),
+        ) && tails_allow(
             *state,
             tape,
-            &win_possible,
-        ) && window_color_parity_possible(*state, tape, &win_possible)
-            && tape.obeys_state_side(
-                *state,
-                &win_possible,
-                &side_possible,
-            )
-            && window_radius2_possible(*state, tape, &radius2_possible)
-            && tape
-                .obeys_blank_side_possible(*state, &blank_side_possible)
-            && tape.obeys_tail_presence(
-                *state,
-                &color_tail_count,
-                &pair_tail_presence,
-            )
+            &blank_side_possible,
+            &color_tail_count,
+            &pair_tail_presence,
+        )
     });
 
     if configs.is_empty() {
@@ -7788,6 +9372,7 @@ where
     // these rounds because SidePossible/SidePrefixPossible consult only
     // `right/left/any`.  If the relation actually shrinks, rebuild all
     // aggregates and cheap summaries exactly once at the final fixed point.
+    let crossing_contexts = OnceCell::new();
     let mut windows_refined = false;
     // Same-witness whole-side parity is enabled only when the initial target
     // frontier contains an unknown tape end.  Fully finite blank targets use
@@ -7806,7 +9391,6 @@ where
         if windows_refined {
             let (sides, next_left_any, next_right_any, next_radius2) =
                 refine_windows_by_crossings_and_sides(
-                    prog,
                     instrs,
                     &mut win_possible,
                     None,
@@ -7816,11 +9400,8 @@ where
             crossing_left_any = next_left_any;
             crossing_right_any = next_right_any;
             radius2_possible = next_radius2;
-            color_tail_count = color_tail_count_from_blank(
-                prog,
-                instrs,
-                &win_possible,
-            );
+            color_tail_count =
+                color_tail_count_from_blank(instrs, &win_possible);
             side_possible.refine_zero_tail_pairs(&color_tail_count);
         }
 
@@ -7928,6 +9509,29 @@ where
             return None;
         }
 
+        // Easy targets have already passed through the cheaper domains.
+        // Build once and feed the completed projection back into their
+        // shared fixed point. A budget miss supplies no constraints.
+        if crossing_contexts.get().is_none()
+            && let Some(contexts) =
+                crossing_contexts.get_or_init(|| {
+                    CrossingContexts::wide(
+                        instrs,
+                        &win_possible,
+                        &configs,
+                    )
+                })
+        {
+            configs.retain(|cfg| contexts.allows(cfg.state, &cfg.tape));
+            if configs.is_empty() {
+                return None;
+            }
+            if contexts.refine(&mut win_possible) {
+                windows_refined = true;
+                continue;
+            }
+        }
+
         break (prefixes, joint, joint_side, joint_word);
     };
 
@@ -7938,7 +9542,6 @@ where
         win_possible.refine_reachability(&side_possible);
 
         blank_side_possible = blank_side_possible_from_blank_with_any(
-            prog,
             instrs,
             &win_possible,
             &crossing_left_any,
@@ -7948,38 +9551,25 @@ where
         // at the beginning of the iteration, and was already used to refine
         // `side_possible`'s zero-tail pairs. Do not rerun its fixed point.
         pair_tail_presence =
-            pair_tail_presence_from_blank(prog, instrs, &win_possible);
+            pair_tail_presence_from_blank(instrs, &win_possible);
 
         // The smaller final window graph can sharpen all of the cheap filters
         // too, so recheck only the targets that survived their first pass.
         configs.retain(|Config { state, tape }| {
-            window_side_nonblank_parity_possible(
+            window_side_allows(
                 *state,
                 tape,
-                &win_possible,
-            ) && window_side_nonblank_mod3_possible(
-                *state,
-                tape,
-                &win_possible,
-            ) && window_color_parity_possible(
-                *state,
-                tape,
-                &win_possible,
-            ) && tape.obeys_state_side(
-                *state,
                 &win_possible,
                 &side_possible,
-            ) && window_radius2_possible(
+                &radius2_possible,
+                tape.required_side_parities(),
+            ) && tails_allow(
                 *state,
                 tape,
-                &radius2_possible,
-            ) && tape
-                .obeys_blank_side_possible(*state, &blank_side_possible)
-                && tape.obeys_tail_presence(
-                    *state,
-                    &color_tail_count,
-                    &pair_tail_presence,
-                )
+                &blank_side_possible,
+                &color_tail_count,
+                &pair_tail_presence,
+            )
         });
 
         if configs.is_empty() {
@@ -8031,6 +9621,7 @@ where
     Some(BkwPrepared {
         pair_search,
         wide_windows: OnceCell::new(),
+        crossing_contexts: crossing_contexts.into_inner().flatten(),
         configs,
         phase_filters,
         win_possible,
@@ -8052,6 +9643,19 @@ where
         left_forced_blank,
         right_forced_blank,
     })
+}
+
+fn remember_tape(
+    seen: &mut Dict<(State, u64), Vec<Tape>>,
+    state: State,
+    tape: &Tape,
+) -> bool {
+    let bucket = seen.entry((state, tape.hash())).or_default();
+    if bucket.contains(tape) {
+        return false;
+    }
+    bucket.push(tape.clone());
+    true
 }
 
 fn cant_reach_once<
@@ -8099,28 +9703,18 @@ fn cant_reach_once<
     for step in 1..=steps {
         if let Some(cycle_seen) = &mut cycle_seen {
             configs.retain(|Config { state, tape }| {
-                let key = (*state, tape.hash());
-                let bucket = cycle_seen.entry(key).or_default();
-
-                if bucket.contains(tape) {
-                    return false;
-                }
-
-                bucket.push(tape.clone());
-                true
+                remember_tape(cycle_seen, *state, tape)
             });
         } else {
             configs.retain(|Config { state, tape }| {
                 if widening_active
                     && (tape.has_indef_word() || tape.has_stride_run())
                 {
-                    let key = (*state, tape.hash());
-                    let bucket = widened_seen.entry(key).or_default();
-                    if bucket.contains(tape) {
-                        return false;
-                    }
-                    bucket.push(tape.clone());
-                    return true;
+                    return remember_tape(
+                        &mut widened_seen,
+                        *state,
+                        tape,
+                    );
                 }
 
                 let blank_ends = tape.lspan.end == TapeEnd::Blanks
@@ -8236,22 +9830,11 @@ fn cant_reach_once<
         }
 
         if let Some(exact_seen) = &mut exact_seen {
-            let mut kept = Configs::with_capacity(stepped.len());
-            for config in stepped {
-                let key = (config.state, config.tape.hash());
-                let bucket = exact_seen.entry(key).or_default();
-
-                if bucket.contains(&config.tape) {
-                    continue;
-                }
-
-                bucket.push(config.tape.clone());
-                kept.push(config);
-            }
-            configs = kept;
-        } else {
-            configs = stepped;
+            stepped.retain(|config| {
+                remember_tape(exact_seen, config.state, &config.tape)
+            });
         }
+        configs = stepped;
     }
 
     StepLimit
@@ -8425,6 +10008,16 @@ fn nonblank_parity_possible<const s: usize>(
     (parity.possible[st] & tape.nonblank_parity_mask()) != 0
 }
 
+fn residue_pairs<const MOD: u32>(left: u8, right: u8) -> u16 {
+    let mut pairs = 0;
+    for r in 0..MOD {
+        if right & (1 << r) != 0 {
+            pairs |= u16::from(left) << (MOD * r);
+        }
+    }
+    pairs
+}
+
 fn window_side_nonblank_parity_possible<
     const S: usize,
     const C: usize,
@@ -8432,27 +10025,10 @@ fn window_side_nonblank_parity_possible<
     state: State,
     tape: &Tape,
     possible: &WinPossible<S, C>,
+    required_pairs: u16,
 ) -> bool {
-    let (left_required, right_required) =
-        tape.side_nonblank_parity_masks();
-
-    // If neither side has a fixed parity, this abstraction cannot prune.
-    if left_required == 0b11 && right_required == 0b11 {
+    if required_pairs == 0b1111 {
         return true;
-    }
-
-    let mut required_pairs = 0_u8;
-    for left_parity in 0..2 {
-        if left_required & (1_u8 << left_parity) == 0 {
-            continue;
-        }
-        for right_parity in 0..2 {
-            if right_required & (1_u8 << right_parity) == 0 {
-                continue;
-            }
-            let pair = left_parity | (right_parity << 1);
-            required_pairs |= 1_u8 << pair;
-        }
     }
 
     let st = state as usize;
@@ -8469,7 +10045,7 @@ fn window_side_nonblank_parity_possible<
         (None, None) => possible.side_parity_any[st][sc],
     };
 
-    possible_pairs & required_pairs != 0
+    u16::from(possible_pairs) & required_pairs != 0
 }
 
 fn window_side_nonblank_mod3_possible<
@@ -8481,26 +10057,15 @@ fn window_side_nonblank_mod3_possible<
     possible: &WinPossible<S, C>,
 ) -> bool {
     let (left_required, right_required) =
-        tape.side_nonblank_mod3_masks();
+        tape.side_nonblank_residue_masks::<3>();
 
     // Unknown ends or indefinite nonblank runs allow every residue.
     if left_required == 0b111 && right_required == 0b111 {
         return true;
     }
 
-    let mut required_pairs = 0_u16;
-    for left_residue in 0..3 {
-        if left_required & (1_u8 << left_residue) == 0 {
-            continue;
-        }
-        for right_residue in 0..3 {
-            if right_required & (1_u8 << right_residue) == 0 {
-                continue;
-            }
-            let pair = left_residue + 3 * right_residue;
-            required_pairs |= 1_u16 << pair;
-        }
-    }
+    let required_pairs =
+        residue_pairs::<3>(left_required, right_required);
 
     let st = state as usize;
     let sc = tape.scan as usize;
@@ -8565,27 +10130,6 @@ fn step_instrs<
     prepared: &BkwPrepared<s, c>,
     stepped: &mut Configs,
 ) -> Result<(), BackwardResult> {
-    let win_possible = &prepared.win_possible;
-    let radius2_possible = &prepared.radius2_possible;
-    let side_possible = &prepared.side_possible;
-    let side_triple_possible = &prepared.side_triple_possible;
-    let joint_side_triple_possible =
-        &prepared.joint_side_triple_possible;
-    let side_prefix_possible = &prepared.side_prefix_possible;
-    let joint_short_possible = &prepared.joint_short_possible;
-    let joint_side_prefix_possible =
-        &prepared.joint_side_prefix_possible;
-    let joint_side_word_prefix_possible =
-        &prepared.joint_side_word_prefix_possible;
-    let blank_side_possible = &prepared.blank_side_possible;
-    let color_tail_count = &prepared.color_tail_count;
-    let pair_tail_presence = &prepared.pair_tail_presence;
-    let forbid_left = &prepared.forbid_left;
-    let forbid_right = &prepared.forbid_right;
-    let left_fresh_zero = prepared.left_fresh_zero;
-    let right_fresh_zero = prepared.right_fresh_zero;
-    let left_forced_blank = prepared.left_forced_blank;
-    let right_forced_blank = prepared.right_forced_blank;
     let wide_windows =
         prepared.wide_windows.get().and_then(Option::as_ref);
     for (color, shift, state) in instrs {
@@ -8615,6 +10159,15 @@ fn step_instrs<
         let mut tape = config.tape.clone();
         tape.backstep(shift, color)?;
 
+        // Check this predecessor before it can affect blank-state history.
+        if prepared
+            .crossing_contexts
+            .as_ref()
+            .is_some_and(|contexts| !contexts.allows(state, &tape))
+        {
+            continue;
+        }
+
         if tape.blank() {
             if state == 0 {
                 return Err(Init);
@@ -8627,21 +10180,24 @@ fn step_instrs<
 
         // Retain the original full-span static checks. This helper only avoids
         // the temporary `branch_indef` frontier and its instruction vectors.
-        if !tape.obeys_shift_side(forbid_left, forbid_right) {
-            continue;
-        }
-
-        if !tape.tighten_forced_blank_ends(
-            left_forced_blank,
-            right_forced_blank,
+        if !tape.obeys_shift_side(
+            &prepared.forbid_left,
+            &prepared.forbid_right,
         ) {
             continue;
         }
 
-        if (left_fresh_zero || right_fresh_zero)
+        if !tape.tighten_forced_blank_ends(
+            prepared.left_forced_blank,
+            prepared.right_forced_blank,
+        ) {
+            continue;
+        }
+
+        if (prepared.left_fresh_zero || prepared.right_fresh_zero)
             && !tape.enforce_fresh_zero_side_invariants(
-                left_fresh_zero,
-                right_fresh_zero,
+                prepared.left_fresh_zero,
+                prepared.right_fresh_zero,
             )
         {
             continue;
@@ -8657,67 +10213,60 @@ fn step_instrs<
             continue;
         }
 
-        if !window_side_nonblank_parity_possible(
+        let required_parity = tape.required_side_parities();
+        if !window_side_allows(
             state,
             &tape,
-            win_possible,
-        ) || !window_side_nonblank_mod3_possible(
-            state,
-            &tape,
-            win_possible,
-        ) || !window_color_parity_possible(
-            state,
-            &tape,
-            win_possible,
+            &prepared.win_possible,
+            &prepared.side_possible,
+            &prepared.radius2_possible,
+            required_parity,
         ) {
             continue;
         }
-
         let mut triple_requirements =
             TripleMatchRequirements::default();
-        if !tape.obeys_state_side(state, win_possible, side_possible)
-            || !window_radius2_possible(state, &tape, radius2_possible)
-            || !tape.obeys_state_triples_cached(
-                state,
-                side_triple_possible,
-                &mut triple_requirements,
-            )
-            || !tape.obeys_joint_state_triples_cached(
-                state,
-                joint_side_triple_possible,
-                &mut triple_requirements,
-            )
-            || !tape
-                .obeys_blank_side_possible(state, blank_side_possible)
-            || !tape.obeys_tail_presence(
-                state,
-                color_tail_count,
-                pair_tail_presence,
-            )
-        {
+        if !tape.obeys_state_triples_cached(
+            state,
+            &prepared.side_triple_possible,
+            &mut triple_requirements,
+        ) || !tape.obeys_joint_state_triples_cached(
+            state,
+            &prepared.joint_side_triple_possible,
+            &mut triple_requirements,
+        ) || !tails_allow(
+            state,
+            &tape,
+            &prepared.blank_side_possible,
+            &prepared.color_tail_count,
+            &prepared.pair_tail_presence,
+        ) {
             continue;
         }
 
         // The tiny joint prefix needs no compiled backward run/word
         // requirements, so let it reject first.  The three richer prefix
         // matchers below then share one lazily-built requirement bundle.
-        if !tape.obeys_joint_short_possible(state, joint_short_possible)
-        {
+        if !tape.obeys_joint_short_possible(
+            state,
+            &prepared.joint_short_possible,
+        ) {
             continue;
         }
 
         let mut side_requirements = SideMatchRequirements::default();
         if !tape.obeys_side_prefix_possible_cached(
             state,
-            side_prefix_possible,
+            &prepared.side_prefix_possible,
             &mut side_requirements,
         ) || !tape.obeys_joint_side_prefix_possible_cached(
             state,
-            joint_side_prefix_possible,
+            &prepared.joint_side_prefix_possible,
             &mut side_requirements,
+            Some(required_parity),
         ) || !tape.obeys_joint_side_word_prefix_possible_cached(
             state,
-            joint_side_word_prefix_possible,
+            &prepared.joint_side_word_prefix_possible,
             &mut side_requirements,
         ) {
             continue;
@@ -9418,13 +10967,12 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                 continue;
             };
 
-            let mut merge_target =
+            let merge_target =
                 |target_left: usize,
                  target_scan: usize,
                  target_right: usize,
                  push_side: usize,
-                 old_neighbor: usize,
-                 possible: &mut SideTriplePossible<s, c>| {
+                 old_neighbor: usize| {
                     let target_window =
                         SideTriplePossible::<s, c>::window_index(
                             next_state,
@@ -9443,13 +10991,8 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                             for middle in 0..c {
                                 let source_index =
                                     SideTriplePossible::<s, c>::index(
-                                        st,
-                                        scan,
-                                        left,
-                                        right,
-                                        side,
-                                        near,
-                                        middle,
+                                        st, scan, left, right, side,
+                                        near, middle,
                                     );
                                 let target_index =
                                     SideTriplePossible::<s, c>::index(
@@ -9464,8 +11007,10 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                                 let source_mask =
                                     possible.masks[source_index];
                                 let old = possible.masks[target_index];
-                                possible.masks[target_index] |= source_mask;
-                                changed |= possible.masks[target_index] != old;
+                                possible.masks[target_index] |=
+                                    source_mask;
+                                changed |=
+                                    possible.masks[target_index] != old;
                             }
                         }
                     }
@@ -9475,15 +11020,16 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     // third color following that exact old neighbor.
                     let boundary =
                         source_side.pairs[push_side][old_neighbor];
-                    let target_index = SideTriplePossible::<s, c>::index(
-                        next_state,
-                        target_scan,
-                        target_left,
-                        target_right,
-                        push_side,
-                        print,
-                        old_neighbor,
-                    );
+                    let target_index =
+                        SideTriplePossible::<s, c>::index(
+                            next_state,
+                            target_scan,
+                            target_left,
+                            target_right,
+                            push_side,
+                            print,
+                            old_neighbor,
+                        );
                     let old = possible.masks[target_index];
                     possible.masks[target_index] |= boundary;
                     changed |= possible.masks[target_index] != old;
@@ -9499,39 +11045,13 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     }
                 };
 
-            if shift {
-                let mut new_rights = source_side.pairs[RIGHT_SIDE]
-                    [right]
-                    & windows.right[next_state][right][print];
-                while new_rights != 0 {
-                    let new_right =
-                        new_rights.trailing_zeros() as usize;
-                    new_rights &= new_rights - 1;
-                    merge_target(
-                        print,
-                        right,
-                        new_right,
-                        LEFT_SIDE,
-                        left,
-                        &mut possible,
-                    );
-                }
-            } else {
-                let mut new_lefts = source_side.pairs[LEFT_SIDE][left]
-                    & windows.left[next_state][left][print];
-                while new_lefts != 0 {
-                    let new_left = new_lefts.trailing_zeros() as usize;
-                    new_lefts &= new_lefts - 1;
-                    merge_target(
-                        new_left,
-                        left,
-                        print,
-                        RIGHT_SIDE,
-                        right,
-                        &mut possible,
-                    );
-                }
-            }
+            visit_triple_successors(
+                windows,
+                source_side,
+                [left, right],
+                (print, shift, next_state),
+                merge_target,
+            );
         }
 
         possible
@@ -9590,13 +11110,12 @@ impl<const s: usize, const c: usize> Prog<s, c> {
             let (source_left_triples, source_right_triples) =
                 possible.projections(st, scan, left, right);
 
-            let mut merge_target =
+            let merge_target =
                 |target_left: usize,
                  target_scan: usize,
                  target_right: usize,
                  push_side: usize,
-                 old_neighbor: usize,
-                 possible: &mut JointSideTriplePossible<s, c>| {
+                 old_neighbor: usize| {
                     let target_window =
                         JointSideTriplePossible::<s, c>::window_index(
                             next_state,
@@ -9671,39 +11190,13 @@ impl<const s: usize, const c: usize> Prog<s, c> {
                     }
                 };
 
-            if shift {
-                let mut new_rights = source_side.pairs[RIGHT_SIDE]
-                    [right]
-                    & windows.right[next_state][right][print];
-                while new_rights != 0 {
-                    let new_right =
-                        new_rights.trailing_zeros() as usize;
-                    new_rights &= new_rights - 1;
-                    merge_target(
-                        print,
-                        right,
-                        new_right,
-                        LEFT_SIDE,
-                        left,
-                        &mut possible,
-                    );
-                }
-            } else {
-                let mut new_lefts = source_side.pairs[LEFT_SIDE][left]
-                    & windows.left[next_state][left][print];
-                while new_lefts != 0 {
-                    let new_left = new_lefts.trailing_zeros() as usize;
-                    new_lefts &= new_lefts - 1;
-                    merge_target(
-                        new_left,
-                        left,
-                        print,
-                        RIGHT_SIDE,
-                        right,
-                        &mut possible,
-                    );
-                }
-            }
+            visit_triple_successors(
+                windows,
+                source_side,
+                [left, right],
+                (print, shift, next_state),
+                merge_target,
+            );
         }
 
         possible
@@ -10983,7 +12476,57 @@ impl fmt::Display for Config {
 // `(word)^k` configuration by `(word)^m..` for m <= k is itself a sound
 // over-approximation, so a mistaken recurrence guess cannot create a false
 // refutation.
-const WORD_WIDEN_OBSERVATIONS: usize = 3;
+/// Record at most one maximum per step and look for three equally spaced samples.
+fn growth_progression<T>(
+    samples: &mut Vec<(Steps, T)>,
+    step: Steps,
+    count: T,
+    keep: usize,
+    lookback: usize,
+) -> Option<(T, T)>
+where
+    T: Copy + Ord + core::ops::Sub<Output = T>,
+{
+    if let Some((last_step, last_count)) = samples.last_mut() {
+        if *last_step == step {
+            if count <= *last_count {
+                return None;
+            }
+            *last_count = count;
+        } else {
+            if *last_count == count {
+                return None;
+            }
+            samples.push((step, count));
+        }
+    } else {
+        samples.push((step, count));
+    }
+    if samples.len() > keep {
+        samples.remove(0);
+    }
+    let (_, previous) = samples.split_last()?;
+    for &(prev_step, prev_count) in previous.iter().rev().take(lookback)
+    {
+        if prev_step >= step || prev_count >= count {
+            continue;
+        }
+        let stride = count - prev_count;
+        if prev_count <= stride {
+            continue;
+        }
+        if let Some(first_step) =
+            prev_step.checked_sub(step - prev_step)
+        {
+            let minimum = prev_count - stride;
+            if previous.contains(&(first_step, minimum)) {
+                return Some((minimum, stride));
+            }
+        }
+    }
+    None
+}
+
 const WORD_WIDEN_KEEP: usize = 12;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -11033,66 +12576,15 @@ impl WordWideningHistory {
             return (count >= minimum).then_some(minimum);
         }
 
-        if let Some(last) = entry.samples.last_mut()
-            && last.0 == step
-        {
-            if count <= last.1 {
-                return None;
-            }
-            last.1 = count;
-        } else {
-            if entry
-                .samples
-                .last()
-                .is_some_and(|&(_, old)| old == count)
-            {
-                return None;
-            }
-            entry.samples.push((step, count));
-            if entry.samples.len() > WORD_WIDEN_KEEP {
-                entry.samples.remove(0);
-            }
-        }
-
-        if entry.samples.len() < WORD_WIDEN_OBSERVATIONS {
-            return None;
-        }
-
-        // Use the newest point and look through recent history for two points
-        // at the same positive (step,count) spacing. This tolerates unrelated
-        // branches interleaved between observations of the growing macro-edge.
-        let (now_step, now_count) =
-            entry.samples[entry.samples.len() - 1];
-        for &(prev_step, prev_count) in entry.samples
-            [..entry.samples.len() - 1]
-            .iter()
-            .rev()
-            .take(8)
-        {
-            if prev_step >= now_step || prev_count >= now_count {
-                continue;
-            }
-
-            let period = now_step - prev_step;
-            let delta = now_count - prev_count;
-            let Some(first_step) = prev_step.checked_sub(period) else {
-                continue;
-            };
-            let Some(first_count) = prev_count.checked_sub(delta)
-            else {
-                continue;
-            };
-            if first_count == 0 {
-                continue;
-            }
-
-            if entry.samples.contains(&(first_step, first_count)) {
-                entry.widened_min = Some(first_count);
-                return Some(first_count);
-            }
-        }
-
-        None
+        let (minimum, _) = growth_progression(
+            &mut entry.samples,
+            step,
+            count,
+            WORD_WIDEN_KEEP,
+            8,
+        )?;
+        entry.widened_min = Some(minimum);
+        Some(minimum)
     }
 
     fn widen(&mut self, config: &mut Config, step: Steps) -> bool {
@@ -11179,7 +12671,6 @@ impl WordWideningHistory {
 // exact count by any arithmetic progression containing that count is a sound
 // over-approximation, so an accidental recurrence match can only weaken later
 // pruning, never create a false refutation.
-const RUN_SPINE_WIDEN_OBSERVATIONS: usize = 3;
 const RUN_SPINE_WIDEN_KEEP: usize = 16;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -11265,66 +12756,14 @@ impl RunSpineWideningHistory {
             return None;
         };
 
-        if let Some(last) = entry.samples.last_mut()
-            && last.0 == step
-        {
-            if count <= last.1 {
-                return None;
-            }
-            last.1 = count;
-        } else {
-            if entry
-                .samples
-                .last()
-                .is_some_and(|&(_, old)| old == count)
-            {
-                return None;
-            }
-            entry.samples.push((step, count));
-            if entry.samples.len() > RUN_SPINE_WIDEN_KEEP {
-                entry.samples.remove(0);
-            }
-        }
-
-        if entry.samples.len() < RUN_SPINE_WIDEN_OBSERVATIONS {
-            return None;
-        }
-
-        let (now_step, now_count) =
-            entry.samples[entry.samples.len() - 1];
-        for &(prev_step, prev_count) in entry.samples
-            [..entry.samples.len() - 1]
-            .iter()
-            .rev()
-            .take(12)
-        {
-            if prev_step >= now_step || prev_count >= now_count {
-                continue;
-            }
-
-            let period = now_step - prev_step;
-            let stride = now_count - prev_count;
-            if stride == 0 {
-                continue;
-            }
-            let Some(first_step) = prev_step.checked_sub(period) else {
-                continue;
-            };
-            let Some(first_count) = prev_count.checked_sub(stride)
-            else {
-                continue;
-            };
-            if first_count == 0 {
-                continue;
-            }
-
-            if entry.samples.contains(&(first_step, first_count)) {
-                entry.widened = Some((first_count, stride));
-                return Some((first_count, stride));
-            }
-        }
-
-        None
+        entry.widened = growth_progression(
+            &mut entry.samples,
+            step,
+            count,
+            RUN_SPINE_WIDEN_KEEP,
+            12,
+        );
+        entry.widened
     }
 
     fn widen(&mut self, config: &mut Config, step: Steps) -> bool {
@@ -12453,6 +13892,35 @@ struct Span {
 }
 
 impl Span {
+    fn known_prefix<const N: usize>(&self) -> ([Color; N], usize) {
+        let mut cells = [0; N];
+        if N == 0 {
+            return (cells, 0);
+        }
+        let mut len = 0;
+        for block in self.span.iter() {
+            let (minimum, stride) = phase_repetitions(block);
+            for _ in 0..minimum {
+                for &color in block.word() {
+                    cells[len] = color;
+                    len += 1;
+                    if len == cells.len() {
+                        return (cells, len);
+                    }
+                }
+            }
+            // Beyond the minimum, different legal counts can put different
+            // cells at the next position. Leave the rest unconstrained.
+            if stride.is_some() {
+                return (cells, len);
+            }
+        }
+        if self.end == TapeEnd::Blanks {
+            len = cells.len();
+        }
+        (cells, len)
+    }
+
     const fn init_blank() -> Self {
         Self {
             span: SpanT::init_blank(),
@@ -12930,18 +14398,11 @@ impl Tape {
                 != 0
         };
 
-        match (known_left, known_right) {
-            (Some(left), Some(right)) => matches_window(left, right),
-            (Some(left), None) => {
-                (0..C).any(|right| matches_window(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| matches_window(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| matches_window(left, right))
-            }),
-        }
+        any_matching_window::<C>(
+            known_left,
+            known_right,
+            matches_window,
+        )
     }
 
     /// Check capped per-color tail counts and pairwise same-run presence.
@@ -13082,8 +14543,7 @@ impl Tape {
                     sc,
                     left_neighbor,
                     right_neighbor,
-                    a,
-                    b,
+                    PairTailPresencePossible::<S, C>::pair_index(a, b),
                 );
                 if forward & required == 0 {
                     return false;
@@ -13094,29 +14554,18 @@ impl Tape {
         true
     }
 
-    /// Return possible nonblank-count parities for the left and right spans
-    /// separately. Bit 0 means even, bit 1 means odd. Unknown ends and
-    /// indefinite nonblank runs permit either parity; indefinite blank runs do
-    /// not affect nonblank parity.
-    fn side_nonblank_parity_masks(&self) -> (u8, u8) {
-        fn span_mask(span: &Span) -> u8 {
-            span.nonblank_residue(2)
-                .map_or(0b11, |parity| 1_u8 << parity)
-        }
-
-        (span_mask(&self.lspan), span_mask(&self.rspan))
+    fn required_side_parities(&self) -> u16 {
+        let (left, right) = self.side_nonblank_residue_masks::<2>();
+        residue_pairs::<2>(left, right)
     }
 
-    /// Return possible nonblank-count residues modulo 3 for the left and right
-    /// spans separately. Bits 0..=2 correspond to residues 0..=2. Unknown
-    /// ends and indefinite nonblank runs permit every residue.
-    fn side_nonblank_mod3_masks(&self) -> (u8, u8) {
-        fn span_mask(span: &Span) -> u8 {
-            span.nonblank_residue(3)
-                .map_or(0b111, |residue| 1_u8 << residue)
-        }
-
-        (span_mask(&self.lspan), span_mask(&self.rspan))
+    /// Each bit is an allowed nonblank-count residue on that side.
+    fn side_nonblank_residue_masks<const MOD: u8>(&self) -> (u8, u8) {
+        let mask = |span: &Span| {
+            span.nonblank_residue(MOD)
+                .map_or((1_u8 << MOD) - 1, |r| 1_u8 << r)
+        };
+        (mask(&self.lspan), mask(&self.rspan))
     }
 
     /// Return the possible global per-color parity vectors.  Vector bit
@@ -13629,18 +15078,11 @@ impl Tape {
                 )
         };
 
-        match (known_left, known_right) {
-            (Some(left), Some(right)) => matches_window(left, right),
-            (Some(left), None) => {
-                (0..C).any(|right| matches_window(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| matches_window(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| matches_window(left, right))
-            }),
-        }
+        any_matching_window::<C>(
+            known_left,
+            known_right,
+            matches_window,
+        )
     }
 
     /// Check ordered triples forced by the explicit portions of both tape
@@ -13715,18 +15157,11 @@ impl Tape {
                 )
         };
 
-        match (known_left, known_right) {
-            (Some(left), Some(right)) => matches_window(left, right),
-            (Some(left), None) => {
-                (0..C).any(|right| matches_window(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| matches_window(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| matches_window(left, right))
-            }),
-        }
+        any_matching_window::<C>(
+            known_left,
+            known_right,
+            matches_window,
+        )
     }
 
     /// Check cross-side correlation between triples forced by the two explicit
@@ -13790,18 +15225,11 @@ impl Tape {
             true
         };
 
-        match (known_left, known_right) {
-            (Some(left), Some(right)) => matches_window(left, right),
-            (Some(left), None) => {
-                (0..C).any(|right| matches_window(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| matches_window(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| matches_window(left, right))
-            }),
-        }
+        any_matching_window::<C>(
+            known_left,
+            known_right,
+            matches_window,
+        )
     }
 
     /// Match the ordered two-run-plus-spill forward prefixes on both sides
@@ -13906,21 +15334,11 @@ impl Tape {
         // window whose two forward side antichains are already universal. This
         // also handles unknown immediate neighbors and is common once the
         // two-run-plus-spill horizon has been crossed.
-        let has_unconstrained_window = match (known_left, known_right) {
-            (Some(left), Some(right)) => {
-                candidate_unconstrained(left, right)
-            },
-            (Some(left), None) => {
-                (0..C).any(|right| candidate_unconstrained(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| candidate_unconstrained(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| candidate_unconstrained(left, right))
-            }),
-        };
-        if has_unconstrained_window {
+        if any_matching_window::<C>(
+            known_left,
+            known_right,
+            candidate_unconstrained,
+        ) {
             return true;
         }
 
@@ -13954,18 +15372,11 @@ impl Tape {
             )
         };
 
-        match (known_left, known_right) {
-            (Some(left), Some(right)) => matches_window(left, right),
-            (Some(left), None) => {
-                (0..C).any(|right| matches_window(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| matches_window(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| matches_window(left, right))
-            }),
-        }
+        any_matching_window::<C>(
+            known_left,
+            known_right,
+            matches_window,
+        )
     }
 
     /// Match both ordered word-prefix requirements against one joint forward
@@ -14001,7 +15412,7 @@ impl Tape {
         let known_left = self.left_neighbor_color().map(usize::from);
         let known_right = self.right_neighbor_color().map(usize::from);
 
-        let mut matches_window = |left: usize, right: usize| {
+        let matches_window = |left: usize, right: usize| {
             possible.window(st, sc, left, right).iter().copied().any(
                 |prefix| match prefix {
                     JointSideWordPrefix::Unknown => true,
@@ -14015,18 +15426,11 @@ impl Tape {
             )
         };
 
-        match (known_left, known_right) {
-            (Some(left), Some(right)) => matches_window(left, right),
-            (Some(left), None) => {
-                (0..C).any(|right| matches_window(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| matches_window(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| matches_window(left, right))
-            }),
-        }
+        any_matching_window::<C>(
+            known_left,
+            known_right,
+            matches_window,
+        )
     }
 
     /// Match both run requirements against the same forward alternative.
@@ -14043,10 +15447,10 @@ impl Tape {
             state,
             possible,
             &mut requirements,
+            None,
         )
     }
 
-    #[expect(clippy::excessive_nesting)]
     fn obeys_joint_side_prefix_possible_cached<
         const S: usize,
         const C: usize,
@@ -14055,6 +15459,7 @@ impl Tape {
         state: State,
         possible: &JointSidePrefixPossible<S, C>,
         requirements: &mut SideMatchRequirements,
+        mut required_parity: Option<u16>,
     ) -> bool {
         let matches =
             |prefix, req: &RequirementSet, far_colors: u64| {
@@ -14077,9 +15482,8 @@ impl Tape {
         // forward alternative actually has a restrictive parity relation.
         // Many buckets have already widened to all four pairs, and shape-only
         // rejection should not pay for another full scan of the tape spans.
-        let mut required_parity = None;
         let mut run_requirements: Option<[RequirementSet; 2]> = None;
-        let mut matches_window = |left: usize, right: usize| {
+        let matches_window = |left: usize, right: usize| {
             possible.window(st, sc, left, right).iter().copied().any(
                 |prefix| {
                     let shape_matches = match prefix {
@@ -14115,43 +15519,22 @@ impl Tape {
                     }
 
                     let required =
-                        *required_parity.get_or_insert_with(|| {
-                            let (left_mask, right_mask) =
-                                self.side_nonblank_parity_masks();
-                            let mut pairs = 0_u8;
-                            for lp in 0..2 {
-                                if left_mask & (1_u8 << lp) == 0 {
-                                    continue;
-                                }
-                                for rp in 0..2 {
-                                    if right_mask & (1_u8 << rp) == 0 {
-                                        continue;
-                                    }
-                                    pairs |= 1_u8 << (lp | (rp << 1));
-                                }
-                            }
-                            pairs
+                        required_parity.get_or_insert_with(|| {
+                            self.required_side_parities()
                         });
-                    parity_mask & required != 0
+                    u16::from(parity_mask) & *required != 0
                 },
             )
         };
 
-        match (known_left, known_right) {
-            (Some(left), Some(right)) => matches_window(left, right),
-            (Some(left), None) => {
-                (0..C).any(|right| matches_window(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| matches_window(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| matches_window(left, right))
-            }),
-        }
+        any_matching_window::<C>(
+            known_left,
+            known_right,
+            matches_window,
+        )
     }
 
-    /// Match the two sides' first two cells beyond the immediate neighbors
+    /// Match each side's known prefix beyond its immediate neighbor
     /// against one joint forward witness. Unknown positions in the backward
     /// tape are left unconstrained; exact/guaranteed positions must agree.
     fn obeys_joint_short_possible<const S: usize, const C: usize>(
@@ -14159,112 +15542,23 @@ impl Tape {
         state: State,
         possible: &JointShortPossible<S, C>,
     ) -> bool {
-        #[derive(Clone, Copy)]
-        struct Requirement {
-            cells: [Option<Color>; JOINT_SHORT_DEPTH],
-        }
-
-        impl Requirement {
-            const fn unconstrained(self) -> bool {
-                self.cells[0].is_none() && self.cells[1].is_none()
-            }
-        }
-
-        fn requirement(span: &Span) -> Requirement {
-            let mut cells = [None; JOINT_SHORT_DEPTH];
-            let mut len = 0_usize;
-            let mut skip = 1_usize;
-
-            const fn append(
-                cells: &mut [Option<Color>; JOINT_SHORT_DEPTH],
-                len: &mut usize,
-                color: Color,
-            ) {
-                if *len < JOINT_SHORT_DEPTH {
-                    cells[*len] = Some(color);
-                    *len += 1;
-                }
-            }
-
-            for block in span.span.iter() {
-                if len == JOINT_SHORT_DEPTH {
-                    break;
-                }
-
-                match block {
-                    Block::Run { color, count } => {
-                        let minimum = usize::from(count.minimum());
-                        let start = skip.min(minimum);
-                        skip -= start;
-                        let guaranteed = minimum - start;
-                        for _ in 0..guaranteed {
-                            if len == JOINT_SHORT_DEPTH {
-                                break;
-                            }
-                            append(&mut cells, &mut len, *color);
-                        }
-                        if count.is_indef() && len < JOINT_SHORT_DEPTH {
-                            return Requirement { cells };
-                        }
-                    },
-                    Block::Word { word, count } => {
-                        let width = word.len();
-                        let minimum =
-                            count.minimum().saturating_mul(width);
-                        let start = skip.min(minimum);
-                        skip -= start;
-                        for offset in start..minimum {
-                            if len == JOINT_SHORT_DEPTH {
-                                break;
-                            }
-                            append(
-                                &mut cells,
-                                &mut len,
-                                word[offset % width],
-                            );
-                        }
-                        if count.is_indef() && len < JOINT_SHORT_DEPTH {
-                            return Requirement { cells };
-                        }
-                    },
-                }
-            }
-
-            if len < JOINT_SHORT_DEPTH {
-                match span.end {
-                    TapeEnd::Blanks => {
-                        // If the immediate neighbor itself came from the blank
-                        // end, consume that skipped zero first; every farther
-                        // position is also exact zero.
-                        while len < JOINT_SHORT_DEPTH {
-                            append(&mut cells, &mut len, 0);
-                        }
-                    },
-                    TapeEnd::Unknown => {},
-                }
-            }
-
-            Requirement { cells }
-        }
-
         fn side_matches(
             side: JointShortSide,
-            req: Requirement,
+            required: &[Color],
         ) -> bool {
-            for index in 0..JOINT_SHORT_DEPTH {
-                if let Some(required) = req.cells[index]
-                    && let Some(actual) = side.cell(index)
-                    && actual != required
-                {
-                    return false;
-                }
-            }
-            true
+            required.iter().enumerate().all(|(index, &color)| {
+                side.cell(index).is_none_or(|actual| actual == color)
+            })
         }
 
-        let left_req = requirement(&self.lspan);
-        let right_req = requirement(&self.rspan);
-        if left_req.unconstrained() && right_req.unconstrained() {
+        // Cell zero is the immediate neighbor, already in the window key.
+        let (left, nl) =
+            self.lspan.known_prefix::<{ JOINT_SHORT_DEPTH + 1 }>();
+        let (right, nr) =
+            self.rspan.known_prefix::<{ JOINT_SHORT_DEPTH + 1 }>();
+        let left_req = &left[1..nl.max(1)];
+        let right_req = &right[1..nr.max(1)];
+        if left_req.is_empty() && right_req.is_empty() {
             return true;
         }
 
@@ -14282,18 +15576,11 @@ impl Tape {
             )
         };
 
-        match (known_left, known_right) {
-            (Some(left), Some(right)) => matches_window(left, right),
-            (Some(left), None) => {
-                (0..C).any(|right| matches_window(left, right))
-            },
-            (None, Some(right)) => {
-                (0..C).any(|left| matches_window(left, right))
-            },
-            (None, None) => (0..C).any(|left| {
-                (0..C).any(|right| matches_window(left, right))
-            }),
-        }
+        any_matching_window::<C>(
+            known_left,
+            known_right,
+            matches_window,
+        )
     }
 
     /// Enforce sides proved to contain blanks only.
@@ -14710,8 +15997,8 @@ fn reachability<const S: usize>(adj: &Adj<S>) -> [[bool; S]; S] {
 /// `ret[back][st][co]` is a bitmask of states that can be entered by a
 /// balanced one-sided computation starting in exact `(st, co)` with immediate
 /// parent/back color `back` and finishing by moving back across that boundary.
-/// With `clean == true`, every matched pop writes 0, so all cells touched on
-/// that side are restored to blank recursively.
+/// Blank-side queries project zero boundary colors at the final return.
+/// Interior returns may leave marks which later visits erase.
 ///
 /// A return has a direct recursive form, so we do not need the old all-pairs
 /// `same` transitive closure.  If the first move pops, it returns immediately.
@@ -14726,8 +16013,11 @@ struct SideExcursions<const S: usize, const C: usize> {
 
     // Aggregate ordinary-excursion final boundary colors, flattened
     // [back][state][color][return_state] -> final pop-color mask.
-    // Clean excursions do not need this aggregate outside their fixed point.
-    pop: Option<Vec<u64>>,
+    pop: Vec<u64>,
+
+    // Return states whose final boundary cells can be zero. For C > 8
+    // only the popped cell is tracked. Interior visits are unrestricted.
+    blank_ret: Vec<u64>,
 
     // Strong ordinary relation retaining the exact child/front color during
     // recursive composition. Flattened
@@ -14738,9 +16028,7 @@ struct SideExcursions<const S: usize, const C: usize> {
     // `pop * C + final_front`.  This lets the crossing reduced product keep
     // the second cell on the excursion side exact.  For larger alphabets the
     // same storage falls back to the original final-pop-color mask.
-    //
-    // This is kept only for ordinary excursions.
-    exact_pop: Option<Vec<u64>>,
+    exact_pop: Vec<u64>,
 }
 
 impl<const S: usize, const C: usize> SideExcursions<S, C> {
@@ -14795,6 +16083,21 @@ impl<const S: usize, const C: usize> SideExcursions<S, C> {
             != 0
     }
 
+    fn blank_returns_from_mask(
+        &self,
+        back: usize,
+        st: usize,
+        mut scans: u64,
+    ) -> u64 {
+        let mut states = 0;
+        while scans != 0 {
+            let scan = scans.trailing_zeros() as usize;
+            scans &= scans - 1;
+            states |= self.blank_ret[Self::ret_index(back, st, scan)];
+        }
+        states
+    }
+
     fn pop_colors(
         &self,
         back: usize,
@@ -14803,7 +16106,7 @@ impl<const S: usize, const C: usize> SideExcursions<S, C> {
         tr: usize,
     ) -> u64 {
         let node = Self::ret_index(back, st, co);
-        self.pop.as_ref().map_or(0, |pop| pop[node * S + tr])
+        self.pop[node * S + tr]
     }
 
     fn exact_pop_colors(
@@ -14815,10 +16118,7 @@ impl<const S: usize, const C: usize> SideExcursions<S, C> {
         tr: usize,
     ) -> u64 {
         let node = Self::exact_node_index(back, st, co, front);
-        let outcomes =
-            self.exact_pop.as_ref().map_or(0, |pop| pop[node * S + tr]);
-
-        Self::outcome_pop_colors(outcomes)
+        Self::outcome_pop_colors(self.exact_pop[node * S + tr])
     }
 
     #[expect(clippy::disallowed_names)]
@@ -14856,7 +16156,7 @@ impl<const S: usize, const C: usize> SideExcursions<S, C> {
         }
 
         let node = Self::exact_node_index(back, st, co, front);
-        self.exact_pop.as_ref().map_or(0, |pop| pop[node * S + tr])
+        self.exact_pop[node * S + tr]
     }
 }
 
@@ -14881,7 +16181,7 @@ fn window_child_mask<const S: usize, const C: usize>(
 ///
 /// An exact node is `(back, state, scan, front)`, where `back` is the parent
 /// cell and `front` is the immediate neighbor deeper into the excursion side.
-/// For ordinary (`clean == false`) excursions with C <= 8, an outcome
+/// For excursions with C <= 8, an outcome
 /// `(return_state, pop_color, final_front_color)` means the computation
 /// eventually moves back onto the parent in
 /// `return_state`, leaving `pop_color` on this node's scanned cell and
@@ -14889,14 +16189,12 @@ fn window_child_mask<const S: usize, const C: usize>(
 /// returns, its `pop_color` becomes the exact `front` color of the same-level
 /// continuation.  The nested child's farther result is deliberately joined
 /// there; retaining the current node's final front is nevertheless enough for
-/// the radius-2 same-cell crossing product.  Clean excursions and larger
-/// alphabets keep the cheaper pop-color-only encoding.
+/// the radius-2 same-cell crossing product. Larger alphabets keep only
+/// the final pop color.
 fn side_excursions<const S: usize, const C: usize>(
-    _prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     push: Shift,
-    clean: bool,
 ) -> SideExcursions<S, C> {
     struct PushEq {
         source: usize,
@@ -14942,7 +16240,7 @@ fn side_excursions<const S: usize, const C: usize>(
         }
     }
 
-    let keep_front = !clean && C <= 8;
+    let keep_front = C <= 8;
     let pop_shift = !push;
     let exact_nodes = C * S * C * C;
     let mut outcomes = vec![0_u64; exact_nodes * S];
@@ -14977,17 +16275,15 @@ fn side_excursions<const S: usize, const C: usize>(
                     };
 
                     if shift == pop_shift {
-                        if !clean || print == 0 {
-                            add_outcome::<S>(
-                                &mut outcomes,
-                                &mut q,
-                                source,
-                                tr,
-                                encode_outcome::<C>(
-                                    print, front, keep_front,
-                                ),
-                            );
-                        }
+                        add_outcome::<S>(
+                            &mut outcomes,
+                            &mut q,
+                            source,
+                            tr,
+                            encode_outcome::<C>(
+                                print, front, keep_front,
+                            ),
+                        );
                         continue;
                     }
 
@@ -15089,7 +16385,8 @@ fn side_excursions<const S: usize, const C: usize>(
     // get the stronger relation without needing to carry another index.
     let ret_len = C * S * C;
     let mut ret = vec![0_u64; ret_len];
-    let mut pop = (!clean).then(|| vec![0_u64; ret_len * S]);
+    let mut pop = vec![0_u64; ret_len * S];
+    let mut blank_ret = vec![0_u64; ret_len];
 
     for back in 0..C {
         for st in 0..S {
@@ -15110,11 +16407,15 @@ fn side_excursions<const S: usize, const C: usize>(
                             continue;
                         }
                         ret[aggregate] |= 1_u64 << tr;
-                        if let Some(pop) = &mut pop {
-                            pop[aggregate * S + tr] |=
-                                outcome_pop_colors::<S, C>(
-                                    outcomes, keep_front,
-                                );
+                        pop[aggregate * S + tr] |=
+                            outcome_pop_colors::<S, C>(
+                                outcomes, keep_front,
+                            );
+                        // Bit zero is (pop 0, final front 0), or just pop 0
+                        // in the wider-alphabet encoding. Test the endpoint
+                        // only after closing over all nested return colors.
+                        if outcomes & 1 != 0 {
+                            blank_ret[aggregate] |= 1_u64 << tr;
                         }
                     }
                 }
@@ -15125,7 +16426,8 @@ fn side_excursions<const S: usize, const C: usize>(
     SideExcursions {
         ret,
         pop,
-        exact_pop: (!clean).then_some(outcomes),
+        blank_ret,
+        exact_pop: outcomes,
     }
 }
 
@@ -15135,18 +16437,15 @@ fn side_excursions<const S: usize, const C: usize>(
 /// `blank_side == true`  describes `? [color] 0+`.
 ///
 /// The worklist keeps the blank side clean at abstract checkpoints, but may
-/// cross through dirty intermediate configurations via `clean` excursions.
+/// cross through dirty intermediate configurations via balanced excursions.
 /// The unconstrained side may use arbitrary balanced excursions.
 fn halfblank_slots<const S: usize, const C: usize>(
-    _prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     blank_side: Shift,
-    clean: &SideExcursions<S, C>,
+    toward: &SideExcursions<S, C>,
     away: &SideExcursions<S, C>,
 ) -> [[u64; C]; S] {
-    debug_assert!(away.pop.is_some());
-
     let mut possible = [[0_u64; C]; S];
     let trans = &instrs.instrs;
 
@@ -15173,6 +16472,33 @@ fn halfblank_slots<const S: usize, const C: usize>(
 
     // The true blank initial configuration has exact zero on both sides.
     push(0, 0, 0, &mut possible, &mut q);
+
+    // The last excursion toward this side can start with arbitrary dirt:
+    // it may erase marks left by earlier visits to the same boundary.
+    // A return to a blank half necessarily has zero final boundary cells.
+    // The inward neighbor is untouched throughout that excursion.
+    #[expect(clippy::disallowed_names)]
+    for (st, row) in trans.iter().enumerate() {
+        for (scan, &instr) in row.iter().enumerate() {
+            let Some((print, shift, tr)) = instr else {
+                continue;
+            };
+            if shift != blank_side {
+                continue;
+            }
+            for near in 0..C {
+                let children =
+                    window_child_mask(st, scan, shift, near, windows);
+                let mut returns =
+                    toward.blank_returns_from_mask(print, tr, children);
+                while returns != 0 {
+                    let state = returns.trailing_zeros() as usize;
+                    returns &= returns - 1;
+                    push(state, print, near, &mut possible, &mut q);
+                }
+            }
+        }
+    }
 
     while let Some((node, near)) = q.pop_front() {
         let (st, co) = SideExcursions::<S, C>::decode(node);
@@ -15215,17 +16541,6 @@ fn halfblank_slots<const S: usize, const C: usize>(
             // side, so the transition's print becomes the new exact inward
             // neighbor.
             push(tr, 0, print, &mut possible, &mut q);
-
-            // Or make a complete clean excursion into the blank side and
-            // return to the original boundary.  The unconstrained side is
-            // untouched by that excursion, so its exact neighbor remains
-            // `near`.
-            let mut return_states = clean.ret_states(print, tr, 0);
-            while return_states != 0 {
-                let return_st = return_states.trailing_zeros() as usize;
-                return_states &= return_states - 1;
-                push(return_st, print, near, &mut possible, &mut q);
-            }
         } else if print == 0 {
             // Move directly away from the blank side while leaving zero on
             // the old head cell.  The old exact `near` becomes the new scan;
@@ -15255,14 +16570,11 @@ fn halfblank_slots<const S: usize, const C: usize>(
 /// outward onto the next fresh cell, whose scanned color is exactly 0.  A
 /// direct inward move that does not return is not itself a frontier checkpoint.
 fn frontier_slots<const S: usize, const C: usize>(
-    _prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     frontier_side: Shift,
     inward: &SideExcursions<S, C>,
 ) -> [[u64; C]; S] {
-    debug_assert!(inward.pop.is_some());
-
     let mut possible = [[0_u64; C]; S];
     let trans = &instrs.instrs;
 
@@ -15354,19 +16666,15 @@ fn same_cell_crossing_windows_radius1_from_blank<
     const S: usize,
     const C: usize,
 >(
-    prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     left_any: &SideExcursions<S, C>,
     right_any: &SideExcursions<S, C>,
 ) -> [[[u64; C]; C]; S] {
-    debug_assert!(left_any.exact_pop.is_some());
-    debug_assert!(right_any.exact_pop.is_some());
-
     let left_frontier =
-        frontier_slots(prog, instrs, windows, false, right_any);
+        frontier_slots(instrs, windows, false, right_any);
     let right_frontier =
-        frontier_slots(prog, instrs, windows, true, left_any);
+        frontier_slots(instrs, windows, true, left_any);
     let mut possible = [[[0_u64; C]; C]; S];
     let mut q = VecDeque::new();
     let trans = &instrs.instrs;
@@ -15486,14 +16794,12 @@ fn same_cell_crossing_windows_radius1_from_blank<
 /// `(near, far)`.  Keeping this pair here avoids the old radius-2 seed step
 /// taking a Cartesian product with every possible second-neighbor color.
 fn frontier_pair_slots<const S: usize, const C: usize>(
-    _prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     frontier_side: Shift,
     inward: &SideExcursions<S, C>,
 ) -> [[u64; C]; S] {
     debug_assert!(C <= 8);
-    debug_assert!(inward.exact_pop.is_some());
 
     let mut possible = [[0_u64; C]; S];
     let trans = &instrs.instrs;
@@ -15586,20 +16892,17 @@ fn same_cell_crossing_windows_radius2_from_blank<
     const S: usize,
     const C: usize,
 >(
-    prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     left_any: &SideExcursions<S, C>,
     right_any: &SideExcursions<S, C>,
 ) -> Radius2Possible<S, C> {
     debug_assert!(C <= 8);
-    debug_assert!(left_any.exact_pop.is_some());
-    debug_assert!(right_any.exact_pop.is_some());
 
     let left_frontier =
-        frontier_pair_slots(prog, instrs, windows, false, right_any);
+        frontier_pair_slots(instrs, windows, false, right_any);
     let right_frontier =
-        frontier_pair_slots(prog, instrs, windows, true, left_any);
+        frontier_pair_slots(instrs, windows, true, left_any);
     let window_count = S * C * C * C;
     let mut possible2 = vec![0_u64; window_count];
     let mut pending = vec![0_u64; window_count];
@@ -15775,7 +17078,6 @@ fn refine_windows_by_same_cell_crossings<
     const S: usize,
     const C: usize,
 >(
-    prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &mut WinPossible<S, C>,
     first_any: Option<(SideExcursions<S, C>, SideExcursions<S, C>)>,
@@ -15789,15 +17091,13 @@ fn refine_windows_by_same_cell_crossings<
         let (left_any, right_any) =
             initial.take().unwrap_or_else(|| {
                 (
-                    side_excursions(
-                        prog, instrs, windows, false, false,
-                    ),
-                    side_excursions(prog, instrs, windows, true, false),
+                    side_excursions(instrs, windows, false),
+                    side_excursions(instrs, windows, true),
                 )
             });
 
         let crossing1 = same_cell_crossing_windows_radius1_from_blank(
-            prog, instrs, windows, &left_any, &right_any,
+            instrs, windows, &left_any, &right_any,
         );
         if windows.refine_crossing_reachability_relation(&crossing1) {
             continue;
@@ -15805,7 +17105,7 @@ fn refine_windows_by_same_cell_crossings<
 
         if C <= 8 {
             let radius2 = same_cell_crossing_windows_radius2_from_blank(
-                prog, instrs, windows, &left_any, &right_any,
+                instrs, windows, &left_any, &right_any,
             );
             let crossing2 = radius2.radius1_projection();
             if windows.refine_crossing_reachability_relation(&crossing2)
@@ -15827,7 +17127,6 @@ fn refine_windows_by_crossings_and_sides<
     const S: usize,
     const C: usize,
 >(
-    prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &mut WinPossible<S, C>,
     first_crossings: Option<(
@@ -15848,7 +17147,6 @@ fn refine_windows_by_crossings_and_sides<
         let (left_any, right_any, radius2) =
             initial.take().unwrap_or_else(|| {
                 refine_windows_by_same_cell_crossings(
-                    prog,
                     instrs,
                     windows,
                     initial_any.take(),
@@ -15871,7 +17169,6 @@ fn refine_windows_by_crossings_and_sides<
 /// color from `2+` leaves either `1` or `2+`. L moves are symmetric.
 #[expect(clippy::cast_possible_truncation)]
 fn color_tail_count_from_blank<const S: usize, const C: usize>(
-    _prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
 ) -> ColorTailCountPossible<S, C> {
@@ -15919,15 +17216,9 @@ fn color_tail_count_from_blank<const S: usize, const C: usize>(
             return;
         }
 
-        let index = ColorTailCountPossible::<S, C>::exact_index(
-            st, scan, left, right, color,
-        );
-        let bit = 1_u16 << status;
-        if possible.exact[index] & bit != 0 {
+        if !possible.insert(st, scan, left, right, color, status) {
             return;
         }
-
-        possible.add(st, scan, left, right, color, status);
         q.push_back((st, left, scan, right, color, status));
     };
 
@@ -16017,7 +17308,6 @@ fn color_tail_count_from_blank<const S: usize, const C: usize>(
 /// runs, while the stored 16-bit mask retains all same-run correlations.
 #[expect(clippy::similar_names)]
 fn pair_tail_presence_from_blank<const S: usize, const C: usize>(
-    _prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
 ) -> PairTailPresencePossible<S, C> {
@@ -16066,15 +17356,9 @@ fn pair_tail_presence_from_blank<const S: usize, const C: usize>(
         }
 
         let pair = PairTailPresencePossible::<S, C>::pair_index(a, b);
-        let index = PairTailPresencePossible::<S, C>::exact_index(
-            st, scan, left, right, pair,
-        );
-        let bit = 1_u16 << status;
-        if possible.exact[index] & bit != 0 {
+        if !possible.insert(st, scan, left, right, pair, status) {
             return;
         }
-
-        possible.add(st, scan, left, right, a, b, status);
         q.push_back((st, left, scan, right, a, b, status));
     };
 
@@ -16191,7 +17475,6 @@ fn pair_tail_presence_from_blank<const S: usize, const C: usize>(
 /// The global `WinPossible` relation is used only as a sound cap on newly
 /// exposed neighbor colors.
 fn joint_blank_status_from_blank<const S: usize, const C: usize>(
-    _prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
 ) -> JointBlankPossible<S, C> {
@@ -16418,34 +17701,16 @@ fn blank_side_possible_from_blank_with_any<
     const S: usize,
     const C: usize,
 >(
-    prog: &Prog<S, C>,
     instrs: &BkwInstrs<S, C>,
     windows: &WinPossible<S, C>,
     left_any: &SideExcursions<S, C>,
     right_any: &SideExcursions<S, C>,
 ) -> BlankSidePossible<S, C> {
-    let left_clean =
-        side_excursions(prog, instrs, windows, false, true);
-    let right_clean =
-        side_excursions(prog, instrs, windows, true, true);
-
-    let left_half = halfblank_slots(
-        prog,
-        instrs,
-        windows,
-        false,
-        &left_clean,
-        right_any,
-    );
-    let right_half = halfblank_slots(
-        prog,
-        instrs,
-        windows,
-        true,
-        &right_clean,
-        left_any,
-    );
-    let joint = joint_blank_status_from_blank(prog, instrs, windows);
+    let left_half =
+        halfblank_slots(instrs, windows, false, left_any, right_any);
+    let right_half =
+        halfblank_slots(instrs, windows, true, right_any, left_any);
+    let joint = joint_blank_status_from_blank(instrs, windows);
 
     BlankSidePossible {
         left_half,
@@ -16481,56 +17746,15 @@ fn scc_from_reach<const S: usize>(
     (comp, masks, k)
 }
 
-fn add_gen<const S: usize>(arr: &mut [i32; S], len: &mut u8, val: i32) {
-    debug_assert!(val > 0);
-    let n = *len as usize;
-    for i in 0..n {
-        if arr[i] == val {
-            return;
-        }
-    }
-    if n < S {
-        arr[n] = val;
-        *len += 1;
-    }
-}
-
-/// DC meta + generators.
-/// Returns:
-/// - reach
-/// - comp[state]
-/// - masks[cid]
-/// - k
-/// - g_scc[cid]
-/// - res[state]
-/// - pos_gens[cid], pos_len[cid] : positive cycle displacements found
-/// - neg_gens[cid], neg_len[cid] : absolute value of negative cycle displacements found
-#[expect(clippy::excessive_nesting)]
-fn dc_meta_with_gens<const S: usize>(
+/// Reachability, component membership and displacement residues for halt slots.
+fn displacement_components<const S: usize>(
     adj: &Adj<S>,
     next: &NextDir<S>,
-) -> (
-    [[bool; S]; S],
-    [usize; S],
-    [u16; S],
-    usize,
-    [i32; S],
-    [i32; S],
-    [[i32; S]; S],
-    [u8; S],
-    [[i32; S]; S],
-    [u8; S],
-) {
+) -> ([[bool; S]; S], [usize; S], [u16; S], usize, [i32; S]) {
     let reach = reachability::<S>(adj);
     let (comp, masks, k) = scc_from_reach::<S>(&reach);
 
-    let mut g_scc = [0; S];
     let mut res = [0; S];
-
-    let mut pos_gens = [[0; S]; S];
-    let mut pos_len = [0; S];
-    let mut neg_gens = [[0; S]; S];
-    let mut neg_len = [0; S];
 
     for cid in 0..k {
         let mask = masks[cid];
@@ -16573,34 +17797,14 @@ fn dc_meta_with_gens<const S: usize>(
                         Some(dv) => {
                             // discrepancy = closed-walk displacement
                             let diff = dv_new - dv;
-                            if diff != 0 {
-                                g = if g == 0 {
-                                    diff.abs()
-                                } else {
-                                    gcd_i32(g, diff)
-                                };
-
-                                if diff > 0 {
-                                    add_gen::<S>(
-                                        &mut pos_gens[cid],
-                                        &mut pos_len[cid],
-                                        diff,
-                                    );
-                                } else {
-                                    add_gen::<S>(
-                                        &mut neg_gens[cid],
-                                        &mut neg_len[cid],
-                                        -diff,
-                                    );
-                                }
+                            if diff != 0 && g != 1 {
+                                g = gcd_i32(g, diff);
                             }
                         },
                     }
                 }
             }
         }
-
-        g_scc[cid] = g;
 
         // fill residues
         for v in 0..S {
@@ -16620,10 +17824,7 @@ fn dc_meta_with_gens<const S: usize>(
         }
     }
 
-    (
-        reach, comp, masks, k, g_scc, res, pos_gens, pos_len, neg_gens,
-        neg_len,
-    )
+    (reach, comp, masks, k, res)
 }
 
 /// Bellman-Ford negative-cycle detection inside SCC.
@@ -16762,20 +17963,9 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     ) -> Set<Slot> {
         let (adj, preds, writers, next) = idx;
 
-        let (
-            reach,
-            comp,
-            masks,
-            k,
-            _g_scc,
-            res,
-            _pos_gens,
-            _pos_len,
-            _neg_gens,
-            _neg_len,
-        ) = dc_meta_with_gens::<S>(adj, next);
+        let (reach, comp, masks, k, res) =
+            displacement_components(adj, next);
 
-        // SCC drift classification (same as you already do)
         let mut has_neg = [false; S];
         let mut has_pos = [false; S];
         for cid in 0..k {
@@ -16784,12 +17974,8 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             has_pos[cid] = has_neg_cycle_in_scc::<S>(mask, next, true);
         }
 
-        // NEW: exact 0-displacement reachability cache for one-sided SCCs.
-        // zero_done[cid][src] indicates whether we computed zero_reach[cid][src].
-        // zero_reach[cid][src] is bitmask of nodes reachable from src with net disp 0
-        // (under an orientation where SCC has no negative cycles).
-        let mut zero_done = [[false; S]; S];
-        let mut zero_reach = [[0; S]; S];
+        // A source uniquely identifies its component and weight orientation.
+        let mut zero_reach = [None; S];
 
         let (max_st, max_co) = self.max_reached();
 
@@ -16836,20 +18022,12 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                                     // - if SCC has neg cycles but no pos cycles, negate weights
                                     let negate = has_neg[cid] && !has_pos[cid];
 
-                                    if !zero_done[cid][s0] {
-                                        zero_reach[cid][s0] =
-                                            zero_disp_reach_mask_one_sided_scc::<S>(
-                                                masks[cid],
-                                                next,
-                                                s0,
-                                                negate,
-                                            );
-                                        zero_done[cid][s0] = true;
-                                    }
-
-                                    // p reachable from s0 with net displacement 0?
-                                    if ((zero_reach[cid][s0] >> p) & 1) == 0 {
-                                        // No exact 0-displacement witness in this SCC => prune this witness
+                                    let reachable = zero_reach[s0].get_or_insert_with(|| {
+                                        zero_disp_reach_mask_one_sided_scc(
+                                            masks[cid], next, s0, negate,
+                                        )
+                                    });
+                                    if (*reachable >> p) & 1 == 0 {
                                         continue;
                                     }
 
@@ -16880,7 +18058,6 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     /// Previously visited zero cells are covered by the same
     /// last-departure rule, with a transition that writes 0.
     fn halt_slots_side_excursion(
-        &self,
         slots: Set<Slot>,
         instrs: &BkwInstrs<S, C>,
     ) -> (Set<Slot>, Option<BkwWindowSeed<S, C>>) {
@@ -16893,9 +18070,36 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             &instrs.forbid_left,
             &instrs.forbid_right,
         );
+        // A completed halt-only closure has expanded every reachable slot
+        // without finding an undefined instruction. A budget miss falls through.
+        if instrs.writers.iter().skip(4).all(Vec::is_empty)
+            && CrossingContexts::build_frames::<
+                { CrossingContexts::ADJACENT_HISTORY },
+                false,
+                2,
+                S,
+                C,
+            >(instrs, 4, 0, &windows, 256, 512, true)
+            .is_some()
+        {
+            return (Set::new(), None);
+        }
+        if instrs.writers.iter().skip(2).all(Vec::is_empty)
+            && (CrossingContexts::run_halt_closure::<2, 4, 2, S, C>(
+                instrs,
+            )
+            .is_some()
+                || CrossingContexts::run_halt_closure::<1, 2, 3, S, C>(
+                    instrs,
+                )
+                .is_some()
+                || CrossingContexts::pair_balance_halt_closure(instrs)
+                    .is_some())
+        {
+            return (Set::new(), None);
+        }
         let (left_any, right_any, radius2) =
             refine_windows_by_same_cell_crossings(
-                self,
                 instrs,
                 &mut windows,
                 None,
@@ -16905,12 +18109,10 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             slots.iter().any(|&(_, color)| color == 0).then(|| {
                 // At the left frontier, arbitrary balanced work is to the
                 // right/inward side.  At the right frontier it is to the left.
-                let left = frontier_slots(
-                    self, instrs, &windows, false, &right_any,
-                );
-                let right = frontier_slots(
-                    self, instrs, &windows, true, &left_any,
-                );
+                let left =
+                    frontier_slots(instrs, &windows, false, &right_any);
+                let right =
+                    frontier_slots(instrs, &windows, true, &left_any);
                 (left, right)
             });
 
@@ -16967,7 +18169,6 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
     /// Construct the same half-blank facts for blank and zloop targets.
     fn bkw_halfblank_targets(
-        &self,
         instrs: &BkwInstrs<S, C>,
     ) -> BkwHalfblankTargets<S, C> {
         let windows = Self::win_possible_from_blank(
@@ -16975,38 +18176,20 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             &instrs.forbid_left,
             &instrs.forbid_right,
         );
-        let left_clean =
-            side_excursions(self, instrs, &windows, false, true);
-        let right_clean =
-            side_excursions(self, instrs, &windows, true, true);
-        let left_any =
-            side_excursions(self, instrs, &windows, false, false);
-        let right_any =
-            side_excursions(self, instrs, &windows, true, false);
+        let left_any = side_excursions(instrs, &windows, false);
+        let right_any = side_excursions(instrs, &windows, true);
 
         // false = left side blank:  0+ [color] ?
         // true  = right side blank: ? [color] 0+
         let left_half = halfblank_slots(
-            self,
-            instrs,
-            &windows,
-            false,
-            &left_clean,
-            &right_any,
+            instrs, &windows, false, &left_any, &right_any,
         );
         let right_half = halfblank_slots(
-            self,
-            instrs,
-            &windows,
-            true,
-            &right_clean,
-            &left_any,
+            instrs, &windows, true, &right_any, &left_any,
         );
 
         BkwHalfblankTargets {
             windows,
-            left_clean,
-            right_clean,
             left_any,
             right_any,
             left_half,
@@ -17036,13 +18219,11 @@ impl<const S: usize, const C: usize> Prog<S, C> {
         }
         let BkwHalfblankTargets {
             windows,
-            left_clean,
-            right_clean,
             left_any,
             right_any,
             left_half,
             right_half,
-        } = self.bkw_halfblank_targets(instrs);
+        } = Self::bkw_halfblank_targets(instrs);
 
         let filtered = slots
             .into_iter()
@@ -17074,34 +18255,26 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                     next_state: child_st,
                 } in &instrs.writers[co]
                 {
-                    let (opposite_half, clean) = if shift {
+                    let (opposite_half, excursions) = if shift {
                         // Depart right: left side remains untouched.
-                        (&left_half, &right_clean)
+                        (&left_half, &right_any)
                     } else {
                         // Depart left: right side remains untouched.
-                        (&right_half, &left_clean)
+                        (&right_half, &left_any)
                     };
 
                     if opposite_half[st][read] == 0 {
                         continue;
                     }
 
-                    // Do not narrow the clean-return child colors to the
-                    // neighbor-aware halfblank mask here. `clean` is a
-                    // deliberately restrictive recursive summary; the old
-                    // window-level existential join is needed to keep this
-                    // static last-departure test conservative. The refined
-                    // halfblank mask remains useful for the dynamic tape
-                    // filter and for the exact blank-neighbor target gate.
                     let child_colors =
                         window_child_mask(st, read, shift, 0, &windows);
-
-                    if clean.ret_from_mask_possible(
+                    let returns = excursions.blank_returns_from_mask(
                         co,
                         child_st,
                         child_colors,
-                        h,
-                    ) {
+                    );
+                    if returns & (1_u64 << h) != 0 {
                         return true;
                     }
                 }
@@ -17124,7 +18297,6 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     ///  ? [0] 0+  (side = R)
     ///  0+ [0] ?  (side = L)
     fn shifts_side_clean(
-        &self,
         shifts: Set<(State, Shift)>,
         instrs: &BkwInstrs<S, C>,
     ) -> (Set<(State, Shift)>, Option<BkwWindowSeed<S, C>>) {
@@ -17137,8 +18309,7 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             right_any,
             left_half,
             right_half,
-            ..
-        } = self.bkw_halfblank_targets(instrs);
+        } = Self::bkw_halfblank_targets(instrs);
         let filtered = shifts
             .into_iter()
             .filter(|&(state, side)| {
@@ -17160,6 +18331,7 @@ impl<const S: usize, const C: usize> Prog<S, C> {
         )
     }
 
+    #[expect(clippy::disallowed_names)]
     fn spinout_shifts_side_clean(
         &self,
         instrs: &BkwInstrs<S, C>,
@@ -17174,16 +18346,14 @@ impl<const S: usize, const C: usize> Prog<S, C> {
             &instrs.forbid_left,
             &instrs.forbid_right,
         );
-        let left_any =
-            side_excursions(self, instrs, &windows, false, false);
-        let right_any =
-            side_excursions(self, instrs, &windows, true, false);
+        let left_any = side_excursions(instrs, &windows, false);
+        let right_any = side_excursions(instrs, &windows, true);
         let left_frontier =
-            frontier_slots(self, instrs, &windows, false, &right_any);
+            frontier_slots(instrs, &windows, false, &right_any);
         let right_frontier =
-            frontier_slots(self, instrs, &windows, true, &left_any);
+            frontier_slots(instrs, &windows, true, &left_any);
 
-        let filtered = shifts
+        let mut filtered: Set<_> = shifts
             .into_iter()
             .filter(|&(state, side)| {
                 let h = state as usize;
@@ -17194,6 +18364,55 @@ impl<const S: usize, const C: usize> Prog<S, C> {
                 }
             })
             .collect();
+        if !filtered.is_empty() {
+            let adjacent = CrossingContexts::build_frames::<
+                { CrossingContexts::ADJACENT_HISTORY },
+                false,
+                2,
+                S,
+                C,
+            >(
+                instrs, 6, 0, &windows, 768, 1536, false
+            );
+            let contexts = adjacent.or_else(|| {
+                if instrs
+                    .writers
+                    .iter()
+                    .skip(4)
+                    .any(|writers| !writers.is_empty())
+                    || instrs
+                        .instrs
+                        .iter()
+                        .filter(|row| row.iter().any(Option::is_some))
+                        .take(3)
+                        .count()
+                        != 2
+                {
+                    return None;
+                }
+                CrossingContexts::build_frames::<
+                    { CrossingContexts::BOUNDARY_HISTORY },
+                    false,
+                    2,
+                    S,
+                    C,
+                >(
+                    instrs, 7, 0, &windows, 1024, 2048, false
+                )
+            });
+            if let Some((contexts, ..)) = contexts {
+                filtered.retain(|&(state, side)| {
+                    contexts
+                        .by_slot
+                        .get(&(usize::from(state), 0))
+                        .is_some_and(|pairs| {
+                            pairs
+                                .iter()
+                                .any(|p| p[usize::from(side)] == 0)
+                        })
+                });
+            }
+        }
         (
             filtered,
             Some(BkwWindowSeed {
@@ -17208,7 +18427,7 @@ impl<const S: usize, const C: usize> Prog<S, C> {
         &self,
         instrs: &BkwInstrs<S, C>,
     ) -> (Set<(State, Shift)>, Option<BkwWindowSeed<S, C>>) {
-        self.shifts_side_clean(self.blank_loops(), instrs)
+        Self::shifts_side_clean(self.blank_loops(), instrs)
     }
 
     fn cant_blank_by_color_graph(&self) -> bool {
@@ -17218,150 +18437,44 @@ impl<const S: usize, const C: usize> Prog<S, C> {
     }
 }
 
-/// BF min distances inside SCC with optional weight negation.
-/// If `negate=true`, weights are negated (R=-1, L=+1).
-fn bf_min_row_in_scc_weight<const S: usize>(
-    mask: u16,
-    next: &NextDir<S>,
-    src: usize,
-    negate: bool,
-    out: &mut [i32; S],
-) {
-    const INF: i32 = 1_000_000;
-
-    *out = [INF; S];
-    out[src] = 0;
-
-    let mut nodes = [0; S];
-    let mut n = 0;
-    for v in 0..S {
-        if ((mask >> v) & 1) == 1 {
-            nodes[n] = v;
-            n += 1;
-        }
-    }
-    if n == 0 {
-        return;
-    }
-
-    for _ in 0..(n.saturating_sub(1)) {
-        let mut changed = false;
-
-        for i in 0..n {
-            let u = nodes[i];
-            let du = out[u];
-            if du == INF {
-                continue;
-            }
-
-            for dir in 0..2 {
-                let mut w = if dir == 1 { 1 } else { -1 };
-                if negate {
-                    w = -w;
-                }
-
-                for &v in &next[u][dir] {
-                    if ((mask >> v) & 1) == 0 {
-                        continue;
-                    }
-                    let nv = du + w;
-                    if nv < out[v] {
-                        out[v] = nv;
-                        changed = true;
-                    }
-                }
-            }
-        }
-
-        if !changed {
-            break;
-        }
-    }
-}
-
-/// Exact check inside a one-sided SCC:
-/// Return bitmask of states v in SCC such that there exists a path src -> v
-/// with net displacement exactly 0, under weights:
-/// - normal: R=+1, L=-1 if negate=false
-/// - negated: R=-1, L=+1 if negate=true
-///
-/// Assumes: under the chosen weight system, SCC has no negative cycles
-/// (so min distance is bounded and the explored displacement window is small).
+/// In the chosen orientation every cycle has nonnegative displacement.
+/// Removing cycles leaves a simple path, so every path weighs at least
+/// -(n - 1). On a zero-weight path that bound applies to both the prefix
+/// and the remaining suffix, bounding each intermediate displacement.
 fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
     mask: u16,
     next: &NextDir<S>,
     src: usize,
     negate: bool,
 ) -> u16 {
-    // Compute global lower bound on displacement reachable from src in SCC:
-    // min over nodes of shortest path distance (no negative cycles => finite).
-    let mut d = [0; S];
-    bf_min_row_in_scc_weight::<S>(mask, next, src, negate, &mut d);
-
-    let lo_opt = (0..S)
-        .filter(|&v| (mask >> v) & 1 != 0)
-        .map(|v| d[v])
-        .filter(|&dv| dv < 900_000)
-        .min();
-
-    let Some(lo) = lo_opt else { return 0 };
-
-    // We need to search displacements in [lo .. 0].
-    // For S<=16 and no negative cycles, lo is typically >= -(S-1) (<= -15).
-    // Keep a safe cap; if it somehow exceeds the cap, return
-    // conservative "all nodes".
-    const CAP: usize = 33; // supports lo down to -32
-    let offset = -lo;
-    #[expect(clippy::cast_sign_loss)]
-    if offset < 0 || (offset as usize) >= CAP {
-        // Too wide; don't prune.
-        return mask;
-    }
-    #[expect(clippy::cast_sign_loss)]
-    let zero_idx = offset as usize; // index representing displacement 0
-
-    // visited[state][idx] where idx corresponds to disp = lo + idx
-    let mut visited = [[false; CAP]; S];
-
-    let mut q = VecDeque::new();
-    visited[src][zero_idx] = true;
-    q.push_back((src, 0)); // store actual displacement
-
-    while let Some((u, disp)) = q.pop_front() {
-        for dir in 0..2 {
-            let mut w = if dir == 1 { 1 } else { -1 };
-            if negate {
-                w = -w;
+    let bound = i32::try_from(mask.count_ones())
+        .expect("u16 component count fits in i32")
+        - 1;
+    // A u16 component mask gives at most 31 displacement bits per state.
+    let zero = 1_u32 << bound;
+    let mut visited = [0_u32; S];
+    visited[src] = zero;
+    let mut reached = 1_u16 << src;
+    let mut queue = VecDeque::from([(src, 0_i32)]);
+    while let Some((state, disp)) = queue.pop_front() {
+        for (dir, successors) in next[state].iter().enumerate() {
+            let delta = if (dir == 1) ^ negate { 1 } else { -1 };
+            let next_disp = disp + delta;
+            if next_disp.abs() > bound {
+                continue;
             }
-
-            for &v in &next[u][dir] {
-                if ((mask >> v) & 1) == 0 {
+            let bit = 1_u32 << (next_disp + bound);
+            for &v in successors {
+                if mask & (1 << v) == 0 || visited[v] & bit != 0 {
                     continue;
                 }
-                let nd = disp + w;
-                if nd < lo || nd > 0 {
-                    continue;
+                visited[v] |= bit;
+                if next_disp == 0 {
+                    reached |= 1 << v;
                 }
-                #[expect(clippy::cast_sign_loss)]
-                let idx = (nd - lo) as usize;
-                if idx >= CAP || visited[v][idx] {
-                    continue;
-                }
-                visited[v][idx] = true;
-                q.push_back((v, nd));
+                queue.push_back((v, next_disp));
             }
         }
     }
-
-    // Collect targets reachable with displacement exactly 0
-    let mut out = 0;
-    for v in 0..S {
-        if ((mask >> v) & 1) == 0 {
-            continue;
-        }
-        if visited[v][zero_idx] {
-            out |= 1 << v;
-        }
-    }
-    out
+    reached
 }
