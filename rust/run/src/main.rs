@@ -427,6 +427,16 @@ fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
         || prog.far_cant_blank(3)
 }
 
+fn _5_2_0(prog: &Prog<5, 2>, config: &mut PassConfig<'_>) -> bool {
+    prog.bkw_cant_halt(256).is_refuted()
+        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
+        || prog.prover_settled(INF_MIN)
+        || prog.cps_cant_halt(30)
+        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
+        || prog.prover_settled(INF_MOR)
+        || prog.far_cant_halt(3)
+}
+
 fn test_deciders() {
     println!("deciders");
 
@@ -440,6 +450,9 @@ fn test_deciders() {
             1 => (_2_4_1, TREE_LIM, (_2_4_1_, 358_596)),
             2 => (_2_4_2, TREE_LIM, (0, 622_367)),
             3 => (_2_4_3, TREE_LIM, (8, 1_563_752)),
+        ],
+        (5, 2) => [
+            0 => (_5_2_0, TREE_LIM, (_5_2_0_, 72_682_619)),
         ],
     ];
 }

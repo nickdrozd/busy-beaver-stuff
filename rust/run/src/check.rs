@@ -63,6 +63,8 @@ fn test_linrec() {
 
     check_linrec(&mut failures, "8-2 holdouts", _8_2_ho.as_slice());
 
+    check_linrec(&mut failures, "5-2-0 holdouts", _5_2_0_ho.as_slice());
+
     assert_no_holdout_failures("lin rec", &failures);
 }
 
@@ -134,6 +136,12 @@ fn test_prover() {
         _8_2_ho.as_slice(),
         |prog| prog.prover_settled(PROVER),
     );
+    check_holdout_decider(
+        &mut failures,
+        "5-2-0 halt",
+        _5_2_0_ho.as_slice(),
+        |prog| prog.prover_settled(PROVER),
+    );
 
     assert_no_holdout_failures("prover", &failures);
 }
@@ -158,6 +166,12 @@ fn test_backward() {
         "8-2 blank",
         _8_2_ho.as_slice(),
         |prog| prog.bkw_cant_blank(2000).is_refuted(),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "5-2-0 halt",
+        _5_2_0_ho.as_slice(),
+        |prog| prog.bkw_cant_halt(2000).is_refuted(),
     );
 
     assert_no_holdout_failures("backward", &failures);
@@ -184,6 +198,12 @@ fn test_cps() {
         _8_2_ho.as_slice(),
         |prog| prog.cps_cant_blank(20),
     );
+    check_holdout_decider(
+        &mut failures,
+        "5-2-0 halt",
+        _5_2_0_ho.as_slice(),
+        |prog| prog.cps_cant_halt(20),
+    );
 
     assert_no_holdout_failures("cps", &failures);
 }
@@ -208,6 +228,12 @@ fn test_far() {
         "8-2 blank",
         _8_2_ho.as_slice(),
         |prog| prog.far_cant_blank(6),
+    );
+    check_holdout_decider(
+        &mut failures,
+        "5-2-0 halt",
+        _5_2_0_ho.as_slice(),
+        |prog| prog.far_cant_halt(6),
     );
 
     assert_no_holdout_failures("far", &failures);
@@ -432,7 +458,7 @@ fn run_from_file(path: &str, steps: usize) -> io::Result<()> {
 }
 
 fn test_file() {
-    let files = ["halt", "blank", "spinout"];
+    let files = ["halt", "blank", "spinout", "5-2-0"];
 
     for file in files {
         let filename = format!("test/data/holdouts/{file}.prog");

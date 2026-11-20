@@ -47,6 +47,7 @@ macro_rules! holdouts {
 holdouts!(_8_0_ch, _8_0_ho, _8_0_, "halt");
 holdouts!(&[], _8_1_ho, _8_1_, "spinout");
 holdouts!(&[], _8_2_ho, _8_2_, "blank");
+holdouts!(&[], _5_2_0_ho, _5_2_0_, "5-2-0");
 
 /**************************************/
 

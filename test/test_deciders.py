@@ -45,7 +45,7 @@ def get_holdouts(path: str) -> set[str]:
     return holdouts
 
 
-HALT_HOLDOUTS = get_holdouts('halt')
+HALT_HOLDOUTS = get_holdouts('halt') | get_holdouts('5-2-0')
 BLANK_HOLDOUTS = get_holdouts('blank')
 SPINOUT_HOLDOUTS = get_holdouts('spinout')
 
