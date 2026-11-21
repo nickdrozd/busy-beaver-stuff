@@ -212,10 +212,8 @@ class Simple(TuringTest):
                             check = bool(self.machine.undfnd)
                         case 'blank':
                             check = bool(self.machine.blanks)
-                        case 'spinout' | 'zloop':
+                        case 'spinout' | 'zloop' | 'twostep':
                             check = bool(self.machine.spnout)
-                        case 'twostep':
-                            check = bool(self.machine.infrul)
 
                     self.assertFalse(check, (goal, prog))
 

@@ -331,9 +331,34 @@ impl MachineResult {
     }
 }
 
+fn quick_twostep_loops(prog: &Prog) -> Dict<Slot, Vec<Slot>> {
+    let mut loops = Dict::<Slot, Vec<Slot>>::new();
+
+    for (slot, &(write, shift, next_state)) in prog.iter() {
+        if write != slot.1 {
+            continue;
+        }
+
+        for (second, &(next_write, next_shift, return_state)) in
+            prog.iter()
+        {
+            if second.0 == next_state
+                && next_write == second.1
+                && next_shift != shift
+                && return_state == slot.0
+            {
+                loops.entry(slot).or_default().push(second);
+            }
+        }
+    }
+
+    loops
+}
+
 #[pyfunction]
 pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
     let prog = Prog::from(prog);
+    let twosteps = quick_twostep_loops(&prog);
 
     let mut config = AlgConfig::init();
 
@@ -347,6 +372,7 @@ pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
     let mut last_slot: Option<Slot> = None;
 
     for cycle in 0..sim_lim {
+        cycles = cycle;
         let slot = config.slot();
 
         let Some(&(color, shift, next_state)) = prog.get(&slot) else {
@@ -362,6 +388,21 @@ pub fn run_quick_machine(prog: &str, sim_lim: Steps) -> MachineResult {
             cycles = cycle;
             result = Some(spnout);
             break;
+        }
+
+        if let Some(second_slots) = twosteps.get(&slot) {
+            let mut probe = AlgConfig::init();
+            probe.state = next_state;
+            probe.tape = config.tape.clone();
+
+            let probed = probe.tape.step(shift, color, false);
+            if probed == AlgCount::from(1_u8)
+                && second_slots.contains(&probe.slot())
+            {
+                cycles = cycle;
+                result = Some(spnout);
+                break;
+            }
         }
 
         let stepped = config.tape.step(shift, color, same);

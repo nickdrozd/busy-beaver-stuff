@@ -513,6 +513,7 @@ TWOSTEPPERS = {
     "1RB 0RB 2LB 1RA  3LA 1RA 3LB 2RB",
     "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2LA",
     "1RB 2LA 1RA 1LA  3LA 1LB 2RB 2RA",
+    "1RB 2LA 2RB 1LA  0LA 2RA 3LB 1RB",
     "1RB 2LB 0RA 3LB  2LA 1RA 3RB 1LB",
     "1RB 2LB 2RA 3LA  1LA 3RA 3LB 0LB",
     "1RB 3LA 1LA 1RA  0LB 2LA 2RA 3RB",
@@ -4094,7 +4095,7 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
          "halt": 19,
         "blank": 7,
         "spinout": 34,
-        "twostep": 10,
+        "twostep": 9,
         "zloop": 1,
     },
 }
@@ -4222,7 +4223,6 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
         },
         "twostep": {
             "1RB 2LA 1LB 3RB  0LA 2RB 3LB 2RA",
-            "1RB 2LA 2RB 1LA  0LA 2RA 3LB 1RB",
             "1RB 3LA 2RB 0LA  2LA 1LA 3LB 3RA",
             "1RB 3RA 2LB 0LA  2LA 1RA 3LB 2RB",
             "1RB 3RA 2LB 1LA  2LA 1RA 3LB 0RB",
