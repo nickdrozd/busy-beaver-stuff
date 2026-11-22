@@ -9,7 +9,9 @@ use ahash::{AHashMap as Dict, AHashSet as Set, AHasher};
 use std::sync::Arc;
 
 use crate::{
-    Color, Instr, Prog, Shift, Slot, State, Steps, instrs::Parse as _,
+    Color, Instr, Prog, Shift, Slot, State, Steps,
+    instrs::Parse as _,
+    prog::{Entries, Entrypoints},
 };
 
 const MAX_STACK_DEPTH: usize = 64;
@@ -126,10 +128,6 @@ impl<const s: usize, const c: usize> Prog<s, c> {
 
 type Configs = Vec<Config>;
 type BlankStates = Set<State>;
-
-type Entry = (Slot, (Color, Shift));
-type Entries = Vec<Entry>;
-type Entrypoints = Dict<State, (Entries, Entries)>;
 
 /// A single, program-derived instruction index. `instrs` are instructions,
 /// not backward target slots: an undefined instruction is represented by None.
@@ -8835,19 +8833,6 @@ fn get_blanks(configs: &Configs) -> BlankStates {
 
 #[expect(clippy::multiple_inherent_impl)]
 impl<const s: usize, const c: usize> Prog<s, c> {
-    fn get_entrypoints(&self) -> Entrypoints {
-        let mut entrypoints = Entrypoints::new();
-
-        for (slot @ (read, _), &(color, shift, state)) in self.iter() {
-            let (same, diff) = entrypoints.entry(state).or_default();
-
-            (if read == state { same } else { diff })
-                .push((slot, (color, shift)));
-        }
-
-        entrypoints
-    }
-
     /// Compute a sound over-approximation of the parity of the number of
     /// nonblank tape cells in each state, starting from the blank tape.
     ///
@@ -10948,111 +10933,6 @@ impl<const S: usize, const C: usize> Prog<S, C> {
 
         possible
     }
-}
-
-#[cfg(test)]
-use crate::instrs::{read_color, read_shift, read_state};
-
-#[cfg(test)]
-fn read_entry(entry: &str) -> Entry {
-    let (slot, instr) = entry.split_once(':').unwrap();
-
-    let mut chars = instr.chars();
-    let color = chars.next().unwrap();
-    let shift = chars.next().unwrap();
-
-    (Slot::read(slot), (read_color(color), read_shift(shift)))
-}
-
-#[cfg(test)]
-macro_rules! assert_entrypoints {
-    ($(($prog:literal, ($s:literal, $c:literal)) => [$($state:literal => ($same:expr, $diff:expr)),* $(,)?]),* $(,)?) => {
-        $({
-            let mut entrypoints = Entrypoints::new();
-
-            $(
-                entrypoints.insert(
-                    read_state($state),
-                    (
-                        $same.into_iter().map(read_entry).collect(),
-                        $diff.into_iter().map(read_entry).collect(),
-                    ),
-                );
-            )*
-
-            assert_eq!(
-                entrypoints,
-                Prog::<$s, $c>::from($prog).get_entrypoints(),
-            );
-        })*
-    };
-}
-
-#[test]
-fn test_entrypoints() {
-    assert_entrypoints!(
-        ("1RB ...  1LB 0RB", (2, 2)) => [
-            'B' => (["B0:1L", "B1:0R"], ["A0:1RB"])
-        ],
-        ("1RB ... ...  0LB 2RB 0RB", (2, 3)) => [
-            'B' => (["B0:0L", "B1:2R", "B2:0R"], ["A0:1RB"])
-        ],
-        ("1RB ... 2LB  2LB 2RA 0RA", (2, 3)) => [
-            'A' => ([], ["B1:2R", "B2:0R"]),
-            'B' => (["B0:2L"], ["A0:1R", "A2:2L"])
-        ],
-        ("1RB 0RB 1RA  1LB 2RB 0LA", (2, 3)) => [
-            'A' => (["A2:1R"], ["B2:0L"]),
-            'B' => (["B0:1L", "B1:2R"], ["A0:1R", "A1:0R"])
-        ],
-        ("1RB 1RC  0LA 1RA  0LB ...", (3, 2)) => [
-            'A' => ([], ["B0:0L", "B1:1R"]),
-            'B' => ([], ["A0:1R", "C0:0L"]),
-            'C' => ([], ["A1:1R"])
-        ],
-        ("1RB ...  0LB 1RC  0LC 1RA", (3, 2)) => [
-            'A' => ([], ["C1:1R"]),
-            'B' => (["B0:0L"], ["A0:1R"]),
-            'C' => (["C0:0L"], ["B1:1R"])
-        ],
-        ("1RB 1LB  1LA 1LC  1RC 0LC", (3, 2)) => [
-            'A' => ([], ["B0:1L"]),
-            'B' => ([], ["A0:1R", "A1:1L"]),
-            'C' => (["C0:1R", "C1:0L"], ["B1:1L"])
-        ],
-        ("1RB 0LC  1LB 1LA  1RC 0LC", (3, 2)) => [
-            'A' => ([], ["B1:1L"]),
-            'B' => (["B0:1L"], ["A0:1R"]),
-            'C' => (["C0:1R", "C1:0L"], ["A1:0L"])
-        ],
-        ("1RB 2RA 0RB 2RB  1LB 3RB 3LA 0LA", (2, 4)) => [
-            'A' => (["A1:2R"], ["B2:3L", "B3:0L"]),
-            'B' => (["B0:1L", "B1:3R"], ["A0:1R", "A2:0R", "A3:2R"])
-        ],
-        ("1RB ...  0LC ...  1RC 1LD  0LC 0LD", (4, 2)) => [
-            'B' => ([], ["A0:1RB"]),
-            'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
-            'D' => (["D1:0L"], ["C1:1L"])
-        ],
-        ("1RB ...  0LC ...  1RC 1LD  0LC 0LB", (4, 2)) => [
-            'B' => ([], ["A0:1RB", "D1:0L"]),
-            'C' => (["C0:1R"], ["B0:0L", "D0:0L"]),
-            'D' => ([], ["C1:1L"])
-        ],
-        ("1RB 1LC  1RD 1RB  0RD 0RC  1LD 1LA", (4, 2)) => [
-            'A' => ([], ["D1:1L"]),
-            'B' => (["B1:1R"], ["A0:1R"]),
-            'C' => (["C1:0R"], ["A1:1L"]),
-            'D' => (["D0:1L"], ["B0:1R", "C0:0R"])
-        ],
-        ("1RB 1LC  0LC 0RD  1RD 1LE  1RE 1LA  1LA 0LB", (5, 2)) => [
-            'A' => ([], ["D1:1L", "E0:1L"]),
-            'B' => ([], ["A0:1R", "E1:0L"]),
-            'C' => ([], ["A1:1L", "B0:0L"]),
-            'D' => ([], ["B1:0R", "C0:1R"]),
-            'E' => ([], ["C1:1L", "D0:1R"])
-        ],
-    );
 }
 
 /**************************************/
@@ -17484,107 +17364,4 @@ fn zero_disp_reach_mask_one_sided_scc<const S: usize>(
         }
     }
     out
-}
-
-/**************************************/
-
-#[expect(clippy::multiple_inherent_impl)]
-impl<const s: usize, const c: usize> Prog<s, c> {
-    pub fn is_reversible(&self) -> bool {
-        self.get_entrypoints().values().all(|(same, diff)| {
-            let mut shift = None;
-            let mut seen_print = [false; c];
-
-            for &(_, (print, sh)) in same.iter().chain(diff) {
-                match shift {
-                    Some(prev) if prev != sh => return false,
-                    Some(_) => {},
-                    None => shift = Some(sh),
-                }
-
-                let print = print as usize;
-
-                if seen_print[print] {
-                    return false;
-                }
-
-                seen_print[print] = true;
-            }
-
-            true
-        })
-    }
-}
-
-#[test]
-fn test_is_reversible() {
-    assert!(Prog::<2, 2>::from("0RB ...  1LA 1RB").is_reversible());
-    assert!(Prog::<2, 2>::from("0RB 0LA  1LA 1RB").is_reversible());
-    assert!(!Prog::<2, 2>::from("0RB 1LA  1LA 1RB").is_reversible());
-
-    assert!(
-        Prog::<3, 2>::from("0RB ...  0LC 1RA  1RB 1LC").is_reversible()
-    );
-    assert!(
-        Prog::<3, 2>::from("0RB 0RA  0LC 1RA  1RB 1LC").is_reversible()
-    );
-    assert!(
-        !Prog::<3, 2>::from("0RB 0RB  0LC 1RA  1RB 1LC")
-            .is_reversible()
-    );
-
-    assert!(
-        Prog::<4, 2>::from("1RB 0LD  0LC 0RB  1LA 1LD  1LC ...")
-            .is_reversible()
-    );
-    assert!(
-        Prog::<4, 2>::from("1RB 0LD  0LC 0RB  1LA 1LD  1LC 0LA")
-            .is_reversible()
-    );
-    assert!(
-        !Prog::<4, 2>::from("1RB 0LD  0LC 0RB  1LA 1LD  1LC 1LA")
-            .is_reversible()
-    );
-
-    assert!(
-        Prog::<5, 2>::from(
-            "1RB 0RD  1RC 0RB  1RD ...  1LE 1LA  0LE 0LA"
-        )
-        .is_reversible()
-    );
-    assert!(
-        Prog::<5, 2>::from(
-            "1RB 0RD  1RC 0RB  1RD 0RC  1LE 1LA  0LE 0LA"
-        )
-        .is_reversible()
-    );
-    assert!(
-        !Prog::<5, 2>::from(
-            "1RB 0RD  1RC 0RB  1RD 1RC  1LE 1LA  0LE 0LA"
-        )
-        .is_reversible()
-    );
-
-    assert!(
-        Prog::<6, 2>::from(
-            "1RB 1LD  1LC 1RE  0LD 0LC  0RE 0RF  0RA ...  1RF 1RA"
-        )
-        .is_reversible()
-    );
-    assert!(
-        Prog::<6, 2>::from(
-            "1RB 1LD  1LC 1RE  0LD 0LC  0RE 0RF  0RA 0RB  1RF 1RA"
-        )
-        .is_reversible()
-    );
-    assert!(
-        !Prog::<6, 2>::from(
-            "1RB 1LD  1LC 1RE  0LD 0LC  0RE 0RF  0RA 1RB  1RF 1RA"
-        )
-        .is_reversible()
-    );
-
-    assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB ...").is_reversible());
-    assert!(Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB 1RG").is_reversible());
-    assert!(!Prog::<7, 2>::from("1RB 1LD  0LC 0LD  1LC 1LA  0LA 1RE  0RF 0RE  0RG 1RF  0RB 1LG").is_reversible());
 }
