@@ -1,5 +1,4 @@
 # ruff:file-ignore[undefined-local-with-import-star-usage]
-import json
 from typing import TYPE_CHECKING
 from unittest import TestCase
 
@@ -10,9 +9,6 @@ from tm.rust_stuff import (
     bkw_cant_spinout,
     bkw_cant_twostep,
     bkw_cant_zloop,
-    cps_cant_blank,
-    cps_cant_halt,
-    cps_cant_spinout,
     far_cant_blank,
     far_cant_halt,
     far_cant_spinout,
@@ -31,7 +27,6 @@ if TYPE_CHECKING:
 
 ########################################
 
-CPS_LIMIT = 33
 BKW_LIMIT = 3_000
 
 ########################################
@@ -211,97 +206,6 @@ class Bkw(DeciderTest):
                     changed = True
 
         self.assertFalse(changed)
-
-########################################
-
-class Cps(DeciderTest):
-    false_negatives = FALSE_NEGATIVES['cps']
-
-    def assert_could_halt_cps(self, prog: str):
-        self.assertFalse(
-            cps_cant_halt(prog, CPS_LIMIT))
-
-    def assert_cant_halt_cps(self, prog: str):
-        if prog in self.false_negatives['halt'] | IRREGULAR:
-            return
-
-        self.assertTrue(
-            cps_cant_halt(prog, CPS_LIMIT))
-
-    def assert_could_blank_cps(self, prog: str):
-        self.assertFalse(
-            cps_cant_blank(prog, CPS_LIMIT))
-
-    def assert_cant_blank_cps(self, prog: str):
-        if prog in self.false_negatives['blank']:
-            return
-
-        self.assertTrue(
-            cps_cant_blank(prog, CPS_LIMIT))
-
-    def assert_could_spinout_cps(self, prog: str):
-        self.assertFalse(
-            cps_cant_spinout(prog, CPS_LIMIT))
-
-    def assert_cant_spinout_cps(self, prog: str):
-        if prog in self.false_negatives['spinout']:
-            return
-
-        self.assertTrue(
-            cps_cant_spinout(prog, CPS_LIMIT), prog)
-
-    def test_true_positives(self):
-        for prog in NONHALTERS:
-            self.assert_cant_halt_cps(prog)
-
-        for prog in NONBLANKERS:
-            self.assert_cant_blank_cps(prog)
-
-        for prog in NONSPINNERS:
-            self.assert_cant_spinout_cps(prog)
-
-    def test_true_negatives(self):
-        for prog in HALTERS:
-            self.assert_could_halt_cps(prog)
-
-        for prog in BLANKERS:
-            self.assert_could_blank_cps(prog)
-
-        for prog in SPINNERS:
-            self.assert_could_spinout_cps(prog)
-
-    def test_holdouts(self):
-        for prog in BLANK_HOLDOUTS:
-            self.assert_could_blank_cps(prog)
-
-        for prog in SPINOUT_HOLDOUTS:
-            self.assert_could_spinout_cps(prog)
-
-        for prog in HALT_HOLDOUTS | IRREGULAR:
-            self.assert_could_halt_cps(prog)
-
-    def test_false_negatives(self):
-        cats: dict[Goal, tuple[set[str], Callable[[str], None]]] = {
-            'halt': (set(), self.assert_could_halt_cps),
-            'blank': (set(), self.assert_could_blank_cps),
-            'spinout': (set(), self.assert_could_spinout_cps),
-        }
-
-        for cat, (pos, cps_check) in cats.items():
-            for prog in self.false_negatives[cat]:
-                try:
-                    cps_check(prog)
-                except AssertionError:
-                    pos.add(prog)
-
-        true_pos = {
-            cat: sorted(pos, key = len)
-            for cat, (pos, _) in cats.items()
-        }
-
-        if any(pos for pos in true_pos.values()):
-            print(json.dumps(true_pos, indent = 4))
-            raise AssertionError
 
 ########################################
 

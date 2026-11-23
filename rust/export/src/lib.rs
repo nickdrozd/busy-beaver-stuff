@@ -153,43 +153,6 @@ pub fn bkw_cant_twostep(prog: &str, steps: Steps) -> BackwardResult {
 
 /***************************************/
 
-use tm::cps::Radius;
-
-#[pyfunction]
-pub fn cps_cant_halt(prog: &str, rad: Radius) -> bool {
-    let p = Prog::from(prog);
-
-    if p.halt_slots().is_empty() {
-        return true;
-    }
-
-    p.cps_cant_halt(rad)
-}
-
-#[pyfunction]
-pub fn cps_cant_blank(prog: &str, rad: Radius) -> bool {
-    let p = Prog::from(prog);
-
-    if p.erase_slots().is_empty() {
-        return true;
-    }
-
-    p.cps_cant_blank(rad)
-}
-
-#[pyfunction]
-pub fn cps_cant_spinout(prog: &str, rad: Radius) -> bool {
-    let p = Prog::from(prog);
-
-    if p.zr_shifts().is_empty() {
-        return true;
-    }
-
-    p.cps_cant_spinout(rad)
-}
-
-/***************************************/
-
 #[pyfunction]
 pub fn far_cant_halt(prog: &str, steps: Steps) -> bool {
     let p = Prog::from(prog);
@@ -471,10 +434,9 @@ mod rust_stuff {
     use crate::{
         BackwardResult, MachineResult, PastConfigPy, TermRes,
         bkw_cant_blank, bkw_cant_halt, bkw_cant_spinout,
-        bkw_cant_twostep, bkw_cant_zloop, check_inf, cps_cant_blank,
-        cps_cant_halt, cps_cant_spinout, far_cant_blank, far_cant_halt,
-        far_cant_spinout, opt_block, read_instr, run_quick_machine,
-        show_comp, show_instr, show_slot, show_state, tcompile,
-        term_or_rec,
+        bkw_cant_twostep, bkw_cant_zloop, check_inf, far_cant_blank,
+        far_cant_halt, far_cant_spinout, opt_block, read_instr,
+        run_quick_machine, show_comp, show_instr, show_slot,
+        show_state, tcompile, term_or_rec,
     };
 }

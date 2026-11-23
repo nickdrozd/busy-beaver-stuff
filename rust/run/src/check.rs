@@ -23,9 +23,6 @@ pub fn test_holdouts() {
     println!("backward");
     test_backward();
 
-    println!("cps");
-    test_cps();
-
     println!("far");
     test_far();
 }
@@ -175,37 +172,6 @@ fn test_backward() {
     );
 
     assert_no_holdout_failures("backward", &failures);
-}
-
-fn test_cps() {
-    let mut failures = vec![];
-
-    check_holdout_decider(
-        &mut failures,
-        "8-0 halt",
-        _8_0_ho.as_slice(),
-        |prog| prog.cps_cant_halt(20),
-    );
-    check_holdout_decider(
-        &mut failures,
-        "8-1 spinout",
-        _8_1_ho.as_slice(),
-        |prog| prog.cps_cant_spinout(20),
-    );
-    check_holdout_decider(
-        &mut failures,
-        "8-2 blank",
-        _8_2_ho.as_slice(),
-        |prog| prog.cps_cant_blank(20),
-    );
-    check_holdout_decider(
-        &mut failures,
-        "5-2-0 halt",
-        _5_2_0_ho.as_slice(),
-        |prog| prog.cps_cant_halt(20),
-    );
-
-    assert_no_holdout_failures("cps", &failures);
 }
 
 fn test_far() {

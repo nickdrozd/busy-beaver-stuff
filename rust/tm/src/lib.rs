@@ -5,7 +5,6 @@
 pub mod bkw;
 pub mod blocks;
 pub mod config;
-pub mod cps;
 pub mod far;
 pub mod instrs;
 pub mod machine;

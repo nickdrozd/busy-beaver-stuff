@@ -168,12 +168,6 @@ macro_rules! assert_holdouts {
                             prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
                                 || prog.prover_settled(INF_MIN)
                         },
-                        [ $( |prog| match $goal {
-                            0 => prog.cps_cant_halt(CPS_8),
-                            1 => prog.cps_cant_spinout(CPS_8),
-                            2 => prog.cps_cant_blank(CPS_8),
-                            _ => unreachable!(),
-                        } ),* ],
                         |prog, config| {
                             prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
                                 || prog.prover_settled(INF_MOR)
@@ -351,9 +345,9 @@ fn _5_2_0(prog: &Prog<5, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(256).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_halt(30)
         || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
         || prog.prover_settled(INF_MOR)
+        || prog.far_cant_halt(3)
 }
 
 fn test_deciders() {
@@ -426,7 +420,6 @@ fn test_bkw() {
 /**************************************/
 
 const BKW_8: usize = 1000;
-const CPS_8: usize = 21;
 const FAR_8: usize = 6;
 
 fn test_pipeline_8() {

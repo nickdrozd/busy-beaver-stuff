@@ -1,4 +1,7 @@
-use core::fmt::{self, Display};
+use core::{
+    cell::RefCell,
+    fmt::{self, Display},
+};
 
 use ahash::{AHashMap as Dict, AHashSet as Set};
 
@@ -283,22 +286,6 @@ impl<const states: usize, const colors: usize> Prog<states, colors> {
         }
 
         false
-    }
-}
-
-pub trait GetInstr {
-    #[expect(clippy::result_unit_err)]
-    fn get_instr(&self, slot: &Slot) -> Result<Option<Instr>, ()>;
-    fn is_blank(&self, color: Color) -> bool;
-}
-
-impl<const s: usize, const c: usize> GetInstr for Prog<s, c> {
-    fn get_instr(&self, slot: &Slot) -> Result<Option<Instr>, ()> {
-        Ok(self.get(slot).copied())
-    }
-
-    fn is_blank(&self, color: Color) -> bool {
-        color == 0
     }
 }
 
@@ -613,4 +600,159 @@ fn test_entrypoints() {
             'E' => ([], ["C1:1L", "D0:1R"])
         ],
     );
+}
+
+/**************************************/
+
+pub trait GetInstr {
+    #[expect(clippy::result_unit_err)]
+    fn get_instr(&self, slot: &Slot) -> Result<Option<Instr>, ()>;
+    fn is_blank(&self, color: Color) -> bool;
+}
+
+impl<const s: usize, const c: usize> GetInstr for Prog<s, c> {
+    fn get_instr(&self, slot: &Slot) -> Result<Option<Instr>, ()> {
+        Ok(self.get(slot).copied())
+    }
+
+    fn is_blank(&self, color: Color) -> bool {
+        color == 0
+    }
+}
+
+#[expect(clippy::multiple_inherent_impl)]
+impl<const s: usize, const c: usize> Prog<s, c> {
+    pub fn make_lru_macro(&self) -> HistoryMacro<'_, s, c> {
+        HistoryMacro::new(self, update_lru)
+    }
+
+    pub fn make_transcript_macro(
+        &self,
+        steps: usize,
+    ) -> HistoryMacro<'_, s, c> {
+        HistoryMacro::new(self, update_transcript(steps))
+    }
+}
+
+type History = Vec<Slot>;
+
+pub struct HistoryMacro<'p, const s: usize, const c: usize> {
+    prog: &'p Prog<s, c>,
+
+    instrs: RefCell<Dict<Slot, Instr>>,
+
+    colors: RefCell<Vec<(Color, History)>>,
+
+    updater: Box<dyn Fn(Slot, &History) -> History>,
+}
+
+impl<const s: usize, const c: usize> Display
+    for HistoryMacro<'_, s, c>
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.prog)
+    }
+}
+
+impl<const s: usize, const c: usize> GetInstr
+    for HistoryMacro<'_, s, c>
+{
+    fn is_blank(&self, color: Color) -> bool {
+        self.colors.borrow()[color as usize].0 == 0
+    }
+
+    fn get_instr(
+        &self,
+        macro_slot @ &(state, macro_color): &Slot,
+    ) -> Result<Option<Instr>, ()> {
+        if let Some(&instr) = self.instrs.borrow().get(macro_slot) {
+            return Ok(Some(instr));
+        }
+
+        let (slot, updated) = {
+            let (color, past) =
+                &self.colors.borrow()[macro_color as usize];
+
+            let slot = (state, *color);
+
+            let updated = (self.updater)(slot, past);
+
+            (slot, updated)
+        };
+
+        let Some(&(print, shift, trans)) = self.prog.get(&slot) else {
+            return Ok(None);
+        };
+
+        let macro_instr = (self.encode(print, updated)?, shift, trans);
+
+        self.instrs.borrow_mut().insert(*macro_slot, macro_instr);
+
+        Ok(Some(macro_instr))
+    }
+}
+
+impl<'p, const s: usize, const c: usize> HistoryMacro<'p, s, c> {
+    fn new(
+        prog: &'p Prog<s, c>,
+        updater: impl 'static + Fn(Slot, &History) -> History,
+    ) -> Self {
+        // Macro color 0 is the fresh, blank tape cell. Subsequent colors
+        // retain the complete (base color, history) pair, even if base is 0.
+        let colors = vec![(0, vec![])];
+
+        Self {
+            prog,
+            instrs: Dict::new().into(),
+            colors: colors.into(),
+            updater: Box::new(updater),
+        }
+    }
+
+    fn encode(
+        &self,
+        print: Color,
+        history: History,
+    ) -> Result<Color, ()> {
+        let new = (print, history);
+        let mut colors = self.colors.borrow_mut();
+
+        if let Some((index, _)) =
+            colors.iter().enumerate().find(|&(_, entry)| *entry == new)
+        {
+            return Color::try_from(index).map_err(|_| ());
+        }
+
+        // No history is discarded when the u8 macro-color space is full.
+        let index = Color::try_from(colors.len()).map_err(|_| ())?;
+        colors.push(new);
+        Ok(index)
+    }
+}
+
+fn update_lru(slot: Slot, past: &History) -> History {
+    let mut history = past.clone();
+
+    if history.first() != Some(&slot) {
+        history.retain(|&s| s != slot);
+        history.insert(0, slot);
+    }
+
+    history
+}
+
+fn update_transcript(
+    steps: usize,
+) -> impl Fn(Slot, &History) -> History {
+    move |slot, past| {
+        let mut history = past.clone();
+
+        if steps <= history.len() {
+            history.pop();
+        }
+
+        history.insert(0, slot);
+
+        history
+    }
 }

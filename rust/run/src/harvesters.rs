@@ -103,7 +103,6 @@ pub struct MultiCollector<
     initial: Pipeline<s, c>,
     bkw: [Decider<s, c>; n],
     rec_prover_short: Pipeline<s, c>,
-    cps: [Decider<s, c>; n],
     rec_prover_long: Pipeline<s, c>,
     far: [Decider<s, c>; n],
 }
@@ -115,7 +114,6 @@ impl<const s: usize, const c: usize, const n: usize>
         initial: Pipeline<s, c>,
         bkw: [Decider<s, c>; n],
         rec_prover_short: Pipeline<s, c>,
-        cps: [Decider<s, c>; n],
         rec_prover_long: Pipeline<s, c>,
         far: [Decider<s, c>; n],
     ) -> Self {
@@ -125,7 +123,6 @@ impl<const s: usize, const c: usize, const n: usize>
             initial,
             bkw,
             rec_prover_short,
-            cps,
             rec_prover_long,
             far,
         }
@@ -169,12 +166,6 @@ impl<const s: usize, const c: usize, const n: usize> Harvester<s, c>
         }
 
         if (self.rec_prover_short)(prog, config) {
-            return;
-        }
-
-        Self::run_deciders(&mut alive, &self.cps, prog);
-
-        if !alive.iter().any(|&alive| alive) {
             return;
         }
 
