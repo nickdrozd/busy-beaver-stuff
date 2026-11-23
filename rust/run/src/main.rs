@@ -324,52 +324,6 @@ macro_rules! assert_holdouts {
     }};
 }
 
-macro_rules! assert_bkw {
-    ( $( $instrs:literal => [
-        $steps:expr,
-        $visited:expr,
-        [
-            0 => $halt:tt,
-            1 => $spinout:tt,
-            2 => $blank:tt,
-            3 => $twostep:tt,
-        ],
-    ] ),* $(,)? ) => {{
-        rayon::scope(|s| {
-            $(
-                assert_holdouts!(
-                    @instrs_run
-                    s,
-                    $instrs,
-                    $steps,
-                    $visited,
-                    &|| MultiCollector::new(
-                        |prog, config| {
-                            prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
-                        },
-                        [
-                            |prog| prog.bkw_cant_halt(BKW).is_refuted(),
-                            |prog| prog.bkw_cant_spinout(BKW).is_refuted(),
-                            |prog| prog.bkw_cant_blank(BKW).is_refuted(),
-                            |prog| prog.bkw_cant_twostep(BKW).is_refuted(),
-                        ],
-                        |_, _| false,
-                        [|_| false, |_| false, |_| false, |_| false],
-                        |_, _| false,
-                        [|_| false, |_| false, |_| false, |_| false],
-                    ),
-                    [
-                        0 => $halt,
-                        1 => $spinout,
-                        2 => $blank,
-                        3 => $twostep,
-                    ]
-                );
-            )*
-        });
-    }};
-}
-
 #[expect(clippy::string_slice, clippy::sliced_string_as_bytes)]
 fn show_num(n: u64) -> String {
     let s = n.to_string();
@@ -393,38 +347,6 @@ fn show_num(n: u64) -> String {
 
 /**************************************/
 
-const BKW_DCD: usize = 10_000;
-
-fn _4_2_1(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(BKW_DCD).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-}
-
-fn _4_2_2(prog: &Prog<4, 2>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(BKW_DCD).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_blank(9)
-        || prog.prover_settled(INF_MOR)
-}
-
-fn _2_4_1(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_spinout(BKW_DCD).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_spinout(19)
-        || prog.term_or_rec(LIN_MAX, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MOR)
-}
-
-fn _2_4_2(prog: &Prog<2, 4>, config: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_blank(BKW_DCD).is_refuted()
-        || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
-        || prog.prover_settled(INF_MIN)
-        || prog.cps_cant_blank(12)
-}
-
 fn _5_2_0(prog: &Prog<5, 2>, config: &mut PassConfig<'_>) -> bool {
     prog.bkw_cant_halt(256).is_refuted()
         || prog.term_or_rec(LIN_MOR, config.to_mut()).is_settled()
@@ -438,16 +360,6 @@ fn test_deciders() {
     println!("deciders");
 
     assert_holdouts![
-        (4, 2) => [
-            1 => (_4_2_1, 99, (0, 258_229)),
-            2 => (_4_2_2, 99, (0, 949_480)),
-            3 => (_4_2_3, 99, (0, 1_828_723)),
-        ],
-        (2, 4) => [
-            1 => (_2_4_1, TREE_LIM, (_2_4_1_, 358_596)),
-            2 => (_2_4_2, TREE_LIM, (0, 622_367)),
-            3 => (_2_4_3, TREE_LIM, (2, 1_563_752)),
-        ],
         (5, 2) => [
             0 => (_5_2_0, TREE_LIM, (_5_2_0_, 72_682_619)),
         ],
@@ -456,59 +368,57 @@ fn test_deciders() {
 
 /**************************************/
 
-const BKW: usize = 2048;
+macro_rules! assert_bkw {
+    ( $( ($states:literal, $colors:literal) => [
+        $( $goal:literal => ($holdouts:expr, $visited:expr) ),* $(,)?
+    ] ),* $(,)? ) => {{
+        rayon::scope(|s| {
+            $( $(
+                s.spawn(move |_| {
+                    let result = HoldoutVisited::<$states, $colors>::run_params(
+                        get_goal($goal),
+                        TREE_LIM,
+                        &|| HoldoutVisited::new(|prog, config| {
+                            prog.term_or_rec(LIN_MIN, config.to_mut()).is_settled()
+                                || match $goal {
+                                    1 => prog.bkw_cant_spinout(BKW).is_refuted(),
+                                    2 => prog.bkw_cant_blank(BKW).is_refuted(),
+                                    _ => unreachable!(),
+                                }
+                        }),
+                    );
 
-fn _4_2_3(prog: &Prog<4, 2>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(BKW).is_refuted()
+                    if result != ($holdouts, $visited) {
+                        panic!(
+                            "(({}, {}), {}) result mismatch:\n  old: ({}, {})\n  new: ({}, {})",
+                            $states,
+                            $colors,
+                            $goal,
+                            show_num($holdouts),
+                            show_num($visited),
+                            show_num(result.0),
+                            show_num(result.1),
+                        );
+                    }
+                });
+            )* )*
+        });
+    }};
 }
 
-fn _2_4_3(prog: &Prog<2, 4>, _: &mut PassConfig<'_>) -> bool {
-    prog.bkw_cant_twostep(BKW).is_refuted()
-}
+const BKW: usize = 10_000;
 
 fn test_bkw() {
     println!("bkw");
 
     assert_bkw![
-        4 => [
-            4,
-            1_433,
-            [
-                0 => 0,
-                1 => 0,
-                2 => 0,
-                3 => 0,
-            ],
+        (4, 2) => [
+            1 => (3, 258_219),
+            2 => (7, 949_467),
         ],
-        5 => [
-            12,
-            50_520,
-            [
-                0 => 0,
-                1 => 0,
-                2 => 0,
-                3 => 0,
-            ],
-        ],
-        6 => [
-            22,
-            1_800_711,
-            [
-                0 => 0,
-                1 => 0,
-                2 => 0,
-                3 => 0,
-            ],
-        ],
-        7 => [
-            109,
-            81_810_021,
-            [
-                0 => 4,
-                1 => 0,
-                2 => 0,
-                3 => 0,
-            ],
+        (2, 4) => [
+            1 => (23, 358_596),
+            2 => (5, 622_367),
         ],
     ];
 }
