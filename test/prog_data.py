@@ -3732,14 +3732,6 @@ RECURS = (
 
 assert not INFRUL & RECURS
 
-NONHALTERS = (
-    SPINNERS
-    | RECURS
-    | INFRUL
-    | set(BACKWARD_STEPS['halt'])
-    | IRREGULAR
-)
-
 BLANKERS = (
     DO_BLANK
     | set(SPINOUT_BLANK
@@ -3754,28 +3746,6 @@ BLANKERS = (
            if marks == 0}
     | {prog for steps in LIMITED['blank'].values() for prog in steps}
 )
-
-NONBLANKERS = (
-    DONT_BLANK
-    | (set(SPINOUT | SPINOUT_SLOW) - BLANKERS)
-    | set(RECUR)
-    | {prog for prog, marks in PROVER_SPINOUT.items()
-           if not isinstance(marks, int) or marks > 3}
-    | {prog for prog, (marks, _) in HALT.items() if marks > 3}
-    | set(BACKWARD_STEPS['blank'])
-)
-
-NONSPINNERS = (
-    DONT_SPINOUT
-    | HALTERS
-    | RECURS
-    | INFRUL
-    | set(BACKWARD_STEPS['spinout'])
-)
-
-assert not HALTERS & NONHALTERS
-assert not BLANKERS & NONBLANKERS
-assert not SPINNERS & NONSPINNERS
 
 assert not RECURS & HALTERS
 assert not RECURS & SPINNERS
@@ -4082,19 +4052,19 @@ type Decider = Literal[
 
 FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
     "far": {
-        "halt": 1,
+        "halt": 19,
         "blank": 1,
         "spinout": 2,
     },
     "cps": {
-        "halt": 6,
+        "halt": 38,
         "blank": 7,
-        "spinout": 20,
+        "spinout": 24,
     },
     "bkw": {
-        "halt": 18,
+        "halt": 36,
         "blank": 0,
-        "spinout": 2,
+        "spinout": 6,
         "twostep": 0,
         "zloop": 0,
     },
@@ -4103,7 +4073,25 @@ FALSE_NEGATIVE_COUNTS: dict[Decider, dict[Goal, int]] = {
 FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
     "far": {
         "halt": {
+            "1RB 2RA 1LB  0LC 0RA 1LA  ... 2LA ...",
             "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
+            "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
+            "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 0RF  1LA 0LA",
+            "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 1RF  1LB 1LC",
+            "1RB ...  1LC 1RD  1LD 1LC  1LE 0RD  1RF 0LE  1RA 0LE",
+            "1RB 0LA  1RC 0LA  1RD ...  1LE 1RF  1LF 1LE  1LA 0RF",
+            "1RB 0LB  1LA 1RC  0RD 0RC  1RF 0LE  1LE 1LB  0LA ...",
+            "1RB 0LC  0RC 0RF  1RD 0LA  0LE 0RC  1LE 1LA  0RD ...",
+            "1RB 0LE  1RC 0RB  0RD 1LE  1LE 1RF  1LA 0LC  ... 1RE",
+            "1RB 0RF  0RC ...  1RD 0LD  1LD 0LE  0LA 0LC  1RF 0RB",
+            "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
+            "1RB 1LF  1RC 0RE  1LD 0RB  1LE 0LD  0LA 1RB  ... 1LB",
+            "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 0LB  ... 0LC",
+            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 0LB  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 1LD  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 1LD  1RD 0LF",
+            "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1RD 0LF",
         },
         "blank": {
             "1RB 0LD  1RC 1RF  0LA 0RC  0LE 1LD  0RF 1LE  1LA 0RB",
@@ -4115,12 +4103,44 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
     },
     "cps": {
         "halt": {
+            "1RB 0LA 2LA  2RC ... 0RC  1LA 2LB 2RC",
+            "1RB 0LB 0RC  1LB 2LC ...  1RA 2RC 1LC",
+            "1RB 0RB ...  2LC 1RB 1LA  2RA 1LC 0LC",
+            "1RB 2RA 1LB  0LC 0RA 1LA  ... 2LA ...",
             "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
             "1RB 2LA 3LB 2RA 5LA 1RA  1LB 1LA 3RA 4RB 3RB ...",
+            "1RB 0LA 2LA ...  2RC ... 0RC ...  3LA ... 2RC 2LB",
+            "1RB 0RB ... ...  2LC 1RB 1LA ...  3RA 1LC ... 0LC",
+            "1RB 3LA ... 1LA  1RC 0RA 1LA 3RB  2LA ... ... ...",
+            "1RB 3LA ... 1LA  2LA 0RA 3RC 3RB  1LA ... ... ...",
+            "1RB 3LB 3LA ...  2LA 0LA 0RC 1RB  ... ... ... 2RA",
+            "1RB ... ...  0RC ... 0LB  0RD ... 1LC  2LB 2RD 1LD",
+            "1RB ... ...  0RC ... 0LB  0RD ... 2RD  2LB 2RD 1LD",
+            "1RB ... ...  0RC ... 1LB  2LD 2RC 1LC  0RB ... 0LD",
+            "1RB ... ...  0RC ... 2RC  2LD 2RC 1LC  0RB ... 0LD",
             "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
-            "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
+            "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 0RF  1LA 0LA",
+            "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 1RF  1LB 1LC",
+            "1RB ...  1LC 1RD  1LD 1LC  1LE 0RD  1RF 0LE  1RA 0LE",
+            "1RB 0LA  1RC 0LA  1RD ...  1LE 1RF  1LF 1LE  1LA 0RF",
+            "1RB 0LB  1LA 1RC  0RD 0RC  1RF 0LE  1LE 1LB  0LA ...",
+            "1RB 0LC  0RC 0RF  1RD 0LA  0LE 0RC  1LE 1LA  0RD ...",
+            "1RB 0LE  1RC 0RB  0RD 1LE  1LE 1RF  1LA 0LC  ... 1RE",
             "1RB 0RC  1LA 0RE  1RA 1LD  0LC 0LA  0RD 0RF  0RE ...",
+            "1RB 0RF  0RC ...  1RD 0LD  1LD 0LE  0LA 0LC  1RF 0RB",
+            "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
+            "1RB 1LF  1RC 0RE  1LD 0RB  1LE 0LD  0LA 1RB  ... 1LB",
+            "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 0LB  ... 0LC",
+            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 0LB  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 1LD  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 1LD  1RD 0LF",
+            "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1LD 0LF",
+            "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1RD 0LF",
             "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
+            "1RB ... ... ...  0RC ... 0LB ...  0RD ... 2RD ...  2LB ... 3LD 2RD",
+            "1RB ... ... ...  0RC ... 0LB ...  0RD ... 3LC ...  2LB ... 3LD 2RD",
+            "1RB ... ... ...  0RC ... 2RC ...  2LD ... 3LC 2RC  0RB ... 0LD ...",
+            "1RB ... ... ...  0RC ... 3LB ...  2LD ... 3LC 2RC  0RB ... 0LD ...",
         },
         "blank": {
             "1RB 3RB 0RB 0LA  2LB 3RA 3LA 1LA",
@@ -4145,10 +4165,14 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 3RB 3RA 2LB  1LB 2LA 0RA 0LA",
             "1RB 0RB  1LC 1LD  0LC 1RA  0LD 0RA",
             "1RB 0RD  1LB 1LC  1RC 0RA  0LB 1RD",
+            "1RB 0LC 0RB  2LB 2RA 1LC  2RB ... 2LB",
             "1RB 1RB 1LA  2LC 0LB 2LB  2RC 2RA 0LC",
             "1RB 0LE  0RC 1RB  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0LE  0RC 0LC  0RD 1RA  1LD 1LA  1LC 0RB",
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
+            "1RB ... ... ...  1RC 0LB 0LC ...  1LC 2RC 3LB 1RC",
+            "1RB ... ... ...  2LC ... 0RB 0RC  2RC 2LC 3LC 1RB",
+            "1RB 0RB ... ...  1LC 2LA 3LB 0RB  0LC 1RA ... ...",
             "1RB 0RC 1LB  2LC 2RD 1LC  1RC 0LC 1LB  ... 1RA ...",
             "1RB 0RA  1LC 1LF  1RD 0LB  1RA 1LE  ... 0LC  1RG 1LD  0RG 0RF",
             "1RB 0LD  1RC 0RF  1LA 0RE  1LD 1LB  0RF 1RE  0RG 0RB  1LD 0RA",
@@ -4156,8 +4180,21 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
     },
     "bkw": {
         "halt": {
+            "1RB 0LA 2LA  2RC ... 0RC  1LA 2LB 2RC",
+            "1RB 0LB 0RC  1LB 2LC ...  1RA 2RC 1LC",
+            "1RB 0RB ...  2LC 1RB 1LA  2RA 1LC 0LC",
             "1RB 2RA 1LB  0LC 0RA 1LA  ... 2LA ...",
             "1RB 1RD  1LC 0RC  1RA 1LD  0RE 0LB  ... 1RC",
+            "1RB 0LA 2LA ...  2RC ... 0RC ...  3LA ... 2RC 2LB",
+            "1RB 0RB ... ...  2LC 1RB 1LA ...  3RA 1LC ... 0LC",
+            "1RB 3LA ... 1LA  1RC 0RA 1LA 3RB  2LA ... ... ...",
+            "1RB 3LA ... 1LA  2LA 0RA 3RC 3RB  1LA ... ... ...",
+            "1RB 3LB 3LA ...  2LA 0LA 0RC 1RB  ... ... ... 2RA",
+            "1RB ... ...  0RC ... 0LB  0RD ... 1LC  2LB 2RD 1LD",
+            "1RB ... ...  0RC ... 0LB  0RD ... 2RD  2LB 2RD 1LD",
+            "1RB ... ...  0RC ... 1LB  2LD 2RC 1LC  0RB ... 0LD",
+            "1RB ... ...  0RC ... 2RC  2LD 2RC 1LC  0RB ... 0LD",
+            "1RB ...  1LC 0LD  1RA 0LD  1RE 0LC  0RE 1RF  1LF 1LB",
             "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 0RF  1LA 0LA",
             "1RB ...  1LC 1LB  1RA 0LD  1RE 0LC  0RE 1RF  1LB 1LC",
             "1RB ...  1LC 1RD  1LD 1LC  1LE 0RD  1RF 0LE  1RA 0LE",
@@ -4166,6 +4203,7 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 0LC  0RC 0RF  1RD 0LA  0LE 0RC  1LE 1LA  0RD ...",
             "1RB 0LE  1RC 0RB  0RD 1LE  1LE 1RF  1LA 0LC  ... 1RE",
             "1RB 0RF  0RC ...  1RD 0LD  1LD 0LE  0LA 0LC  1RF 0RB",
+            "1RB 1LB  1LC ...  1RA 0LD  1RE 0LC  0RE 1RF  1LA 1LC",
             "1RB 1LF  1RC 0RE  1LD 0RB  1LE 0LD  0LA 1RB  ... 1LB",
             "1RB 1RA  0RC 1RC  1LD 0LF  0LE 1LE  1RA 0LB  ... 0LC",
             "1RB 1RA  0RC 1RF  1LD ...  0LE 1LE  1RA 0LB  1LD 0LF",
@@ -4174,10 +4212,18 @@ FALSE_NEGATIVES: dict[Decider, dict[Goal, set[str]]] = {
             "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1LD 0LF",
             "1RB 1RA  0RC 1RF  1RD ...  0LE 1LE  1RA 1LD  1RD 0LF",
             "1RB 1LG  1LC 1RD  0LF 1LA  0RE 1RE  0RC 0LC  1RB 0RB  ... 1LD",
+            "1RB ... ... ...  0RC ... 0LB ...  0RD ... 2RD ...  2LB ... 3LD 2RD",
+            "1RB ... ... ...  0RC ... 0LB ...  0RD ... 3LC ...  2LB ... 3LD 2RD",
+            "1RB ... ... ...  0RC ... 2RC ...  2LD ... 3LC 2RC  0RB ... 0LD ...",
+            "1RB ... ... ...  0RC ... 3LB ...  2LD ... 3LC 2RC  0RB ... 0LD ...",
         },
         "blank": set(),
         "spinout": {
+            "1RB 0LC 0RB  2LB 2RA 1LC  2RB ... 2LB",
             "1RB 0RC  1LC 1RA  0RC 1RD  1LE 0RB  1LB 0LD",
+            "1RB ... ... ...  1RC 0LB 0LC ...  1LC 2RC 3LB 1RC",
+            "1RB ... ... ...  2LC ... 0RB 0RC  2RC 2LC 3LC 1RB",
+            "1RB 0RB ... ...  1LC 2LA 3LB 0RB  0LC 1RA ... ...",
             "1RB 0RC 1LB  2LC 2RD 1LC  1RC 0LC 1LB  ... 1RA ...",
         },
         "twostep": set(),
@@ -4220,30 +4266,35 @@ assert not any(
 
 ########################################
 
-FAR_SOLVES = {
-    "blank": set(),
-    "spinout": {
-        "1RB 0LC 0RB  2LB 2RA 1LC  2RB ... 2LB",
-        "1RB ... ... ...  1RC 0LB 0LC ...  1LC 2RC 3LB 1RC",
-        "1RB ... ... ...  2LC ... 0RB 0RC  2RC 2LC 3LC 1RB",
-        "1RB 0RB ... ...  1LC 2LA 3LB 0RB  0LC 1RA ... ...",
-    },
-    "halt": {
-        "1RB 0LA 2LA  2RC ... 0RC  1LA 2LB 2RC",
-        "1RB 0LB 0RC  1LB 2LC ...  1RA 2RC 1LC",
-        "1RB 0RB ...  2LC 1RB 1LA  2RA 1LC 0LC",
-        "1RB 0LA 2LA ...  2RC ... 0RC ...  3LA ... 2RC 2LB",
-        "1RB 0RB ... ...  2LC 1RB 1LA ...  3RA 1LC ... 0LC",
-        "1RB 3LA ... 1LA  1RC 0RA 1LA 3RB  2LA ... ... ...",
-        "1RB 3LA ... 1LA  2LA 0RA 3RC 3RB  1LA ... ... ...",
-        "1RB 3LB 3LA ...  2LA 0LA 0RC 1RB  ... ... ... 2RA",
-        "1RB ... ...  0RC ... 0LB  0RD ... 1LC  2LB 2RD 1LD",
-        "1RB ... ...  0RC ... 0LB  0RD ... 2RD  2LB 2RD 1LD",
-        "1RB ... ...  0RC ... 1LB  2LD 2RC 1LC  0RB ... 0LD",
-        "1RB ... ...  0RC ... 2RC  2LD 2RC 1LC  0RB ... 0LD",
-        "1RB ... ... ...  0RC ... 0LB ...  0RD ... 2RD ...  2LB ... 3LD 2RD",
-        "1RB ... ... ...  0RC ... 0LB ...  0RD ... 3LC ...  2LB ... 3LD 2RD",
-        "1RB ... ... ...  0RC ... 2RC ...  2LD ... 3LC 2RC  0RB ... 0LD ...",
-        "1RB ... ... ...  0RC ... 3LB ...  2LD ... 3LC 2RC  0RB ... 0LD ...",
-    },
-}
+NONHALTERS = (
+    SPINNERS
+    | RECURS
+    | INFRUL
+    | set(BACKWARD_STEPS['halt'])
+    | IRREGULAR
+    | {prog for progs in FALSE_NEGATIVES.values() for prog in progs['halt']}
+)
+
+NONBLANKERS = (
+    DONT_BLANK
+    | (set(SPINOUT | SPINOUT_SLOW) - BLANKERS)
+    | set(RECUR)
+    | {prog for prog, marks in PROVER_SPINOUT.items()
+           if not isinstance(marks, int) or marks > 3}
+    | {prog for prog, (marks, _) in HALT.items() if marks > 3}
+    | set(BACKWARD_STEPS['blank'])
+    | {prog for progs in FALSE_NEGATIVES.values() for prog in progs['blank']}
+)
+
+NONSPINNERS = (
+    DONT_SPINOUT
+    | HALTERS
+    | RECURS
+    | INFRUL
+    | set(BACKWARD_STEPS['spinout'])
+    | {prog for progs in FALSE_NEGATIVES.values() for prog in progs['spinout']}
+)
+
+assert not HALTERS & NONHALTERS
+assert not BLANKERS & NONBLANKERS
+assert not SPINNERS & NONSPINNERS

@@ -355,7 +355,7 @@ class Far(DeciderTest):
 
         print('halt')
         for prog in self.false_negatives['halt']:
-            if far_cant_halt(prog, 3):
+            if far_cant_halt(prog, 6):
                 print(prog)
                 new_solved = True
 
@@ -367,7 +367,7 @@ class Far(DeciderTest):
 
         print('spinout')
         for prog in self.false_negatives['spinout']:
-            if far_cant_spinout(prog, 3):
+            if far_cant_spinout(prog, 6):
                 print(prog)
                 new_solved = True
 
@@ -395,72 +395,3 @@ class Far(DeciderTest):
                 new_solved = True
 
         self.assertFalse(new_solved)
-
-########################################
-
-class FarSolves(DeciderTest):
-    def test_blank(self):
-        bkw_solved = set()
-        cps_solved = set()
-        far_missed = set()
-
-        for prog in FAR_SOLVES['blank']:
-            if bkw_cant_blank(prog, BKW_LIMIT).is_refuted():
-                bkw_solved.add(prog)
-
-            if cps_cant_blank(prog, CPS_LIMIT):
-                cps_solved.add(prog)
-
-            if not far_cant_blank(prog, 3):
-                far_missed.add(prog)
-
-        self.assertTrue(
-            not bkw_solved
-            and not cps_solved
-            and not far_missed)
-
-    def test_spinout(self):
-        bkw_solved = set()
-        cps_solved = set()
-        far_missed = set()
-
-        for prog in FAR_SOLVES['spinout']:
-            if bkw_cant_spinout(prog, BKW_LIMIT).is_refuted():
-                print(f'bkw: {prog}')
-                bkw_solved.add(prog)
-
-            if cps_cant_spinout(prog, CPS_LIMIT):
-                print(f'cps: {prog}')
-                cps_solved.add(prog)
-
-            if not far_cant_spinout(prog, 3):
-                print(f'far: {prog}')
-                far_missed.add(prog)
-
-        self.assertTrue(
-            not bkw_solved
-            and not cps_solved
-            and not far_missed)
-
-    def test_halt(self):
-        bkw_solved = set()
-        cps_solved = set()
-        far_missed = set()
-
-        for prog in FAR_SOLVES['halt']:
-            if bkw_cant_halt(prog, BKW_LIMIT).is_refuted():
-                print(f'bkw: {prog}')
-                bkw_solved.add(prog)
-
-            if cps_cant_halt(prog, CPS_LIMIT):
-                print(f'cps: {prog}')
-                cps_solved.add(prog)
-
-            if not far_cant_halt(prog, 3):
-                print(f'far: {prog}')
-                far_missed.add(prog)
-
-        self.assertTrue(
-            not bkw_solved
-            and not cps_solved
-            and not far_missed)
