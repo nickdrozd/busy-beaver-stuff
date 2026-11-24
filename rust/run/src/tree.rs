@@ -1834,23 +1834,12 @@ impl<
         self.harvester.harvest(&self.prog, config);
     }
 
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cognitive_complexity
-    )]
-    fn branch(&mut self, mut config: Config) {
-        let slot @ (slot_state, _) = match self.run(&mut config) {
-            Undefined(slot) => slot,
-            Blank | Spinout => return,
-            StepLimit => {
-                self.harvest(&mut PassConfig::Owned(config));
-                return;
-            },
-            _ => {
-                unreachable!()
-            },
-        };
-
+    #[expect(clippy::cast_possible_truncation)]
+    fn branch_instrs(
+        &mut self,
+        config: &Config,
+        slot @ (slot_state, _): Slot,
+    ) -> Vec<Instr> {
         let mut avail_instrs: Vec<_> =
             self.instrs.avail_instrs(&slot).into();
 
@@ -2182,32 +2171,102 @@ impl<
             );
         }
 
+        avail_instrs
+    }
+
+    fn harvest_final(
+        &mut self,
+        slot: &Slot,
+        instrs: &[Instr],
+        mut config: PassConfig<'_>,
+    ) {
+        let Some((last, prefix)) = instrs.split_last() else {
+            return;
+        };
+        for instr in prefix {
+            self.prog.insert(slot, instr);
+            if !self.prog.term_immediate(&config, *instr) {
+                self.harvest(&mut Cow::Borrowed(config.as_ref()));
+            }
+        }
+
+        self.prog.insert(slot, last);
+        if (matches!(config, Cow::Owned(_))
+            || !self.prog.term_immediate(&config, *last))
+            && self.not_term_soon(config.to_mut())
+        {
+            self.harvest(&mut config);
+        }
+        self.prog.remove(slot);
+    }
+
+    #[expect(clippy::similar_names)]
+    fn try_one_step_child(
+        &mut self,
+        config: &mut Config,
+        instr: Instr,
+    ) -> bool {
+        // run_basic needs a second iteration to report Undefined.
+        if !self.final_slot() || self.sim_lim < 2 {
+            return false;
+        }
+
+        let (print, shift, target) = instr;
+        let span = if shift {
+            &config.tape.rspan
+        } else {
+            &config.tape.lspan
+        };
+        let read = span.first().map_or(0, |block| block.color);
+        let slot = (target, read);
+        if self.prog.get(&slot).is_some() {
+            return false;
+        }
+
+        // A same-state skip or spinout would read the installed candidate's
+        // slot on the adjacent cell, already ruled out above.
+        let source = config.state;
+        let scan = config.tape.scan;
+        config.tape.step(shift, print, false);
+        config.state = target;
+        if !config.tape.blank() {
+            let instrs = self.branch_instrs(config, slot);
+            self.harvest_final(&slot, &instrs, Cow::Borrowed(config));
+        }
+
+        // Put the adjacent cell back, then restore the overwritten source.
+        config.tape.step(!shift, read, false);
+        config.tape.scan = scan;
+        config.state = source;
+        true
+    }
+
+    fn branch(&mut self, mut config: Config) {
+        let slot @ (slot_state, _) = match self.run(&mut config) {
+            Undefined(slot) => slot,
+            Blank | Spinout => return,
+            StepLimit => {
+                self.harvest(&mut PassConfig::Owned(config));
+                return;
+            },
+            _ => {
+                unreachable!()
+            },
+        };
+
+        let avail_instrs = self.branch_instrs(&config, slot);
+        if self.final_slot() {
+            self.harvest_final(
+                &slot,
+                &avail_instrs,
+                Cow::Owned(config),
+            );
+            return;
+        }
         let Some((last_instr, instrs)) = avail_instrs.split_last()
         else {
             return;
         };
-
-        if self.final_slot() {
-            for next_instr in instrs {
-                self.prog.insert(&slot, next_instr);
-
-                if !self.prog.term_immediate(&config, *next_instr) {
-                    self.harvest(&mut PassConfig::Borrowed(&config));
-                }
-            }
-
-            {
-                self.prog.insert(&slot, last_instr);
-
-                if self.not_term_soon(&mut config) {
-                    self.harvest(&mut PassConfig::Owned(config));
-                }
-            }
-
-            self.prog.remove(&slot);
-
-            return;
-        }
 
         config.state = slot_state;
 
@@ -2224,7 +2283,9 @@ impl<
                 let shape = self.on_shape_insert(&slot, next_instr);
                 self.instrs.on_insert(&slot, next_instr);
 
-                self.branch(config.clone());
+                if !self.try_one_step_child(&mut config, *next_instr) {
+                    self.branch(config.clone());
+                }
 
                 self.instrs.on_remove();
                 self.on_shape_remove(shape, &slot);
